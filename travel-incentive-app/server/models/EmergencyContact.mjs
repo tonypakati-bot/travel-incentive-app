@@ -10,6 +10,7 @@ const emergencyContactSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  departureGroup: String,
   phone: {
     type: String,
     required: true

@@ -59,9 +59,9 @@ const returnFlights = [
 ];
 
 const emergencyContacts = [
-  { id: 'ec1', name: 'Assistenza Viaggio 24/7', phone: '+39 02 123456', type: 'Supporto H24', email: 'supporto@viaggi.it' },
-  { id: 'ec2', name: 'Ambulanza', phone: '998', type: 'Emergenza Medica (UAE)' },
-  { id: 'ec3', name: 'Polizia', phone: '999', type: 'Emergenza Generale (UAE)' }
+  { id: 'ec1', departureGroup: '', name: 'Assistenza Viaggio 24/7', phone: '+39 02 123456', type: 'Supporto H24', email: 'supporto@viaggi.it' },
+  { id: 'ec2', departureGroup: '', name: 'Ambulanza', phone: '998', type: 'Emergenza Medica (UAE)' },
+  { id: 'ec3', departureGroup: '', name: 'Polizia', phone: '999', type: 'Emergenza Generale (UAE)' }
 ];
 
 const galleryPhotos = [
@@ -160,6 +160,7 @@ async function importMockData() {
     for (const contact of emergencyContacts) {
       const newContact = new EmergencyContact({
         eventId: event._id,
+        departureGroup: contact.departureGroup || '',
         name: contact.name,
         phone: contact.phone,
         type: contact.type,

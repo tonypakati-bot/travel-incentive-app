@@ -148,7 +148,17 @@ const TravelPage: React.FC<TravelPageProps> = ({ travelInfo, userRegistration })
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-[#1A2C47] mb-4">Contatti Utili</h2>
         <div className="space-y-3">
-          {travelInfo.emergencyContacts.map(contact => (
+          {travelInfo.emergencyContacts
+            .filter(contact => {
+              // Mostra il contatto se:
+              // 1. Non ha targetAirports (contatto generale)
+              // 2. O ha l'aeroporto di partenza dell'utente nei targetAirports
+              const userAirport = userRegistration?.form_data?.departureAirport;
+              return !contact.targetAirports ||
+                     contact.targetAirports.length === 0 ||
+                     (userAirport && contact.targetAirports.includes(userAirport));
+            })
+            .map(contact => (
             <div key={contact.id} className="bg-white rounded-xl shadow p-4 border border-gray-200">
               <div className="flex justify-between items-center">
                 <div>

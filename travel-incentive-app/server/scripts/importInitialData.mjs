@@ -602,6 +602,7 @@ const travelInfo = {
   ],
   emergencyContacts: [
     {
+      departureGroup: '',
       id: 'ec1',
       name: 'Assistenza Viaggio 24/7',
       phone: '+39 02 123456',
@@ -617,6 +618,7 @@ const travelInfo = {
       ]
     },
     {
+      departureGroup: '',
       id: 'ec2',
       name: 'Ambulanza',
       phone: '998',
@@ -626,6 +628,7 @@ const travelInfo = {
       notes: 'Servizio ambulanza pubblico degli Emirati Arabi Uniti'
     },
     {
+      departureGroup: '',
       id: 'ec3',
       name: 'Polizia',
       phone: '999',
@@ -635,6 +638,7 @@ const travelInfo = {
       languages: ['Arabic', 'English']
     },
     {
+      departureGroup: '',
       id: 'ec4',
       name: 'Emirates Palace - Concierge',
       phone: '+971 2 690 9000',
@@ -650,6 +654,7 @@ const travelInfo = {
       ]
     },
     {
+      departureGroup: '',
       id: 'ec5',
       name: 'Responsabile Gruppo',
       phone: '+39 333 1234567',

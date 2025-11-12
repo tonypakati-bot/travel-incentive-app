@@ -3,9 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.NODE_ENV === 'test'
-  ? 'mongodb://localhost:27017/travel-incentive-test'  // Force test database
-  : process.env.MONGODB_URI || 'mongodb://localhost:27017/travel-incentive';
+const MONGODB_URI = 'mongodb://localhost:27017/travel-incentive'; // Always use travel-incentive database
 
 console.log('Database configuration:', {
   nodeEnv: process.env.NODE_ENV,

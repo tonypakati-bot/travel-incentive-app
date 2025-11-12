@@ -20,6 +20,8 @@ const eventDetailsSchema = new mongoose.Schema({
   brandImageUrl: String,
   backgroundImageUrl: String,
   registrationDeadline: String,
+  startDate: String,
+  endDate: String,
   duration: {
     days: Number,
     nights: Number
@@ -28,6 +30,10 @@ const eventDetailsSchema = new mongoose.Schema({
     description: String,
     highlights: [String]
   },
+  departureGroup: [String],
+  allowCompanion: Boolean,
+  allowBusiness: Boolean,
+  roomType: [String],
   destination: {
     name: String,
     country: String,

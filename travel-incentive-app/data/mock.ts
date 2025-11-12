@@ -48,6 +48,9 @@ const eventDetails: EventDetails = {
   brandImageUrl: 'https://i.imgur.com/8Qz5a2C.png',
   backgroundImageUrl: 'https://images.unsplash.com/photo-1596701062351-8c2c14d1fdd0?q=80&w=2070',
   registrationDeadline: '30 Settembre 2025',
+  departureGroup: ['Milano Malpensa', 'Roma Fiumicino', 'Venezia'],
+  allowCompanion: false,
+  allowBusiness: false,
 };
 
 const announcements: Announcement[] = [
@@ -284,9 +287,9 @@ const returnFlights: Flight[] = [
 ];
 
 const emergencyContacts: EmergencyContact[] = [
-  { id: 'ec1', name: 'Assistenza Viaggio 24/7', phone: '+39 02 123456', type: 'Supporto H24', email: 'supporto@viaggi.it' },
-  { id: 'ec2', name: 'Ambulanza', phone: '998', type: 'Emergenza Medica (UAE)' },
-  { id: 'ec3', name: 'Polizia', phone: '999', type: 'Emergenza Generale (UAE)' },
+  { id: 'ec1', departureGroup: '', name: 'Assistenza Viaggio 24/7', phone: '+39 02 123456', type: 'Supporto H24', email: 'supporto@viaggi.it' },
+  { id: 'ec2', departureGroup: '', name: 'Ambulanza', phone: '998', type: 'Emergenza Medica (UAE)' },
+  { id: 'ec3', departureGroup: '', name: 'Polizia', phone: '999', type: 'Emergenza Generale (UAE)' },
 ];
 
 export const travelInfo: TravelInfo = {

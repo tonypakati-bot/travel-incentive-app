@@ -1,7 +1,6 @@
 // Restituisce la registrazione dell'utente loggato
 export const getUserRegistration = async (req, res) => {
   try {
-    const mongoose = (await import('mongoose')).default;
     const eventId = new mongoose.Types.ObjectId(process.env.DEFAULT_EVENT_ID || '000000000000000000000000');
     const registration = await Registration.findOne({ userId: req.user.id, eventId });
     if (!registration) {
@@ -16,14 +15,17 @@ export const getUserRegistration = async (req, res) => {
 import Trip from '../models/Trip.mjs';
 import TravelInfo from '../models/TravelInfo.mjs';
 import Registration from '../models/Registration.mjs';
+import mongoose from 'mongoose';
 
 // Get Trip Data
 export const getTripData = async (req, res) => {
   try {
+    console.log('getTripData called');
     const tripData = await Trip.findOne();
+    console.log('Trip data found:', !!tripData);
     res.json(tripData);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in getTripData:', err);
     res.status(500).send('Server Error');
   }
 };
@@ -42,11 +44,63 @@ export const getTravelInfo = async (req, res) => {
 // Update Trip Data
 export const updateTripData = async (req, res) => {
   try {
-    const tripData = await Trip.findOneAndUpdate({}, req.body, {
-      new: true,
-      upsert: true
+    console.log('updateTripData called - incoming eventDetails:', JSON.stringify(req.body && req.body.eventDetails ? { allowCompanion: req.body.eventDetails.allowCompanion, allowBusiness: req.body.eventDetails.allowBusiness, departureGroup: req.body.eventDetails.departureGroup } : req.body.eventDetails));
+
+    const incoming = req.body || {};
+    // If there's no existing trip, create or replace with incoming
+    const existing = await Trip.findOne();
+    if (!existing) {
+      const created = await Trip.findOneAndUpdate({}, incoming, { new: true, upsert: true });
+      return res.json(created);
+    }
+
+    // Merge eventDetails defensively to avoid losing fields when client sends partial object
+    if (incoming.eventDetails && typeof incoming.eventDetails === 'object') {
+      const existingEvent = existing.eventDetails ? (existing.eventDetails.toObject ? existing.eventDetails.toObject() : existing.eventDetails) : {};
+      const mergedEvent = { ...existingEvent };
+      // Copy incoming keys but skip null values (they should not delete existing data)
+      Object.keys(incoming.eventDetails).forEach((k) => {
+        const v = incoming.eventDetails[k];
+        if (v === null || typeof v === 'undefined') return; // ignore null/undefined to avoid accidental deletion
+        // Handle specific typed fields
+        if (k === 'departureGroup') {
+          if (Array.isArray(v)) mergedEvent.departureGroup = v;
+          else if (typeof v === 'string' && v.trim()) mergedEvent.departureGroup = [v.trim()];
+          return;
+        }
+        if (k === 'allowCompanion' || k === 'allowBusiness') {
+          if (typeof v === 'boolean') mergedEvent[k] = v; // only accept boolean values
+          return;
+        }
+        // default shallow copy for other fields
+        mergedEvent[k] = v;
+      });
+      // ensure boolean flags exist and default to false if missing
+      if (typeof mergedEvent.allowCompanion === 'undefined') mergedEvent.allowCompanion = false;
+      if (typeof mergedEvent.allowBusiness === 'undefined') mergedEvent.allowBusiness = false;
+      existing.eventDetails = mergedEvent;
+    }
+
+    // Merge other top-level fields (shallow) but skip null/undefined to avoid accidental deletion
+    Object.keys(incoming).forEach((key) => {
+      if (key === 'eventDetails') return;
+      const v = incoming[key];
+      if (v === null || typeof v === 'undefined') return;
+      existing[key] = v;
     });
-    res.json(tripData);
+
+    await existing.save();
+    // Post-save: ensure boolean flags are present in the persisted document
+  const ensure = {};
+    if (typeof existing.eventDetails?.allowCompanion === 'undefined') ensure['eventDetails.allowCompanion'] = false;
+    if (typeof existing.eventDetails?.allowBusiness === 'undefined') ensure['eventDetails.allowBusiness'] = false;
+    if (Object.keys(ensure).length > 0) {
+      await Trip.updateOne({ _id: existing._id }, { $set: ensure });
+      // refresh existing
+      const refreshed = await Trip.findById(existing._id);
+      return res.json(refreshed);
+    }
+    res.json(existing);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -104,7 +158,6 @@ export const submitRegistration = async (req, res) => {
     await User.findByIdAndUpdate(req.user.id, userUpdate, { new: true });
 
     // Cerca registrazione esistente
-  const mongoose = (await import('mongoose')).default;
   const eventId = new mongoose.Types.ObjectId(process.env.DEFAULT_EVENT_ID || '000000000000000000000000');
   let registration = await Registration.findOne({ userId: req.user.id, eventId });
     if (registration) {
@@ -180,5 +233,55 @@ export const deleteAnnouncement = async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
+  }
+};
+
+// Count Registrations for Admin
+export const countRegistrations = async (req, res) => {
+  try {
+    const eventId = new mongoose.Types.ObjectId(process.env.DEFAULT_EVENT_ID || '000000000000000000000000');
+    const count = await Registration.countDocuments({ eventId });
+    res.json({ count });
+  } catch (err) {
+    console.error('Error counting registrations:', err);
+    res.status(500).json({ message: 'Errore nel conteggio delle registrazioni', error: err.message });
+  }
+};
+
+// Count Users for Admin
+export const countUsers = async (req, res) => {
+  try {
+    const User = (await import('../models/User.mjs')).default;
+    const count = await User.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error('Error counting users:', err);
+    res.status(500).json({ message: 'Errore nel conteggio degli utenti', error: err.message });
+  }
+};
+
+// Get All Registrations for Admin
+export const getAllRegistrations = async (req, res) => {
+  try {
+    console.log('getAllRegistrations called');
+    const eventId = new mongoose.Types.ObjectId(process.env.DEFAULT_EVENT_ID || '000000000000000000000000');
+    console.log('Event ID:', eventId);
+    const registrations = await Registration.find({ eventId }).populate('userId', 'firstName lastName email');
+    console.log('Found registrations:', registrations.length);
+    res.json(registrations);
+  } catch (err) {
+    console.error('Error fetching registrations:', err);
+    res.status(500).json({ message: 'Errore nel recupero delle registrazioni', error: err.message });
+  }
+};
+
+// Get Config
+export const getConfig = async (req, res) => {
+  try {
+    const config = await mongoose.connection.db.collection('config').findOne({});
+    res.json(config);
+  } catch (err) {
+    console.error('Error in getConfig:', err);
+    res.status(500).json({ message: 'Errore nel recupero della config', error: err.message });
   }
 };

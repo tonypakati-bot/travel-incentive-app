@@ -8,6 +8,8 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
   transform: {
-    '^.+\\.jsx?$': 'babel-jest'
+    '^.+\\.jsx?$': 'babel-jest',
+    '^.+\\.mjs$': 'babel-jest'
   },
+  moduleFileExtensions: ['js', 'jsx', 'mjs', 'json', 'node'],
 };
