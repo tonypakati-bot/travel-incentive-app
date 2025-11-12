@@ -110,11 +110,68 @@ export const updateTripData = async (req, res) => {
 // Update Travel Info
 export const updateTravelInfo = async (req, res) => {
   try {
-    const travelInfo = await TravelInfo.findOneAndUpdate({}, req.body, {
+    const incoming = req.body || {};
+
+    console.log('DBG updateTravelInfo - incoming.emergencyContacts:', JSON.stringify(incoming.emergencyContacts, null, 2));
+
+    // If incoming contains emergencyContacts, do a safe merge by loading the document
+    if (Array.isArray(incoming.emergencyContacts)) {
+      const existing = await TravelInfo.findOne();
+      if (!existing) {
+        // no existing doc: create new with incoming merged
+        const created = await TravelInfo.findOneAndUpdate({}, incoming, { new: true, upsert: true });
+        console.log('DBG updateTravelInfo - created.emergencyContacts:', JSON.stringify(created.emergencyContacts, null, 2));
+        return res.json(created);
+      }
+
+      const existingContacts = (existing.emergencyContacts || []).map(c => (c.toObject ? c.toObject() : c));
+      const merged = incoming.emergencyContacts.map((inc) => {
+        if (inc && inc.id) {
+          const found = existingContacts.find((e) => e.id === inc.id);
+          if (found) {
+            // Merge defensively: do not overwrite existing values with null/undefined/empty-string
+            const result = { ...found };
+            Object.keys(inc).forEach((k) => {
+              const v = inc[k];
+              // skip null or undefined
+              if (v === null || typeof v === 'undefined') return;
+              // accetta stringa vuota: sovrascrive il valore precedente
+              result[k] = v;
+            });
+            return result;
+          }
+        }
+        return inc;
+      });
+
+      console.log('DBG updateTravelInfo - incoming.emergencyContacts:', JSON.stringify(incoming.emergencyContacts, null, 2));
+      console.log('DBG updateTravelInfo - merged.emergencyContacts:', JSON.stringify(merged, null, 2));
+
+      // apply merged contacts and other incoming top-level fields to existing doc
+      existing.emergencyContacts = merged;
+      // copy other top-level fields except _id and emergencyContacts
+      Object.keys(incoming).forEach((k) => {
+        if (k === 'emergencyContacts' || k === '_id') return;
+        existing[k] = incoming[k];
+      });
+
+      const saved = await existing.save();
+      console.log('DBG updateTravelInfo - saved.emergencyContacts:', JSON.stringify(saved.emergencyContacts, null, 2));
+      try {
+        const raw = await TravelInfo.collection.findOne({});
+        console.log('DBG updateTravelInfo - raw collection doc:', JSON.stringify(raw, null, 2));
+      } catch (e) {
+        console.error('DBG updateTravelInfo - failed to read raw collection doc', e);
+      }
+      return res.json(saved);
+    }
+
+    // fallback: no emergencyContacts present, do a regular upsert
+    const travelInfo = await TravelInfo.findOneAndUpdate({}, incoming, {
       new: true,
       upsert: true
     });
-    res.json(travelInfo);
+    return res.json(travelInfo);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

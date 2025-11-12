@@ -198,11 +198,11 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
     setConfirmMessage('Sei sicuro di voler salvare le modifiche ai contatti di emergenza?');
     setOnConfirmAction(() => async () => {
       try {
-      // Remove departureGroup if empty string before sending
+      // Ensure departureGroup is sent: if empty/whitespace, send empty string so backend can overwrite
       const updatedContacts = editedEmergency.map((c) => {
         const out = { ...c };
         if (typeof out.departureGroup === 'string' && out.departureGroup.trim() === '') {
-          delete out.departureGroup;
+          out.departureGroup = '';
         }
         return out;
       });
