@@ -119,7 +119,13 @@ function MainApp() {
           const configResponse = await getConfig();
           // Update form config with dynamic options
           const updatedFormConfig = JSON.parse(JSON.stringify(registrationFormConfig)); // deep clone
-          // No need to set roomType options here, as they are per trip
+          const logisticsSection = updatedFormConfig.find(s => s.id === 'logistics');
+          if (logisticsSection) {
+            const roomTypeField = logisticsSection.fields.find(f => f.id === 'roomType');
+            if (roomTypeField && configResponse?.tipologiaCamera) {
+              roomTypeField.options = configResponse.tipologiaCamera;
+            }
+          }
           setFormConfig(updatedFormConfig);
         } catch (error) {
           console.error('Error fetching config:', error);

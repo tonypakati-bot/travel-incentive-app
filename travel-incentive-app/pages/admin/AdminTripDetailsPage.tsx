@@ -31,6 +31,9 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
   // Emergency contacts edit state
   const [isEditingEmergency, setIsEditingEmergency] = useState(false);
   const [editedEmergency, setEditedEmergency] = useState<any[] | null>(null);
+  // Agenda edit state
+  const [isEditingAgenda, setIsEditingAgenda] = useState(false);
+  const [editedAgenda, setEditedAgenda] = useState<any[] | null>(null);
 
   useEffect(() => {
     const fetchTripDetails = async () => {
@@ -50,7 +53,8 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
         if (travelData?.emergencyContacts) {
           travelData.emergencyContacts = travelData.emergencyContacts.map((c: any) => ({
             ...c,
-            departureGroup: c.departureGroup || ''
+            departureGroup: c.departureGroup || '',
+            type: c.type || ''
           }));
         }
         setTravelInfo(travelData);
@@ -234,7 +238,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
     if (!editedEmergency) return;
     const copy = JSON.parse(JSON.stringify(editedEmergency));
     // keep departureGroup empty by default (user prefers empty value)
-    copy.push({ departureGroup: '', name: '', phone: '', email: '' });
+  copy.push({ departureGroup: '', type: '', name: '', phone: '', email: '' });
     setEditedEmergency(copy);
   };
 
@@ -264,6 +268,136 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
       // optionally you could setEditedEmergency([...]) with sample data
     });
     setConfirmOpen(true);
+  };
+
+  const handleEditAgenda = () => {
+    const copy: any[] = JSON.parse(JSON.stringify(trip?.agenda || []));
+    // Normalize date strings to ISO (yyyy-mm-dd) so input[type=date] shows value
+    for (let i = 0; i < copy.length; i++) {
+      if (copy[i]?.date) {
+        copy[i].date = parseItalianDateToISO(copy[i].date) || copy[i].date;
+      }
+      // ensure items array exists
+      if (!Array.isArray(copy[i].items)) copy[i].items = [];
+    }
+    setEditedAgenda(copy);
+    setIsEditingAgenda(true);
+  };
+
+  const handleCancelAgenda = () => {
+    setIsEditingAgenda(false);
+    setEditedAgenda(null);
+  };
+
+  const handleSaveAgenda = async () => {
+    if (!editedAgenda) return;
+    setConfirmTitle('Conferma Salvataggio Agenda');
+    setConfirmMessage('Sei sicuro di voler salvare le modifiche all\'agenda?');
+    setOnConfirmAction(() => async () => {
+      try {
+        const payload = { ...(trip || {}), agenda: editedAgenda };
+        const res = await api.put('/trip', payload);
+        setTrip(res.data || payload);
+        setIsEditingAgenda(false);
+        setEditedAgenda(null);
+      } catch (err) {
+        console.error('Error saving agenda:', err);
+        setError('Errore nel salvataggio dell\'agenda');
+      } finally {
+        setConfirmOpen(false);
+        setOnConfirmAction(null);
+      }
+    });
+    setConfirmOpen(true);
+  };
+
+  const updateEditedAgendaDay = (index: number, field: string, value: any) => {
+    if (!editedAgenda) return;
+    const copy = JSON.parse(JSON.stringify(editedAgenda));
+    if (!copy[index]) copy[index] = {};
+    copy[index][field] = value;
+    setEditedAgenda(copy);
+  };
+
+  const handleAddAgendaDay = () => {
+    if (!editedAgenda) return;
+    const copy = JSON.parse(JSON.stringify(editedAgenda));
+    copy.push({ day: (copy.length + 1), title: '', date: '', items: [] });
+    setEditedAgenda(copy);
+  };
+
+  const handleDeleteAgendaDay = (index: number) => {
+    if (!editedAgenda) return;
+    setConfirmTitle('Conferma Eliminazione Giorno');
+    setConfirmMessage('Sei sicuro di eliminare questo giorno dall\'agenda?');
+    setOnConfirmAction(() => () => {
+      const copy = JSON.parse(JSON.stringify(editedAgenda));
+      copy.splice(index, 1);
+      // reindex days
+      for (let i = 0; i < copy.length; i++) copy[i].day = i + 1;
+      setEditedAgenda(copy);
+      setConfirmOpen(false);
+      setOnConfirmAction(null);
+    });
+    setConfirmOpen(true);
+  };
+
+  const handleAddAgendaItem = (dayIndex: number) => {
+    if (!editedAgenda) return;
+    const copy = JSON.parse(JSON.stringify(editedAgenda));
+    if (!Array.isArray(copy[dayIndex].items)) copy[dayIndex].items = [];
+    copy[dayIndex].items.push({ time: '', title: '', description: '' });
+    setEditedAgenda(copy);
+  };
+
+  const handleDeleteAgendaItem = (dayIndex: number, itemIndex: number) => {
+    if (!editedAgenda) return;
+    const copy = JSON.parse(JSON.stringify(editedAgenda));
+    if (!Array.isArray(copy[dayIndex].items)) return;
+    copy[dayIndex].items.splice(itemIndex, 1);
+    setEditedAgenda(copy);
+  };
+
+  const formatDatePretty = (val: any) => {
+    if (!val) return '';
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  const parseItalianDateToISO = (val: any) => {
+    if (!val) return '';
+    // If already ISO/parsible by Date, return yyyy-mm-dd
+    const d1 = new Date(val);
+    if (!isNaN(d1.getTime())) {
+      const yyyy = d1.getFullYear();
+      const mm = String(d1.getMonth() + 1).padStart(2, '0');
+      const dd = String(d1.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    // Try to parse formats like '06 novembre 2025' (it)
+    const months: Record<string, number> = {
+      gennaio: 1, febbraio: 2, marzo: 3, aprile: 4, maggio: 5, giugno: 6,
+      luglio: 7, agosto: 8, settembre: 9, ottobre: 10, novembre: 11, dicembre: 12
+    };
+    const m = String(val).trim().toLowerCase().match(/(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/i);
+    if (m) {
+      const dd = String(Number(m[1])).padStart(2, '0');
+      const monthName = m[2];
+      const yyyy = m[3];
+      const mm = months[monthName] ? String(months[monthName]).padStart(2, '0') : '01';
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return '';
+  };
+
+  const updateEditedAgendaItem = (dayIndex: number, itemIndex: number, field: string, value: any) => {
+    if (!editedAgenda) return;
+    const copy = JSON.parse(JSON.stringify(editedAgenda));
+    if (!Array.isArray(copy[dayIndex].items)) copy[dayIndex].items = [];
+    if (!copy[dayIndex].items[itemIndex]) copy[dayIndex].items[itemIndex] = {};
+    copy[dayIndex].items[itemIndex][field] = value;
+    setEditedAgenda(copy);
   };
 
   const updateEditedTrip = (path: string, value: any) => {
@@ -439,7 +573,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                     value={
                       isEditing
                         ? (editedTrip?.eventDetails?.startDate || '')
-                        : (trip?.eventDetails?.startDate ? new Date(trip.eventDetails.startDate).toLocaleDateString('it-IT') : '')
+                        : (trip?.eventDetails?.startDate ? formatDatePretty(trip.eventDetails.startDate) : '')
                     }
                     onChange={(e) => updateEditedTrip('eventDetails.startDate', e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
@@ -454,7 +588,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                     value={
                       isEditing
                         ? (editedTrip?.eventDetails?.endDate || '')
-                        : (trip?.eventDetails?.endDate ? new Date(trip.eventDetails.endDate).toLocaleDateString('it-IT') : '')
+                        : (trip?.eventDetails?.endDate ? formatDatePretty(trip.eventDetails.endDate) : '')
                     }
                     onChange={(e) => updateEditedTrip('eventDetails.endDate', e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
@@ -469,7 +603,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                     value={
                       isEditing
                         ? (editedTrip?.eventDetails?.registrationDeadline || '')
-                        : (trip?.eventDetails?.registrationDeadline ? new Date(trip.eventDetails.registrationDeadline).toLocaleDateString('it-IT') : '')
+                        : (trip?.eventDetails?.registrationDeadline ? formatDatePretty(trip.eventDetails.registrationDeadline) : '')
                     }
                     onChange={(e) => updateEditedTrip('eventDetails.registrationDeadline', e.target.value)}
                     className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
@@ -485,7 +619,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                       type="url"
                       value={editedTrip?.eventDetails?.backgroundImageUrl || ''}
                       onChange={(e) => updateEditedTrip('eventDetails.backgroundImageUrl', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-200 shadow-sm p-2"
+                      className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
                       placeholder="URL immagine"
                     />
                   ) : (
@@ -506,7 +640,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                       type="url"
                       value={editedTrip?.eventDetails?.brandImageUrl || ''}
                       onChange={(e) => updateEditedTrip('eventDetails.brandImageUrl', e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-200 shadow-sm p-2"
+                      className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
                       placeholder="URL logo"
                     />
                   ) : (
@@ -527,26 +661,28 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                   {((isEditing ? (editedTrip?.eventDetails?.departureGroup || []) : (trip?.eventDetails?.departureGroup || [])) || []).map((g: string, i: number) => (
                     <span key={i} className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${g && String(g).toLowerCase() === 'vip' ? 'bg-yellow-100 text-yellow-900' : 'bg-gray-100 text-gray-800'}`}>
                       <span className="mr-2">{g}</span>
-                      <button type="button" className={`${g && String(g).toLowerCase() === 'vip' ? 'text-yellow-700 hover:text-yellow-900' : 'text-gray-500 hover:text-gray-700'}`} aria-label={`Remove ${g}`} onClick={() => {
-                        // if editing, remove from editedTrip; otherwise no-op
-                        if (!isEditing) return;
-                        const copy = JSON.parse(JSON.stringify(editedTrip || {}));
-                        const arr = (copy.eventDetails = copy.eventDetails || {}).departureGroup || [];
-                        const idx = arr.indexOf(g);
-                        if (idx >= 0) {
-                          arr.splice(idx, 1);
-                          copy.eventDetails.departureGroup = arr;
-                          setEditedTrip(copy);
-                        }
-                      }}>
-                        <span className="material-symbols-outlined text-xs">close</span>
-                      </button>
+                      {isEditing ? (
+                        <button type="button" className={`${g && String(g).toLowerCase() === 'vip' ? 'text-yellow-700 hover:text-yellow-900' : 'text-gray-500 hover:text-gray-700'}`} aria-label={`Remove ${g}`} onClick={() => {
+                          const copy = JSON.parse(JSON.stringify(editedTrip || {}));
+                          const arr = (copy.eventDetails = copy.eventDetails || {}).departureGroup || [];
+                          const idx = arr.indexOf(g);
+                          if (idx >= 0) {
+                            arr.splice(idx, 1);
+                            copy.eventDetails.departureGroup = arr;
+                            setEditedTrip(copy);
+                          }
+                        }}>
+                          <span className="material-symbols-outlined text-xs">close</span>
+                        </button>
+                      ) : (
+                        <div className="w-2" />
+                      )}
                     </span>
                   ))}
                 </div>
                 {isEditing && (
                   <div className="mt-3 flex items-center space-x-2">
-                    <input value={newGroupValue} onChange={(e) => setNewGroupValue(e.target.value)} placeholder="Nuovo gruppo" className="mt-1 block rounded-md border-gray-200 bg-white text-gray-700 p-2" />
+                    <input value={newGroupValue} onChange={(e) => setNewGroupValue(e.target.value)} placeholder="Nuovo gruppo" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
                     <button onClick={() => {
                       const v = (newGroupValue || '').trim();
                       if (!v) return;
@@ -716,7 +852,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                         </div>
                         <div>
                           <label className="text-xs text-gray-600">Data Partenza</label>
-                          <input type={isEditingTravel ? 'date' : 'text'} readOnly={!isEditingTravel} value={isEditingTravel ? (f.departure?.date || '') : (f.departure?.date ? (isNaN(Date.parse(f.departure.date)) ? f.departure.date : new Date(f.departure.date).toLocaleDateString('it-IT')) : '')} onChange={(e) => updateEditedTravel(`${activeTab}Flights[${idx}].departure.date`, e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                          <input type={isEditingTravel ? 'date' : 'text'} readOnly={!isEditingTravel} value={isEditingTravel ? (f.departure?.date || '') : (f.departure?.date ? formatDatePretty(f.departure.date) : '')} onChange={(e) => updateEditedTravel(`${activeTab}Flights[${idx}].departure.date`, e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
                         </div>
                         <div>
                           <label className="text-xs text-gray-600">Ora Partenza</label>
@@ -766,7 +902,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
             <div className="mt-4 space-y-4">
               {(isEditingEmergency ? (editedEmergency || []) : (travelInfo?.emergencyContacts || [])).map((c: any, idx: number) => (
                 <div key={idx} className="bg-white border rounded-lg p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
                     <div>
                       <label className="text-xs text-gray-600">Gruppo Partenza</label>
                       {/* build departure group options from outboundFlights (deduped) */}
@@ -775,7 +911,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                         const groups = Array.from(new Set((flights || []).map((f: any) => f.departureGroup || '').filter(Boolean)));
                         const departureGroups = isEditing ? (editedTrip?.eventDetails?.departureGroup || []) : (trip?.eventDetails?.departureGroup || []);
                         return isEditingEmergency ? (
-                          <select value={c.departureGroup || ''} onChange={(e) => updateEditedEmergency(idx, 'departureGroup', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-white text-gray-700 p-2">
+                          <select value={c.departureGroup || ''} onChange={(e) => updateEditedEmergency(idx, 'departureGroup', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">
                             <option value="">-- Seleziona Gruppo --</option>
                             {departureGroups.map((g: string) => (
                               <option key={g} value={g}>{g}</option>
@@ -789,6 +925,10 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                     <div>
                       <label className="text-xs text-gray-600">Nome Contatto</label>
                       <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.name || c.contactName || '') : (c.name || c.contactName || '')} onChange={(e) => updateEditedEmergency(idx, 'name', e.target.value)} placeholder="Nome Cognome" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Categoria</label>
+                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.type || '') : (c.type || '')} onChange={(e) => updateEditedEmergency(idx, 'type', e.target.value)} placeholder="Categoria" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
                     </div>
                     <div>
                       <label className="text-xs text-gray-600">Telefono</label>
@@ -821,42 +961,130 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
             </div>
           </SectionCard>
 
-          <SectionCard title="📅 Agenda (Programma Viaggio)">
-            {trip?.agenda && trip.agenda.length > 0 ? (
-              <div className="space-y-4">
-                {trip.agenda.map((day: any, index: number) => (
-                  <div key={index} className="bg-white rounded-lg p-4 border-l-4 border-green-500">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                      Giorno {day.day}: {day.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Data: {day.date || 'N/A'}
-                    </p>
-                    {day.items && day.items.length > 0 ? (
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-gray-700">Eventi del giorno:</h4>
-                        <ul className="list-disc list-inside space-y-1">
-                          {day.items.map((item: any, itemIndex: number) => (
-                            <li key={itemIndex} className="text-sm text-gray-600">
-                              <span className="font-medium">{item.time || 'N/A'}</span> - {item.title}
-                              {item.description && (
-                                <span className="block text-xs text-gray-500 mt-1 ml-4">
-                                  {item.description}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
+          <SectionCard title={"Sezione 4: Agenda (Programma Viaggio)"} actions={!isEditingAgenda ? (
+            <button onClick={handleEditAgenda} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Modifica</button>
+          ) : (
+            <div className="space-x-2">
+              <button onClick={handleSaveAgenda} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salva</button>
+              <button onClick={handleCancelAgenda} className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Annulla</button>
+            </div>
+          )}>
+            <div className="mt-2">
+              {((isEditingAgenda ? (editedAgenda || []) : (trip?.agenda || []))).length === 0 ? (
+                <p className="text-gray-600">Nessuna agenda disponibile</p>
+              ) : (
+                <div className="space-y-4">
+                  {((isEditingAgenda ? (editedAgenda || []) : (trip?.agenda || []))).map((day: any, dayIndex: number) => (
+                    <div key={dayIndex} className="bg-white border rounded-lg p-4 relative">
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <div className="md:col-span-1">
+                          <label className="text-xs text-gray-600">Giorno</label>
+                          <div className="mt-1">
+                            {isEditingAgenda ? (
+                              <input value={String(day.day || dayIndex + 1)} onChange={(e) => updateEditedAgendaDay(dayIndex, 'day', Number(e.target.value))} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                            ) : (
+                              <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{day.day}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="md:col-span-4">
+                          <label className="text-xs text-gray-600">Data</label>
+                          <div className="mt-1">
+                            {isEditingAgenda ? (
+                              <input type="date" value={day.date || ''} onChange={(e) => updateEditedAgendaDay(dayIndex, 'date', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                            ) : (
+                              <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{day.date ? formatDatePretty(day.date) : 'N/A'}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="md:col-span-6">
+                          <label className="text-xs text-gray-600">Titolo del Giorno</label>
+                          <div className="mt-1">
+                            {isEditingAgenda ? (
+                              <input value={day.title || ''} onChange={(e) => updateEditedAgendaDay(dayIndex, 'title', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                            ) : (
+                              <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{day.title}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="md:col-span-1 flex justify-end">
+                          {isEditingAgenda ? (
+                            <div className="flex items-center space-x-2">
+                              <button onClick={() => handleDeleteAgendaDay(dayIndex)} className="px-3 py-1 bg-red-50 text-red-700 rounded border border-red-100">Elimina Giorno</button>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">Nessun evento programmato per questo giorno</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">Nessuna agenda disponibile</p>
-            )}
+
+                      <div className="mt-3">
+                        {((day.items || [])).length === 0 ? (
+                          <p className="text-sm text-gray-500">Nessun evento programmato per questo giorno</p>
+                        ) : (
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-gray-700">Eventi del giorno:</h4>
+                            <div className="space-y-2">
+                              {(day.items || []).map((item: any, itemIndex: number) => (
+                                <div key={itemIndex} className="bg-gray-50 p-3 rounded-md border">
+                                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                                    <div className="md:col-span-1">
+                                      <label className="text-xs text-gray-600">Ora</label>
+                                      {isEditingAgenda ? (
+                                        <input value={item.time || ''} onChange={(e) => updateEditedAgendaItem(dayIndex, itemIndex, 'time', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                                      ) : (
+                                        <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{item.time || 'N/A'}</div>
+                                      )}
+                                    </div>
+                                    <div className="md:col-span-3">
+                                      <label className="text-xs text-gray-600">Titolo</label>
+                                      {isEditingAgenda ? (
+                                        <input value={item.title || ''} onChange={(e) => updateEditedAgendaItem(dayIndex, itemIndex, 'title', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                                      ) : (
+                                        <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{item.title}</div>
+                                      )}
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <label className="text-xs text-gray-600">Descrizione</label>
+                                      {isEditingAgenda ? (
+                                        <input value={item.description || ''} onChange={(e) => updateEditedAgendaItem(dayIndex, itemIndex, 'description', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                                      ) : (
+                                        <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{item.description}</div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-start justify-end md:col-span-1">
+                                      {isEditingAgenda ? (
+                                        <button onClick={() => handleDeleteAgendaItem(dayIndex, itemIndex)} className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-red-600" title="Elimina Evento">
+                                          <span className="material-symbols-outlined">delete</span>
+                                        </button>
+                                      ) : (
+                                        <div className="w-8" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {isEditingAgenda && (
+                          <div className="mt-3">
+                            <button onClick={() => handleAddAgendaItem(dayIndex)} className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded border border-blue-100 hover:bg-blue-100">
+                              <span className="mr-2 text-lg font-bold">+</span> Aggiungi Evento
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {isEditingAgenda && (
+                    <div>
+                      <button onClick={handleAddAgendaDay} className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded border border-blue-100 hover:bg-blue-100">
+                        <span className="mr-2 text-lg font-bold">+</span> Aggiungi Giorno
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </SectionCard>
 
           <SectionCard title="📝 Registrations (Registrazioni)">
@@ -893,7 +1121,7 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                           </span>
                         </td>
                         <td className="px-4 py-2 text-sm text-gray-500">
-                          {new Date(reg.submittedAt).toLocaleDateString('it-IT')}
+                          {reg.submittedAt ? formatDatePretty(reg.submittedAt) : ''}
                         </td>
                       </tr>
                     ))}
