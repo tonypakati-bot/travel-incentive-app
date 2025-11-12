@@ -44,11 +44,19 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
           api.get('/admin/registrations')
         ]);
 
-  setTrip(tripRes.data);
-  setTravelInfo(travelInfoRes.data);
-  // initialize local flights arrays for UI
-  setOutboundFlights(travelInfoRes.data?.outboundFlights || []);
-  setReturnFlights(travelInfoRes.data?.returnFlights || []);
+        setTrip(tripRes.data);
+        const travelData = travelInfoRes.data;
+        // Ensure emergencyContacts have departureGroup field
+        if (travelData?.emergencyContacts) {
+          travelData.emergencyContacts = travelData.emergencyContacts.map((c: any) => ({
+            ...c,
+            departureGroup: c.departureGroup || ''
+          }));
+        }
+        setTravelInfo(travelData);
+        // initialize local flights arrays for UI
+        setOutboundFlights(travelData?.outboundFlights || []);
+        setReturnFlights(travelData?.returnFlights || []);
         setRegistrations(registrationsRes.data || []);
       } catch (err) {
         console.error('Error fetching trip details:', err);
@@ -190,8 +198,15 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
     setConfirmMessage('Sei sicuro di voler salvare le modifiche ai contatti di emergenza?');
     setOnConfirmAction(() => async () => {
       try {
-        // send full travel-info update with emergencyContacts replaced
-        const payload = { ...(travelInfo || {}), emergencyContacts: editedEmergency };
+      // Remove departureGroup if empty string before sending
+      const updatedContacts = editedEmergency.map((c) => {
+        const out = { ...c };
+        if (typeof out.departureGroup === 'string' && out.departureGroup.trim() === '') {
+          delete out.departureGroup;
+        }
+        return out;
+      });
+      const payload = { ...(travelInfo || {}), emergencyContacts: updatedContacts };
         const res = await api.put('/travel-info', payload);
         setTravelInfo(res.data);
         setIsEditingEmergency(false);
@@ -669,7 +684,17 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center mb-3">
                         <div>
                           <label className="text-xs text-gray-600">Gruppo Partenza</label>
-                          <input readOnly={!isEditingTravel} value={isEditingTravel ? (f.departureGroup || f.group || '') : (f.departureGroup || f.group || '')} onChange={(e) => updateEditedTravel(`${activeTab}Flights[${idx}].departureGroup`, e.target.value)} placeholder="e.g. Milano Malpensa" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                          <select
+                            disabled={!isEditingTravel}
+                            value={isEditingTravel ? (f.departureGroup || f.group || '') : (f.departureGroup || f.group || '')}
+                            onChange={(e) => updateEditedTravel(`${activeTab}Flights[${idx}].departureGroup`, e.target.value)}
+                            className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2"
+                          >
+                            <option value="">Seleziona gruppo</option>
+                            {(isEditing ? editedTrip?.eventDetails?.departureGroup : trip?.eventDetails?.departureGroup)?.map((g: string) => (
+                              <option key={g} value={g}>{g}</option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <label className="text-xs text-gray-600">Compagnia Aerea</label>
@@ -748,10 +773,11 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                       {(() => {
                         const flights = isEditingTravel ? (editedTravel?.outboundFlights || []) : (travelInfo?.outboundFlights || []);
                         const groups = Array.from(new Set((flights || []).map((f: any) => f.departureGroup || '').filter(Boolean)));
+                        const departureGroups = isEditing ? (editedTrip?.eventDetails?.departureGroup || []) : (trip?.eventDetails?.departureGroup || []);
                         return isEditingEmergency ? (
                           <select value={c.departureGroup || ''} onChange={(e) => updateEditedEmergency(idx, 'departureGroup', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-white text-gray-700 p-2">
                             <option value="">-- Seleziona Gruppo --</option>
-                            {groups.map((g: string) => (
+                            {departureGroups.map((g: string) => (
                               <option key={g} value={g}>{g}</option>
                             ))}
                           </select>
