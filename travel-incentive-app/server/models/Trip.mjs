@@ -62,6 +62,20 @@ const agendaItemSchema = new mongoose.Schema({
       text: String
     }]
   }
+  ,
+  details: [{
+    // canonical shape for details: an object with type and value
+    type: new mongoose.Schema({
+      type: { type: String, default: '' },
+      value: { type: String, default: '' }
+    }, { _id: false })
+  }]
+  ,
+  note: {
+    noteIcon: { type: String, default: '' },
+    noteText: { type: String, default: '' },
+    noteTextAdministrator: { type: String, default: '' }
+  }
 });
 
 const agendaDaySchema = new mongoose.Schema({
