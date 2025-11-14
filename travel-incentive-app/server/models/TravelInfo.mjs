@@ -54,6 +54,7 @@ const travelInfoSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     type: { type: String, required: true },
     email: String,
+    departureGroup: String, // Gruppo di partenza associato al contatto
     availability: String,
     languages: [String],
     services: [String],

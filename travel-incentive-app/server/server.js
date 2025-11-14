@@ -13,6 +13,12 @@ const __dirname = dirname(__filename);
 // Connect to database
 await connectDB();
 
+// Ensure JWT secret is configured
+if (!process.env.JWT_SECRET) {
+  console.error('\nERROR: JWT_SECRET environment variable is not set.\nPlease set JWT_SECRET in server/.env or your environment before starting the server.\n');
+  process.exit(1);
+}
+
 const app = express();
 
 // Middleware

@@ -14,6 +14,7 @@ export const getUserRegistration = async (req, res) => {
 };
 import Trip from '../models/Trip.mjs';
 import TravelInfo from '../models/TravelInfo.mjs';
+import Config from '../models/Config.mjs';
 import Registration from '../models/Registration.mjs';
 import mongoose from 'mongoose';
 
@@ -33,8 +34,15 @@ export const getTripData = async (req, res) => {
 // Get Travel Info
 export const getTravelInfo = async (req, res) => {
   try {
-    const travelInfo = await TravelInfo.findOne();
-    res.json(travelInfo);
+    const [travelInfo, config] = await Promise.all([
+      TravelInfo.findOne(),
+      Config.findOne()
+    ]);
+    const result = {
+      ...travelInfo.toObject(),
+      emergencyContactsType: config?.emergencyContactsType || []
+    };
+    res.json(result);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -163,7 +171,10 @@ export const updateTravelInfo = async (req, res) => {
       } catch (e) {
         console.error('DBG updateTravelInfo - failed to read raw collection doc', e);
       }
-      return res.json(saved);
+      // Load config to include emergencyContactsType
+      const config = await Config.findOne();
+      const result = { ...saved.toObject(), emergencyContactsType: config?.emergencyContactsType || [] };
+      return res.json(result);
     }
 
     // fallback: no emergencyContacts present, do a regular upsert
@@ -171,7 +182,10 @@ export const updateTravelInfo = async (req, res) => {
       new: true,
       upsert: true
     });
-    return res.json(travelInfo);
+    // Load config to include emergencyContactsType
+    const config = await Config.findOne();
+    const result = { ...travelInfo.toObject(), emergencyContactsType: config?.emergencyContactsType || [] };
+    return res.json(result);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

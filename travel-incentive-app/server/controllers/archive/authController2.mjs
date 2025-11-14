@@ -22,44 +22,43 @@ export const loginUser = async (req, res) => {
     const normalizedEmail = email.toLowerCase();
     console.log('Looking for user with normalized email:', normalizedEmail);
 
-    // Try to find user with both password fields
-    let user = await User.findOne({ email: normalizedEmail });
-    console.log('Initial user lookup result:', {
+    // Try to find user with explicit field selection
+    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
+    
+    console.log('Query result:', {
       found: !!user,
-      fields: user ? Object.keys(user.toObject()) : []
+      userFields: user ? Object.keys(user.toObject()) : [],
+      emailInDb: user?.email,
+      hasPasswordHash: !!user?.passwordHash
     });
 
     if (!user) {
       console.log('User not found with email:', normalizedEmail);
+      // Check all users in database to debug
+      const allUsers = await User.find({}).select('email');
+      console.log('All users in database:', 
+        allUsers.map(u => ({
+          email: u.email,
+          normalizedEmail: u.email?.toLowerCase()
+        }))
+      );
       return res.status(400).json({ 
         msg: 'Invalid Credentials',
         debug: {
           error: 'User not found',
-          providedEmail: email
+          providedEmail: email,
+          normalizedEmail
         }
       });
     }
 
-    // Check which password field exists
-    const hashedPassword = user.passwordHash || user.password;
-    console.log('Password field check:', {
-      hasPasswordHash: !!user.passwordHash,
-      hasPassword: !!user.password,
-      usingField: user.passwordHash ? 'passwordHash' : 'password'
+    console.log('Password verification details:', {
+      providedPassword: password,
+      hasStoredHash: !!user.passwordHash,
+      hashLength: user.passwordHash?.length
     });
 
-    if (!hashedPassword) {
-      console.log('No password hash found in user document');
-      return res.status(400).json({
-        msg: 'Invalid Credentials',
-        debug: {
-          error: 'No password hash found',
-          userFound: true
-        }
-      });
-    }
-
-    const isMatch = await bcrypt.compare(password, hashedPassword);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     console.log('Password verification result:', { isMatch });
 
     if (!isMatch) {
@@ -95,4 +94,8 @@ export const loginUser = async (req, res) => {
     console.error('Login error:', err);
     res.status(500).send('Server error');
   }
+};
+
+export default {
+  loginUser
 };

@@ -4,25 +4,16 @@ import User from '../models/User.mjs';
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  console.log('Login attempt for:', email);
 
   try {
     console.log('Looking for user with email:', email);
     const user = await User.findOne({ email }).select('+password');
-    console.log('Query result:', {
-      found: !!user,
-      userEmail: user?.email,
-      hasPassword: !!user?.password,
-      passwordLength: user?.password?.length
-    });
 
     if (!user) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match:', isMatch);
-
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }

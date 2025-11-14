@@ -12,7 +12,13 @@ const auth = function(req, res, next) {
 
   // Verify token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify using configured secret. Do not fall back to an insecure default.
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error('JWT_SECRET is not set in the environment; refusing to verify token.');
+      return res.status(500).json({ msg: 'Server misconfiguration' });
+    }
+    const decoded = jwt.verify(token, secret);
     console.log('Token verified successfully:', { userId: decoded.user.id });
     req.user = decoded.user;
     next();
