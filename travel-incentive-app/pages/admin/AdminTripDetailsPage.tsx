@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import ConfirmModal from '../../components/ConfirmModal';
 import SectionCard from '../../components/SectionCard';
 import api from '../../api';
-import { emergencyContactsType } from '../../config/travelIncentiveConfig';
 
 interface AdminTripDetailsPageProps {
   tripId?: string;
@@ -903,72 +902,50 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
             <div className="mt-4 space-y-4">
               {(isEditingEmergency ? (editedEmergency || []) : (travelInfo?.emergencyContacts || [])).map((c: any, idx: number) => (
                 <div key={idx} className="bg-white border rounded-lg p-4">
-                  <div className="space-y-3">
-                    {/* Row 1: Gruppo Partenza, Nome Contatto, Categoria */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                      <div>
-                        <label className="text-xs text-gray-600">Gruppo Partenza</label>
-                        {(() => {
-                          const flights = isEditingTravel ? (editedTravel?.outboundFlights || []) : (travelInfo?.outboundFlights || []);
-                          const groups = Array.from(new Set((flights || []).map((f: any) => f.departureGroup || '').filter(Boolean)));
-                          const departureGroups = isEditing ? (editedTrip?.eventDetails?.departureGroup || []) : (trip?.eventDetails?.departureGroup || []);
-                          return isEditingEmergency ? (
-                            <select value={c.departureGroup || ''} onChange={(e) => updateEditedEmergency(idx, 'departureGroup', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">
-                              <option value="">-- Seleziona Gruppo --</option>
-                              {departureGroups.map((g: string) => (
-                                <option key={g} value={g}>{g}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{c.departureGroup || ''}</div>
-                          );
-                        })()}
-                      </div>
-
-                      <div>
-                        <label className="text-xs text-gray-600">Nome Contatto</label>
-                        <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.name || c.contactName || '') : (c.name || c.contactName || '')} onChange={(e) => updateEditedEmergency(idx, 'name', e.target.value)} placeholder="Nome Cognome" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
-                      </div>
-
-                      <div>
-                        <label className="text-xs text-gray-600">Categoria</label>
-                        {isEditingEmergency ? (
-                          <select value={c.type || ''} onChange={(e) => updateEditedEmergency(idx, 'type', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">
-                            <option value="">-- Seleziona Categoria --</option>
-                            {emergencyContactsType.map((t) => (
-                              <option key={t} value={t}>{t}</option>
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                    <div>
+                      <label className="text-xs text-gray-600">Gruppo Partenza</label>
+                      {/* build departure group options from outboundFlights (deduped) */}
+                      {(() => {
+                        const flights = isEditingTravel ? (editedTravel?.outboundFlights || []) : (travelInfo?.outboundFlights || []);
+                        const groups = Array.from(new Set((flights || []).map((f: any) => f.departureGroup || '').filter(Boolean)));
+                        const departureGroups = isEditing ? (editedTrip?.eventDetails?.departureGroup || []) : (trip?.eventDetails?.departureGroup || []);
+                        return isEditingEmergency ? (
+                          <select value={c.departureGroup || ''} onChange={(e) => updateEditedEmergency(idx, 'departureGroup', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">
+                            <option value="">-- Seleziona Gruppo --</option>
+                            {departureGroups.map((g: string) => (
+                              <option key={g} value={g}>{g}</option>
                             ))}
-                            {c.type && !emergencyContactsType.includes(c.type) ? (
-                              <option value={c.type}>{c.type} (valore esistente)</option>
-                            ) : null}
                           </select>
                         ) : (
-                          <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{c.type || ''}</div>
-                        )}
-                      </div>
+                          <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{c.departureGroup || ''}</div>
+                        );
+                      })()}
                     </div>
-
-                    {/* Row 2: Telefono, Email, Azioni */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                      <div>
-                        <label className="text-xs text-gray-600">Telefono</label>
-                        <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.phone || '') : (c.phone || '')} onChange={(e) => updateEditedEmergency(idx, 'phone', e.target.value)} placeholder="+39 123 4567" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
-                      </div>
-
-                      <div>
-                        <label className="text-xs text-gray-600">Email</label>
-                        <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.email || '') : (c.email || '')} onChange={(e) => updateEditedEmergency(idx, 'email', e.target.value)} placeholder="m.rossi@example.com" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
-                      </div>
-
-                      <div className="flex items-start justify-end">
-                        {isEditingEmergency ? (
-                          <button onClick={() => handleDeleteContact(idx)} className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-red-600" title="Elimina Contatto">
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
-                        ) : (
-                          <div className="w-8" />
-                        )}
-                      </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Nome Contatto</label>
+                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.name || c.contactName || '') : (c.name || c.contactName || '')} onChange={(e) => updateEditedEmergency(idx, 'name', e.target.value)} placeholder="Nome Cognome" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Categoria</label>
+                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.type || '') : (c.type || '')} onChange={(e) => updateEditedEmergency(idx, 'type', e.target.value)} placeholder="Categoria" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Telefono</label>
+                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.phone || '') : (c.phone || '')} onChange={(e) => updateEditedEmergency(idx, 'phone', e.target.value)} placeholder="+39 123 4567" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600">Email</label>
+                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.email || '') : (c.email || '')} onChange={(e) => updateEditedEmergency(idx, 'email', e.target.value)} placeholder="m.rossi@example.com" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                    </div>
+                    <div className="flex items-start justify-end">
+                      {isEditingEmergency ? (
+                        <button onClick={() => handleDeleteContact(idx)} className="p-2 rounded-full bg-gray-100 hover:bg-red-100 text-red-600" title="Elimina Contatto">
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      ) : (
+                        <div className="w-8" />
+                      )}
                     </div>
                   </div>
                 </div>
