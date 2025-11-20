@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useToast } from '../contexts/ToastContext';
 import ParticipantModal from './ParticipantModal';
 import ConfirmModal from './ConfirmModal';
 import { SearchIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, UploadIcon, ChevronDownIcon, DownloadIcon, PlusIcon, UsersIcon, CheckCircleIcon } from './icons';
@@ -54,6 +55,7 @@ interface TripParticipantsViewProps {
 
 const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, participants, onBack, onSendReminder, onSendInvite, onSaveParticipant, onDeleteParticipant }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const toast = useToast();
     const [statusFilter, setStatusFilter] = useState<ParticipantStatus | 'all'>('all');
     const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
     const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
@@ -185,7 +187,8 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
             const participantsToRemind = selectedObjs.filter(p => p.status !== 'Registered');
 
             if (participantsToRemind.length === 0) {
-                alert('All selected participants are already registered.');
+                console.log('[ManageParticipants] no participants to remind');
+                toast.showToast('All selected participants are already registered.', 'info');
                 return;
             }
             onSendReminder(participantsToRemind.length, () => setSelectedParticipants([]));
@@ -263,14 +266,15 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                         </div>
 
                         <div className="flex items-center gap-2">
-                             {selectedParticipants.length > 0 && primaryAction && (
+                            {selectedParticipants.length > 0 && primaryAction && (
                                 <button 
+                                    data-testid={process.env.NODE_ENV === 'development' ? (primaryAction.type === 'invite' ? 'send-invite' : 'send-reminder') : undefined}
                                     onClick={executePrimaryAction}
                                     className={`${primaryAction.bg} text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm`}>
                                     {primaryAction.label}
                                 </button>
                             )}
-                            <button onClick={handleAddNew} className="bg-blue-600 text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+                            <button data-testid={process.env.NODE_ENV === 'development' ? 'add-new-participant' : undefined} onClick={handleAddNew} className="bg-blue-600 text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
                                 <PlusIcon className="w-4 h-4 mr-2" /> Add New
                             </button>
                             <button className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm">

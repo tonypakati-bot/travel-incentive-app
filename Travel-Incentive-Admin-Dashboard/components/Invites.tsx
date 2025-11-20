@@ -177,7 +177,7 @@ const Invites: React.FC<InvitesProps> = ({ invites = initialInvites, onSave, onD
                             />
                         </div>
                         <button 
-                            data-testid="create-invite"
+                            data-testid={process.env.NODE_ENV === 'development' ? 'create-invite' : undefined}
                             onClick={handleCreateNew}
                             className="bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
                             <PlusIcon className="w-5 h-5 mr-2" />
@@ -212,7 +212,7 @@ const Invites: React.FC<InvitesProps> = ({ invites = initialInvites, onSave, onD
                                     <td className="px-6 py-4">{invite.lastModified}</td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end space-x-2">
-                                            <button data-testid={`edit-invite-${invite.id}`} onClick={() => handleEdit(invite)} className="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100">
+                                            <button data-testid={process.env.NODE_ENV === 'development' ? `edit-invite-${invite.id}` : undefined} onClick={() => handleEdit(invite)} className="p-1.5 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100">
                                                 <PencilIcon className="w-4 h-4" />
                                             </button>
                                             <button onClick={() => handleDeleteAction(invite.id ?? invite._id ?? '')} className="p-1.5 text-red-500 hover:text-red-700 rounded-md hover:bg-red-100">
@@ -257,7 +257,7 @@ const Invites: React.FC<InvitesProps> = ({ invites = initialInvites, onSave, onD
                     <p className="text-gray-500 mt-1">Design your email invitation.</p>
                 </div>
                 <button 
-                    data-testid="back-to-list"
+                    data-testid={process.env.NODE_ENV === 'development' ? 'back-to-list' : undefined}
                     onClick={() => setView('list')}
                     className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
                     Back to List
@@ -319,7 +319,7 @@ const Invites: React.FC<InvitesProps> = ({ invites = initialInvites, onSave, onD
                     Invia Test
                 </button>
                 <button 
-                    data-testid="save-invite"
+                    data-testid={process.env.NODE_ENV === 'development' ? 'save-invite' : undefined}
                     onClick={handleSaveAction}
                     className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
                     Salva Template
