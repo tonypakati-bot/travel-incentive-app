@@ -108,7 +108,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
         <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
                 <header className="flex items-center justify-between p-5 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-800">{participantToEdit ? 'Edit Participant' : 'Add Participant'}</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{participantToEdit ? 'Modifica partecipante' : 'Aggiungi partecipante'}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <XIcon className="w-6 h-6" />
                     </button>
@@ -117,48 +117,48 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
                 <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
                     {Object.keys(fieldErrors).length > 0 && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-                            Please fix the following errors:
+                            Correggi i seguenti errori:
                             <ul className="mt-1 list-disc list-inside">
                                 {Object.entries(fieldErrors).map(([k,v]) => (<li key={k}>{v}</li>))}
                             </ul>
                         </div>
                     )}
                     <FormField label="Name" required>
-                        <Input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. Marco Rossi" disabled={isSaving} aria-invalid={fieldErrors.name ? 'true' : 'false'} required aria-required />
+                        <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-name' : undefined} name="name" value={formData.name} onChange={handleChange} placeholder="es. Marco Rossi" disabled={isSaving} aria-invalid={fieldErrors.name ? 'true' : 'false'} required aria-required />
                         {fieldErrors.name && <div className="text-xs text-red-600 mt-1">{fieldErrors.name}</div>}
                     </FormField>
                     <FormField label="Email" required>
-                        <Input name="email" value={formData.email} onChange={handleChange} placeholder="m.rossi@example.com" disabled={isSaving} aria-invalid={fieldErrors.email ? 'true' : 'false'} required aria-required />
+                        <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-email' : undefined} name="email" value={formData.email} onChange={handleChange} placeholder="m.rossi@example.com" disabled={isSaving} aria-invalid={fieldErrors.email ? 'true' : 'false'} required aria-required />
                         {fieldErrors.email && <div className="text-xs text-red-600 mt-1">{fieldErrors.email}</div>}
                     </FormField>
                     {/* Hide Trip field when defaultTrip is provided (we're inside a selected trip) */}
                     {!defaultTrip && (
-                        <FormField label="Trip" required>
-                            <Input name="trip" value={formData.trip} onChange={handleChange} placeholder="Trip name" disabled={isSaving} aria-invalid={fieldErrors.trip ? 'true' : 'false'} required aria-required />
+                        <FormField label="Viaggio" required>
+                            <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-trip' : undefined} name="trip" value={formData.trip} onChange={handleChange} placeholder="Nome del viaggio" disabled={isSaving} aria-invalid={fieldErrors.trip ? 'true' : 'false'} required aria-required />
                             {fieldErrors.trip && <div className="text-xs text-red-600 mt-1">{fieldErrors.trip}</div>}
                         </FormField>
                     )}
                     <FormField label="Group">
-                        <Input name="group" value={formData.group} onChange={handleChange} placeholder="Group name" disabled={isSaving} aria-invalid={fieldErrors.group ? 'true' : 'false'} />
+                        <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-group' : undefined} name="group" value={formData.group} onChange={handleChange} placeholder="Nome del gruppo" disabled={isSaving} aria-invalid={fieldErrors.group ? 'true' : 'false'} />
                         {fieldErrors.group && <div className="text-xs text-red-600 mt-1">{fieldErrors.group}</div>}
                     </FormField>
                     <FormField label="Status">
-                        <Select name="status" value={formData.status} onChange={handleChange}>
-                            <option value="Registered">Registered</option>
-                            <option value="Invited">Invited</option>
-                            <option value="To Invite">To Invite</option>
+                        <Select data-testid={process.env.NODE_ENV === 'development' ? 'participant-status' : undefined} name="status" value={formData.status} onChange={handleChange}>
+                            <option value="Registered">Registrato</option>
+                            <option value="Invited">Invitato</option>
+                            <option value="To Invite">Da invitare</option>
                         </Select>
                     </FormField>
                 </div>
 
                 <footer className="flex justify-end items-center space-x-4 p-5 bg-gray-50 border-t border-gray-200 rounded-b-xl">
                     <button onClick={onClose} className="bg-white border border-gray-300 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        Cancel
+                        Annulla
                     </button>
                     <div className="flex items-center">
                         {submitError && <div className="text-sm text-red-600 mr-4">{submitError}</div>}
-                        <button onClick={handleSaveClick} disabled={isSaving} className={`bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'} transition-colors`}>
-                            {isSaving ? 'Saving...' : 'Save Participant'}
+                        <button data-testid={process.env.NODE_ENV === 'development' ? 'participant-save' : undefined} onClick={handleSaveClick} disabled={isSaving} className={`bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg ${isSaving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'} transition-colors`}>
+                            {isSaving ? 'Salvataggio...' : 'Salva partecipante'}
                         </button>
                     </div>
                 </footer>

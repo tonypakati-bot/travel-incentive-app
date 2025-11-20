@@ -226,12 +226,13 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                 <button 
                     onClick={onBack} 
                     className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors text-gray-600"
+                    aria-label="Torna indietro"
                 >
                     <ChevronDownIcon className="w-6 h-6 transform rotate-90" />
                 </button>
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">{tripName}</h2>
-                    <p className="text-sm text-gray-500">Managing participants list</p>
+                    <p className="text-sm text-gray-500">Elenco partecipanti</p>
                 </div>
             </div>
 
@@ -244,7 +245,7 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search participants..."
+                                    placeholder="Cerca partecipanti..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-9 pr-4 py-2 w-full border rounded-lg bg-white text-sm text-gray-900 placeholder-gray-500 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
@@ -256,10 +257,10 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                                     onChange={(e) => setStatusFilter(e.target.value as ParticipantStatus | 'all')}
                                     className="w-full border border-gray-300 rounded-lg py-2 pl-3 pr-8 text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none"
                                 >
-                                    <option value="all">All Statuses</option>
-                                    <option value="Registered">Registered</option>
-                                    <option value="Invited">Invited</option>
-                                    <option value="To Invite">To Invite</option>
+                                    <option value="all">Tutti gli stati</option>
+                                    <option value="Registered">Registrato</option>
+                                    <option value="Invited">Invitato</option>
+                                    <option value="To Invite">Da invitare</option>
                                 </select>
                                 <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                             </div>
@@ -275,13 +276,13 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                                 </button>
                             )}
                             <button data-testid={process.env.NODE_ENV === 'development' ? 'add-new-participant' : undefined} onClick={handleAddNew} className="bg-blue-600 text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
-                                <PlusIcon className="w-4 h-4 mr-2" /> Add New
+                                <PlusIcon className="w-4 h-4 mr-2" /> Aggiungi partecipante
                             </button>
                             <button className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm">
-                                <UploadIcon className="w-4 h-4 mr-2" /> Import
+                                <UploadIcon className="w-4 h-4 mr-2" /> Importa
                             </button>
                             <button onClick={handleExport} className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm">
-                                <DownloadIcon className="w-4 h-4 mr-2" /> Export
+                                <DownloadIcon className="w-4 h-4 mr-2" /> Esporta
                             </button>
                         </div>
                     </div>
