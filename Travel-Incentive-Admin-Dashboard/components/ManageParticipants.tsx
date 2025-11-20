@@ -213,6 +213,7 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                 onClose={() => setIsParticipantModalOpen(false)}
                 participantToEdit={participantToEditLocal}
                 defaultTrip={tripName}
+                existingParticipants={participants}
                 onSave={(p) => {
                     if (onSaveParticipant) {
                         const res = onSaveParticipant(p);

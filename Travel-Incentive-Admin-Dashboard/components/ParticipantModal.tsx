@@ -19,6 +19,7 @@ interface ParticipantModalProps {
     onSave: (p: Participant) => Promise<any> | void;
     participantToEdit: Participant | null;
     defaultTrip?: string;
+    existingParticipants?: Participant[];
 }
 
 const defaultParticipant: Participant = {
@@ -85,6 +86,20 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
         setFieldErrors(errors);
         setSubmitError(null);
         if (Object.keys(errors).length > 0) return;
+
+        // duplicate email check (case-insensitive) among existing participants for the same trip
+        try {
+            const ex = (existingParticipants || []).filter(p => String(p.trip || '') === String(final.trip || ''));
+            const dup = ex.find(p => (p.email || '').toLowerCase() === (final.email || '').toLowerCase() && String(p.id ?? p._id) !== String(final.id ?? final._id));
+            if (dup) {
+                const msg = 'Email già presente per questo viaggio';
+                setFieldErrors(prev => ({ ...prev, email: msg }));
+                try { toast.showToast(msg, 'error'); } catch (e) {}
+                return;
+            }
+        } catch (e) {
+            // ignore duplicate check errors
+        }
 
         try {
             setIsSaving(true);
