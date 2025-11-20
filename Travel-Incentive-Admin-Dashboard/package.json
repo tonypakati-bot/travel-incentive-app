@@ -1,0 +1,29 @@
+{
+  "name": "incentive-travel-admin-dashboard",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "e2e:participants": "node scripts/participants-e2e.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify"
+  },
+  "dependencies": {
+    "puppeteer": "^24.30.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.4.7",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

@@ -43,7 +43,7 @@ const FormField: React.FC<{ label: string; children: React.ReactNode; className?
 const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => ( <input {...props} className={`w-full px-3 py-2 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''} ${'aria-invalid' in props && (props as any)['aria-invalid'] === 'true' ? 'border-red-500' : 'border-gray-300'}`} /> );
 const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => ( <select {...props} className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''}`} /> );
 
-const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, onSave, participantToEdit, defaultTrip }) => {
+const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, onSave, participantToEdit, defaultTrip, existingParticipants }) => {
     const [formData, setFormData] = useState<Participant>(defaultParticipant);
     const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -123,17 +123,14 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
         if (Object.keys(errors).length > 0) return;
 
         // duplicate email check (case-insensitive) among existing participants for the same trip
-        try {
-            const ex = (existingParticipants || []).filter(p => String(p.trip || '') === String(final.trip || ''));
-            const dup = ex.find(p => (p.email || '').toLowerCase() === (final.email || '').toLowerCase() && String(p.id ?? p._id) !== String(final.id ?? final._id));
-            if (dup) {
-                const msg = 'Email già presente per questo viaggio';
-                setFieldErrors(prev => ({ ...prev, email: msg }));
-                try { toast.showToast(msg, 'error'); } catch (e) {}
-                return;
-            }
-        } catch (e) {
-            // ignore duplicate check errors
+        // duplicate email check (case-insensitive) among existing participants for the same trip
+        const ex = (existingParticipants ?? []).filter(p => String((p.trip || '').toString().trim()) === String((final.trip || '').toString().trim()));
+        const dup = ex.find(p => (p.email || '').toLowerCase() === (final.email || '').toLowerCase() && String(p.id ?? p._id ?? '') !== String(final.id ?? final._id ?? ''));
+        if (dup) {
+            const msg = 'Email già presente per questo viaggio';
+            setFieldErrors(prev => ({ ...prev, email: msg }));
+            try { toast.showToast(msg, 'error'); } catch (e) {}
+            return;
         }
 
         try {
