@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { XIcon } from './icons';
+import ConfirmModal from './ConfirmModal';
+import { useRef } from 'react';
 
 export type ParticipantStatus = 'Registered' | 'Invited' | 'To Invite';
 export type Participant = {
@@ -46,6 +48,9 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
     const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [isConfirmCloseOpen, setIsConfirmCloseOpen] = useState(false);
+    const nameInputRef = useRef<HTMLInputElement | null>(null);
+    const initialSnapshotRef = useRef<string>('');
 
     const toast = useToast();
 
@@ -58,6 +63,36 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
             }
         }
     }, [participantToEdit, isOpen, defaultTrip]);
+
+    // when modal opens, focus first input and capture initial snapshot
+    useEffect(() => {
+        if (isOpen) {
+            // small timeout to ensure element is mounted
+            setTimeout(() => {
+                try { nameInputRef.current && nameInputRef.current.focus(); } catch (e) {}
+            }, 50);
+            // capture initial snapshot for dirty check
+            try { initialSnapshotRef.current = JSON.stringify({
+                name: (participantToEdit?.name || '').toString().trim(),
+                email: (participantToEdit?.email || '').toString().trim(),
+                trip: (participantToEdit?.trip || defaultTrip || '').toString().trim(),
+                group: (participantToEdit?.group || '').toString().trim(),
+                status: participantToEdit?.status || defaultParticipant.status
+            }); } catch (e) { initialSnapshotRef.current = ''; }
+        }
+    }, [isOpen, participantToEdit, defaultTrip]);
+
+    // ESC key to attempt close
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                e.preventDefault();
+                handleAttemptClose();
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [isOpen, formData]);
 
     if (!isOpen) return null;
 
@@ -109,6 +144,8 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
             }
             // close modal only after successful save
             toast.showToast('Partecipante salvato', 'success');
+            // reset snapshot to avoid dirty prompt after save
+            try { initialSnapshotRef.current = JSON.stringify({ name: final.name, email: final.email, trip: final.trip, group: final.group, status: final.status }); } catch(e){}
             onClose();
         } catch (err) {
             setSubmitError('Errore durante il salvataggio. Riprovare.');
@@ -119,12 +156,28 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
         }
     };
 
+    const isDirty = () => {
+        try {
+            const snap = JSON.stringify({ name: (formData.name||'').toString().trim(), email: (formData.email||'').toString().trim(), trip: (formData.trip||'').toString().trim(), group: (formData.group||'').toString().trim(), status: formData.status });
+            return snap !== initialSnapshotRef.current;
+        } catch (e) { return false; }
+    };
+
+    const handleAttemptClose = () => {
+        if (isSaving) return; // ignore while saving
+        if (isDirty()) {
+            setIsConfirmCloseOpen(true);
+        } else {
+            onClose();
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
                 <header className="flex items-center justify-between p-5 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-800">{participantToEdit ? 'Modifica partecipante' : 'Aggiungi partecipante'}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <button onClick={handleAttemptClose} className="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Chiudi">
                         <XIcon className="w-6 h-6" />
                     </button>
                 </header>
@@ -139,7 +192,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
                         </div>
                     )}
                     <FormField label="Name" required>
-                        <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-name' : undefined} name="name" value={formData.name} onChange={handleChange} placeholder="es. Marco Rossi" disabled={isSaving} aria-invalid={fieldErrors.name ? 'true' : 'false'} required aria-required />
+                        <Input ref={nameInputRef} data-testid={process.env.NODE_ENV === 'development' ? 'participant-name' : undefined} name="name" value={formData.name} onChange={handleChange} placeholder="es. Marco Rossi" disabled={isSaving} aria-invalid={fieldErrors.name ? 'true' : 'false'} required aria-required />
                         {fieldErrors.name && <div className="text-xs text-red-600 mt-1">{fieldErrors.name}</div>}
                     </FormField>
                     <FormField label="Email" required>
@@ -167,7 +220,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
                 </div>
 
                 <footer className="flex justify-end items-center space-x-4 p-5 bg-gray-50 border-t border-gray-200 rounded-b-xl">
-                    <button onClick={onClose} className="bg-white border border-gray-300 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <button onClick={handleAttemptClose} className="bg-white border border-gray-300 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                         Annulla
                     </button>
                     <div className="flex items-center">
@@ -178,6 +231,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
                     </div>
                 </footer>
             </div>
+            <ConfirmModal open={isConfirmCloseOpen} title="Ci sono modifiche non salvate" message="Hai modifiche non salvate. Vuoi davvero chiudere senza salvare?" confirmLabel="Chiudi senza salvare" cancelLabel="Continua a modificare" onConfirm={() => { setIsConfirmCloseOpen(false); onClose(); }} onCancel={() => setIsConfirmCloseOpen(false)} />
             <style>{`@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes fadeInScale { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } } .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; } .animate-fade-in-scale { animation: fadeInScale 0.2s ease-out forwards; }`}</style>
         </div>
     );
