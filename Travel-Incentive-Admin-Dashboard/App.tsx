@@ -197,11 +197,28 @@ const App: React.FC = () => {
   };
 
   const handleConfirmSendInvites = (emailBody: string) => {
-    if (invitesModalData) {
-      alert(`Invio di ${invitesModalData.inviteeCount} inviti per "${invitesModalData.tripName}" in corso...`);
-      console.log("Email body to be sent:", emailBody);
-    }
-    handleCloseInvitesModal();
+    (async () => {
+      if (!invitesModalData) return;
+      const { tripName, inviteeCount } = invitesModalData;
+      try {
+        // show immediate feedback
+        // Disable UI handled by modal if needed
+        const res = await fetch('http://localhost:5001/api/invites/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tripName, emailBody }),
+        });
+        if (!res.ok) throw new Error('Send failed');
+        const summary = await res.json();
+        alert(`Invio completato: ${summary.sent} inviati, ${summary.failed} falliti`);
+        console.log('Send invites summary', summary);
+      } catch (err) {
+        console.error('Error sending invites', err);
+        alert('Errore durante l\'invio degli inviti. Vedi console per dettagli.');
+      } finally {
+        handleCloseInvitesModal();
+      }
+    })();
   };
 
 
