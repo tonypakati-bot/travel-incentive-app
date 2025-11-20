@@ -196,29 +196,58 @@ const App: React.FC = () => {
     setInvitesModalData(null);
   };
 
-  const handleConfirmSendInvites = (emailBody: string) => {
-    (async () => {
-      if (!invitesModalData) return;
-      const { tripName, inviteeCount } = invitesModalData;
+  const handleConfirmSendInvites = async (emailBody: string, saveAsTemplate?: boolean) => {
+    if (!invitesModalData) return;
+    const { tripName, inviteeCount } = invitesModalData;
+    try {
+      // Call send endpoint
+      const res = await fetch('http://localhost:5001/api/invites/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripName, emailBody }),
+      });
+      if (!res.ok) throw new Error('Send failed');
+      const summary = await res.json();
+      // Show toast / alert
+      alert(`Invio completato: ${summary.sent} inviati, ${summary.failed} falliti`);
+
+      // Optionally save template
+      if (saveAsTemplate) {
+        try {
+          const tRes = await fetch('http://localhost:5001/api/invites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tripName, body: emailBody }),
+          });
+          if (tRes.ok) {
+            const created = await tRes.json();
+            setInvitesModalData(prev => prev ? { ...prev, emailBody } : prev);
+            setInvitesTemplates(prev => [{ ...created, id: created._id ?? created.id }, ...prev]);
+          }
+        } catch (e) {
+          console.error('Save template error', e);
+        }
+      }
+
+      // Update local participants to 'Invited'
       try {
-        // show immediate feedback
-        // Disable UI handled by modal if needed
-        const res = await fetch('http://localhost:5001/api/invites/send', {
+        setParticipants(prev => prev.map(p => p.trip === tripName ? { ...p, status: 'Invited' } : p));
+        // Optionally call backend to persist status (not mandatory)
+        await fetch(`http://localhost:5001/api/participants/update-status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tripName, emailBody }),
+          body: JSON.stringify({ tripName, status: 'Invited' }),
         });
-        if (!res.ok) throw new Error('Send failed');
-        const summary = await res.json();
-        alert(`Invio completato: ${summary.sent} inviati, ${summary.failed} falliti`);
-        console.log('Send invites summary', summary);
-      } catch (err) {
-        console.error('Error sending invites', err);
-        alert('Errore durante l\'invio degli inviti. Vedi console per dettagli.');
-      } finally {
-        handleCloseInvitesModal();
+      } catch (e) {
+        console.error('Update participants status failed', e);
       }
-    })();
+
+    } catch (err) {
+      console.error('Error sending invites', err);
+      alert('Errore durante l\'invio degli inviti. Vedi console per dettagli.');
+    } finally {
+      handleCloseInvitesModal();
+    }
   };
 
 
