@@ -4,6 +4,7 @@ import SectionDocumentsCard from './SectionDocumentsCard';
 import SectionSettingsCard from './SectionSettingsCard';
 import { ChevronDownIcon, CheckIcon } from './icons';
 import ConfirmModal from './ConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface CreateTripProps {
   onCancel: () => void;
@@ -45,6 +46,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [settingsValues, setSettingsValues] = useState<any>({});
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
+  const toast = useToast();
 
   const handleToggleSection = (index: number) => {
     // Prevent opening other sections until Section 1 is saved (tripDraft.tripId exists)
@@ -73,6 +75,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
               setSavedTripName(trip.name);
               setShowSavedModal(true);
               setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]);
+              try { toast.showToast('Bozza salvata con successo', 'success'); } catch (e) {}
             }}
           />
         </Section>
@@ -120,11 +123,20 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
       </footer>
       <ConfirmModal
         open={showSavedModal}
+        variant="success"
         title={savedTripName ? `Viaggio "${savedTripName}" creato` : 'Viaggio creato'}
         message={"La bozza è stata salvata con successo. Puoi procedere con la compilazione delle altre sezioni."}
         confirmLabel="Procedi"
         cancelLabel="Chiudi"
-        onConfirm={() => { setShowSavedModal(false); setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]); }}
+        onConfirm={() => {
+          setShowSavedModal(false);
+          setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]);
+          // focus the first input in Section 2 (image URL) after a tick
+          setTimeout(() => {
+            const el = document.querySelector('[data-testid="trip-image-url"]') as HTMLInputElement | null;
+            if (el) el.focus();
+          }, 120);
+        }}
         onCancel={() => setShowSavedModal(false)}
       />
     </div>
