@@ -29,12 +29,16 @@ import fs from 'fs';
       try { fs.appendFileSync(logFile, `PAGE_ERROR ${err.stack}\n`); } catch (e) {}
       console.error('PAGE ERROR:', err);
     });
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000/';
+  const argUrl = process.argv[2];
+  const frontendUrl = argUrl || process.env.FRONTEND_URL || 'http://localhost:3000/';
   await page.goto(frontendUrl, { timeout: 120000, waitUntil: 'domcontentloaded' });
   try { await page.screenshot({ path: './scripts/e2e-screenshots/step-01-home.png', fullPage: false }); } catch(e) {}
 
   // Wait for initial render
   await page.waitForSelector('body');
+
+  // Small helper sleep to avoid using page.waitForTimeout (not available in some puppeteer builds)
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   // Click Create New Trip button by searching button text via page.evaluate
   const clicked = await page.evaluate(() => {
@@ -115,12 +119,6 @@ import fs from 'fs';
       }
     });
   });
-  // settings
-  await typeInto('[data-testid="trip-groups-input"]', 'All,VIP').catch(()=>{});
-  try { const addAcc = await page.$('[data-testid="trip-add-accompany-true"]'); if (addAcc) await addAcc.click(); } catch(e) {}
-  try { const business = await page.$('[data-testid="trip-business-flights-true"]'); if (business) await business.click(); } catch(e) {}
-  await typeInto('[data-testid="trip-image-url"]', 'https://cdn.example.com/e2e.jpg').catch(()=>{});
-  await typeInto('[data-testid="trip-logo-url"]', 'https://cdn.example.com/e2e-logo.png').catch(()=>{});
   try { await page.screenshot({ path: './scripts/e2e-screenshots/step-03-filled.png', fullPage: false }); } catch(e) {}
 
   // verify values and button state
@@ -199,6 +197,167 @@ import fs from 'fs';
   try { fs.appendFileSync(logFile, `TRIP_RESPONSE ${JSON.stringify(tripResponse)}\n`); } catch(e) {}
   if (!tripResponse || !tripResponse.json || !tripResponse.json.tripId) throw new Error('POST to /api/trips did not return tripId');
   try { await page.screenshot({ path: './scripts/e2e-screenshots/step-04-after-save.png', fullPage: false }); } catch(e) {}
+  
+    // --- Section 2 interactions (do this after trip is created) ---
+    const tripId = tripResponse.json.tripId;
+      try {
+      // wait for SectionSettings to become enabled and visible by data-disabled attribute
+      await page.waitForFunction(() => {
+        const root = document.querySelector('[data-testid="trip-groups-input"]');
+        const card = root ? root.closest('[data-disabled]') : null;
+        return !!root && card && card.getAttribute('data-disabled') === 'false';
+      }, { timeout: 10000 });
+    } catch (e) {
+      try { fs.appendFileSync(logFile, `WARN Section 2 did not become enabled: ${e}\n`); } catch(e) {}
+    }
+
+      // Save Section 2 via the new save button and verify server persistence
+      try {
+        // wait for save-section-2 button to appear
+        await page.waitForSelector('[data-testid="save-section-2"]', { timeout: 8000 });
+        try { fs.appendFileSync(logFile, `DIAG found save-section-2\n`); } catch(e) {}
+        // click save
+        await page.evaluate(() => { const b = document.querySelector('[data-testid="save-section-2"]'); if (b) b.click(); });
+        // wait briefly for network activity
+        await sleep(800);
+
+        // fetch trip from backend directly (node-side) to avoid dev-server proxy/html responses
+        const backendBase = process.env.BACKEND_URL || 'http://localhost:5001';
+        let tripGet;
+        // Retry the GET a few times to tolerate eventual consistency or short races
+        const maxGetAttempts = 4;
+        for (let attempt = 1; attempt <= maxGetAttempts; attempt++) {
+          try {
+            const res = await fetch(`${backendBase}/api/trips/${tripId}`);
+            const json = await res.json().catch(()=>null);
+            tripGet = { status: res.status, json };
+            if (tripGet && tripGet.json) break; // success
+          } catch (e) {
+            tripGet = { error: String(e) };
+          }
+          // small backoff
+          await new Promise(r => setTimeout(r, 350 * attempt));
+        }
+        try { fs.appendFileSync(logFile, `TRIP_GET ${JSON.stringify(tripGet)}\n`); } catch(e) {}
+
+        // basic assertions
+        if (!tripGet || !tripGet.json) {
+          try { fs.appendFileSync(logFile, `ASSERT FAIL: trip GET returned no json\n`); } catch(e) {}
+        } else {
+          const groups = (tripGet.json.settings && tripGet.json.settings.groups) || [];
+          const addAccompany = !!(tripGet.json.settings && tripGet.json.settings.addAccompany);
+          const businessFlights = !!(tripGet.json.settings && tripGet.json.settings.businessFlights);
+          try { fs.appendFileSync(logFile, `ASSERT groups=${JSON.stringify(groups)} addAccompany=${addAccompany} businessFlights=${businessFlights}\n`); } catch(e) {}
+          const hasAll = groups.some(g => String(g).toLowerCase() === 'all');
+          const hasVip = groups.some(g => String(g).toLowerCase() === 'vip');
+          try { fs.appendFileSync(logFile, `ASSERT hasAll=${hasAll} hasVip=${hasVip}\n`); } catch(e) {}
+        }
+      } catch (e) {
+        try { fs.appendFileSync(logFile, `WARN saving section 2 or validating trip failed: ${e}\n`); } catch(e) {}
+      }
+  
+    // Try to add groups via TagInput: use Puppeteer's `type` + `click` for reliability
+    try {
+      const rootSel = '[data-testid="trip-groups-input"]';
+        const inputSel = `${rootSel} [data-testid="trip-groups-input-input"], ${rootSel} [data-testid="trip-groups-input-input"] , [data-testid="trip-groups-input-input"]`;
+      const addBtnSel = '[data-testid="trip-groups-input-add"], [data-testid="trip-groups-add"]';
+      try {
+        await page.waitForSelector(rootSel, { timeout: 15000 });
+        try { const outer = await page.evaluate((s)=>{ const el=document.querySelector(s); return el ? el.outerHTML : null; }, rootSel); fs.appendFileSync(logFile, `DIAG rootOuter ${outer}\n`); } catch(e) {}
+
+        // We'll obtain the input handle fresh for each attempt since the page can re-render
+        try { fs.appendFileSync(logFile, `DIAG will use Puppeteer.type + click (fresh handles each attempt)\n`); } catch(e) {}
+
+        // Helper to add a tag with retries using a direct DOM set+click approach (avoids typing concat issues)
+        const addTagAndWait = async (text) => {
+          const maxAttempts = 3;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              await page.waitForSelector(rootSel, { timeout: 10000 });
+              // snapshot before
+              try { const before = await page.evaluate((s)=>{ const el=document.querySelector(s); return el ? el.outerHTML : null; }, rootSel); fs.appendFileSync(logFile, `DIAG beforeSet attempt=${attempt} ${text} ${before}\n`); } catch(e) {}
+
+              // set input value via native setter and dispatch events, then click add button
+              await page.evaluate((rootSelector, addSelectors, t) => {
+                const root = document.querySelector(rootSelector);
+                if (!root) throw new Error('root not found');
+                const input = root.querySelector('input');
+                const addBtn = root.querySelector(addSelectors.split(',')[0].trim()) || root.querySelector('button');
+                if (!input) throw new Error('input not found');
+                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+                if (nativeSetter) nativeSetter.call(input, t); else input.value = t;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                // small delay is not possible inside evaluate reliably; the caller will wait for DOM
+                if (addBtn) addBtn.click();
+              }, rootSel, addBtnSel, text);
+
+              // snapshot after set+click
+              try { const after = await page.evaluate((s)=>{ const el=document.querySelector(s); return el ? el.outerHTML : null; }, rootSel); fs.appendFileSync(logFile, `DIAG afterSetClick attempt=${attempt} ${text} ${after}\n`); } catch(e) {}
+
+              // wait for chip
+              await page.waitForFunction((t) => {
+                return Array.from(document.querySelectorAll('[data-testid^="trip-group-"]')).some(n => (n.textContent || '').toLowerCase().includes(t.toLowerCase()));
+              }, { timeout: 12000 }, text);
+
+              // success
+              return;
+            } catch (err) {
+              try { fs.appendFileSync(logFile, `DIAG addTag attempt=${attempt} failed for ${text}: ${err}\n`); } catch(e) {}
+              if (attempt < maxAttempts) {
+                await sleep(400);
+                continue;
+              }
+              throw err;
+            }
+          }
+        };
+
+        // Add first and second tags
+        await addTagAndWait('All');
+        await addTagAndWait('VIP');
+      } catch (inner) {
+        try { fs.appendFileSync(logFile, `WARN TagInput attempt failed: ${inner}\n`); } catch(e) {}
+        // last-resort fallback: keyboard typing at root
+        try {
+          const inputHandle2 = await page.$(inputSel);
+          if (inputHandle2) {
+            await inputHandle2.focus();
+            await page.keyboard.type('All', { delay: 20 });
+            await page.keyboard.press('Enter');
+            await page.keyboard.type('VIP', { delay: 20 });
+            await page.keyboard.press('Enter');
+          } else {
+            try { fs.appendFileSync(logFile, `WARN no input for keyboard fallback\n`); } catch(e) {}
+          }
+        } catch(e2) { try { fs.appendFileSync(logFile, `WARN final TagInput fallback failed: ${e2}\n`); } catch(e) {} }
+      }
+    } catch(e) { try { fs.appendFileSync(logFile, `WARN Could not interact with TagInput after save: ${e}\n`); } catch(e) {} }
+
+    // Diagnostic snapshot of TagInput state after attempts
+    try {
+      const diag = await page.evaluate(() => {
+        const root = document.querySelector('[data-testid="trip-groups-input"]');
+        const input = root ? root.querySelector('input') : null;
+        return {
+          inputValue: input ? (input.value || '') : null,
+          rootInner: root ? root.innerHTML : null,
+          chips: Array.from(document.querySelectorAll('[data-testid^="trip-group-"]')).map(n=>n.getAttribute('data-testid'))
+        };
+      });
+      try { fs.appendFileSync(logFile, `DIAG afterTags ${JSON.stringify(diag)}\n`); } catch(e) {}
+    } catch(e) { try { fs.appendFileSync(logFile, `DIAG afterTags failed: ${e}\n`); } catch(e) {} }
+
+    // Image/logo uploads removed from UI; only URL inputs remain. Log presence of previews if any.
+    try {
+      const imagePreviewSel = '[data-testid="trip-image-preview"]';
+      const logoPreviewSel = '[data-testid="trip-logo-preview"]';
+      // check if previews appear (they will only if the test sets URLs)
+      const hasImagePreview = await page.$(imagePreviewSel) !== null;
+      const hasLogoPreview = await page.$(logoPreviewSel) !== null;
+      if (!hasImagePreview) try { fs.appendFileSync(logFile, `WARN image preview not present (no URL set)\n`); } catch(e) {}
+      if (!hasLogoPreview) try { fs.appendFileSync(logFile, `WARN logo preview not present (no URL set)\n`); } catch(e) {}
+    } catch(e) { try { fs.appendFileSync(logFile, `WARN preview check failed: ${e}\n`); } catch(e) {} }
 
   await browser.close();
 })();

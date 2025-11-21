@@ -21,9 +21,9 @@ import Invites, { Invite } from './components/Invites';
 import { Contact } from './components/AddContactModal';
 
 const initialContacts: Contact[] = [
-    { id: 1, name: 'Mario Rossi', category: 'Tour Leader', phone: '+39 123 456789', email: 'm.rossi@example.com', notes: 'Referente h24 per il gruppo Milano' },
-    { id: 2, name: 'Laura Verdi', category: 'Assistenza Aeroportuale', phone: '+39 987 654321', email: 'l.verdi@example.com', notes: 'Presente in aeroporto Malpensa per partenze e arrivi' },
-    { id: 3, name: 'Giuseppe Bianchi', category: 'Assistenza Hotel', phone: '+39 456 123789', email: 'g.bianchi@example.com', notes: 'Contatto in hotel per check-in e check-out' },
+  { id: 1, firstName: 'Mario', lastName: 'Rossi', category: 'Tour Leader', phone: '+39 123 456789', email: 'm.rossi@example.com', notes: 'Referente h24 per il gruppo Milano' },
+  { id: 2, firstName: 'Laura', lastName: 'Verdi', category: 'Assistenza Aeroportuale', phone: '+39 987 654321', email: 'l.verdi@example.com', notes: 'Presente in aeroporto Malpensa per partenze e arrivi' },
+  { id: 3, firstName: 'Giuseppe', lastName: 'Bianchi', category: 'Assistenza Hotel', phone: '+39 456 123789', email: 'g.bianchi@example.com', notes: 'Contatto in hotel per check-in e check-out' },
 ];
 
 const initialForms: Form[] = [
@@ -328,7 +328,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (tripFormMode !== 'hidden') {
-      return <CreateTrip onCancel={handleCloseTripForm} onSave={handleSaveTripForm} isEditing={tripFormMode === 'edit'} usefulInformations={usefulInformations} termsDocuments={termsDocuments} privacyDocuments={privacyDocuments} contacts={contacts} forms={forms} />;
+      return <CreateTrip onCancel={handleCloseTripForm} onSave={handleSaveTripForm} isEditing={tripFormMode === 'edit'} />;
     }
 
     if (isCommFormVisible) {

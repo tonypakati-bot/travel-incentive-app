@@ -42,7 +42,7 @@ const FormField: React.FC<{ label: string; children: React.ReactNode; className?
         {children}
     </div>
 );
-const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => ( <input {...props} className={`w-full px-3 py-2 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''} ${'aria-invalid' in props && (props as any)['aria-invalid'] === 'true' ? 'border-red-500' : 'border-gray-300'}`} /> );
+const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) => ( <input ref={ref} {...props} className={`w-full px-3 py-2 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''} ${'aria-invalid' in props && (props as any)['aria-invalid'] === 'true' ? 'border-red-500' : 'border-gray-300'}`} /> ));
 const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => ( <select {...props} className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''}`} /> );
 
 const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, onSave, participantToEdit, defaultTrip, existingParticipants }) => {

@@ -39,11 +39,18 @@ const Section: React.FC<{ title: string; children: React.ReactNode; actions?: Re
   </div>
 );
 
+const DisabledOverlay: React.FC<{ message?: string }> = ({ message }) => (
+  <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="text-sm text-gray-700 text-center">{message ?? 'Salva prima la Sezione 1 per attivare questa sezione.'}</div>
+  </div>
+);
+
 const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = false }) => {
   const [openSections, setOpenSections] = useState<number[]>([1]);
   const [tripDraft, setTripDraft] = useState<{ tripId?: string; name?: string; startDate?: string; endDate?: string }>({});
   const [docValues, setDocValues] = useState<Record<string,string>>({});
   const [settingsValues, setSettingsValues] = useState<any>({});
+  const [savingSection2, setSavingSection2] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
   const toast = useToast();
@@ -81,38 +88,62 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         </Section>
 
         <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(2)} onClick={() => handleToggleSection(2)}>
-          {!tripDraft.tripId ? (
-            <div className="p-4 text-sm text-gray-600">Per modificare le Impostazioni salva prima la <strong>Sezione 1</strong> (Nome/Data) per creare il viaggio.</div>
-          ) : (
-            <SectionSettingsCard values={settingsValues} onChange={(k,v)=>setSettingsValues((prev:any)=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
-          )}
+          <div className="relative">
+            <SectionSettingsCard
+              values={settingsValues}
+              onChange={(k,v)=>setSettingsValues((prev:any)=>({...prev,[k]:v}))}
+              disabled={!tripDraft.tripId}
+              onSave={async () => {
+                if (!tripDraft.tripId) return;
+                setSavingSection2(true);
+                try {
+                  const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ settings: settingsValues }) });
+                  const json = await res.json();
+                  try { toast.showToast('Impostazioni salvate', 'success'); } catch(e) {}
+                  setTripDraft((prev:any)=> ({ ...(prev||{}), ...json }));
+                } catch (err) {
+                  console.error(err);
+                  try { toast.showToast('Errore durante il salvataggio', 'error'); } catch(e) {}
+                } finally { setSavingSection2(false); }
+              }}
+            />
+            {!tripDraft.tripId && <DisabledOverlay message={"Questa sezione è disattivata fino al salvataggio della Sezione 1."} />}
+          </div>
         </Section>
 
         <Section title="Sezione 3: Documenti" isOpen={openSections.includes(3)} onClick={() => handleToggleSection(3)}>
-          {!tripDraft.tripId ? (
-            <div className="p-4 text-sm text-gray-600">Salva prima la <strong>Sezione 1</strong> per accedere ai Documenti.</div>
-          ) : (
+          <div className="relative">
             <SectionDocumentsCard values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
-          )}
+            {!tripDraft.tripId && <DisabledOverlay message={"I Documenti sono bloccati fino al salvataggio della Sezione 1."} />}
+          </div>
         </Section>
 
         <Section title="Sezione 3: Dettagli Voli e Trasporti" isOpen={openSections.includes(3)} onClick={()=>handleToggleSection(3)}>
-          <div className="p-4">Dettagli voli (placeholder)</div>
+          <div className="relative">
+            <div className="p-4">Dettagli voli (placeholder)</div>
+            {!tripDraft.tripId && <DisabledOverlay message={"Dettagli voli disattivati fino al salvataggio della Sezione 1."} />}
+          </div>
         </Section>
 
         <Section title="Sezione 4: Agenda e Eventi" isOpen={openSections.includes(4)} onClick={()=>handleToggleSection(4)}>
-          <div className="p-4">Agenda (placeholder)</div>
+          <div className="relative">
+            <div className="p-4">Agenda (placeholder)</div>
+            {!tripDraft.tripId && <DisabledOverlay message={"Agenda disattivata fino al salvataggio della Sezione 1."} />}
+          </div>
         </Section>
 
         <Section title="Sezione 5: Gestione Partecipanti" isOpen={openSections.includes(5)} onClick={()=>handleToggleSection(5)} actions={<button className="text-sm font-semibold text-white bg-green-600 hover:bg-green-700 flex items-center px-3 py-1.5 rounded-lg transition-colors"><CheckIcon className="w-4 h-4 mr-1.5" /> Importa da Google Sheets</button>}>
-          {tripDraft.tripId ? (
-            <div className="p-4 flex items-center justify-between">
-              <div>Gestisci i partecipanti per questo viaggio.</div>
-              <a href={`/manage-participants?tripId=${tripDraft.tripId}`} className="text-white bg-blue-600 px-3 py-2 rounded font-semibold">Apri Manage Participants</a>
-            </div>
-          ) : (
-            <div className="p-4">Partecipanti (placeholder)</div>
-          )}
+          <div className="relative">
+            {tripDraft.tripId ? (
+              <div className="p-4 flex items-center justify-between">
+                <div>Gestisci i partecipanti per questo viaggio.</div>
+                <a href={`/manage-participants?tripId=${tripDraft.tripId}`} className="text-white bg-blue-600 px-3 py-2 rounded font-semibold">Apri Manage Participants</a>
+              </div>
+            ) : (
+              <div className="p-4">Partecipanti (placeholder)</div>
+            )}
+            {!tripDraft.tripId && <DisabledOverlay message={"Gestione partecipanti disattivata fino al salvataggio della Sezione 1."} />}
+          </div>
         </Section>
       </div>
 

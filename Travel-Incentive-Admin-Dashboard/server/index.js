@@ -19,7 +19,7 @@ app.use('/api/invites', sendInvitesRouter);
 app.use('/api/trips', tripsRouter);
 
 const PORT = process.env.PORT || 5001;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travel-admin';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travel-db';
 
 mongoose.connect(MONGO_URI)
   .then(() => {
