@@ -3,6 +3,7 @@ import Section1Card from './Section1Card';
 import SectionDocumentsCard from './SectionDocumentsCard';
 import SectionSettingsCard from './SectionSettingsCard';
 import { ChevronDownIcon, CheckIcon } from './icons';
+import ConfirmModal from './ConfirmModal';
 
 interface CreateTripProps {
   onCancel: () => void;
@@ -42,6 +43,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [tripDraft, setTripDraft] = useState<{ tripId?: string; name?: string; startDate?: string; endDate?: string }>({});
   const [docValues, setDocValues] = useState<Record<string,string>>({});
   const [settingsValues, setSettingsValues] = useState<any>({});
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
 
   const handleToggleSection = (index: number) => {
     // Prevent opening other sections until Section 1 is saved (tripDraft.tripId exists)
@@ -67,6 +70,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             settings={settingsValues}
             onSaved={(trip) => {
               setTripDraft(trip);
+              setSavedTripName(trip.name);
+              setShowSavedModal(true);
               setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]);
             }}
           />
@@ -113,6 +118,15 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         <button type="button" onClick={() => {}} className="bg-white border border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Salva Bozza</button>
         <button onClick={onSave} className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">{isEditing ? 'Aggiorna' : 'Salva e Pubblica'}</button>
       </footer>
+      <ConfirmModal
+        open={showSavedModal}
+        title={savedTripName ? `Viaggio "${savedTripName}" creato` : 'Viaggio creato'}
+        message={"La bozza è stata salvata con successo. Puoi procedere con la compilazione delle altre sezioni."}
+        confirmLabel="Procedi"
+        cancelLabel="Chiudi"
+        onConfirm={() => { setShowSavedModal(false); setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]); }}
+        onCancel={() => setShowSavedModal(false)}
+      />
     </div>
   );
 };
