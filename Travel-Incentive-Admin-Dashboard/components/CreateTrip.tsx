@@ -12,7 +12,7 @@ interface CreateTripProps {
   isEditing?: boolean;
 }
 
-const Section: React.FC<{ title: string; children: React.ReactNode; actions?: React.ReactNode; isOpen: boolean; onClick: () => void; }> = ({ title, children, actions, isOpen, onClick }) => (
+const Section: React.FC<{ title: string; children: React.ReactNode; actions?: React.ReactNode; isOpen: boolean; onClick: () => void; disabled?: boolean; disabledMessage?: string }> = ({ title, children, actions, isOpen, onClick, disabled, disabledMessage }) => (
   <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
     <div
       role="button"
@@ -24,10 +24,17 @@ const Section: React.FC<{ title: string; children: React.ReactNode; actions?: Re
           onClick();
         }
       }}
-      className="w-full flex justify-between items-center p-6 text-left hover:bg-gray-50 transition-colors cursor-pointer"
+      className="w-full flex justify-between items-start p-6 text-left hover:bg-gray-50 transition-colors cursor-pointer"
       aria-expanded={isOpen}
     >
-      <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+      <div className="flex-1">
+        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+        {disabled && disabledMessage ? (
+          <div className="mt-1 text-sm text-red-600" aria-hidden>
+            {disabledMessage}
+          </div>
+        ) : null}
+      </div>
       <div className="flex items-center space-x-4">
         {actions && <div onClick={(e) => e.stopPropagation()}>{actions}</div>}
         <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -39,11 +46,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; actions?: Re
   </div>
 );
 
-const DisabledOverlay: React.FC<{ message?: string }> = ({ message }) => (
-  <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="text-sm text-gray-700 text-center">{message ?? 'Salva prima la Sezione 1 per attivare questa sezione.'}</div>
-  </div>
-);
+// DisabledOverlay removed: banner now shown in Section header so content remains visible.
 
 const SECTION = { INFO: 1, SETTINGS: 2, DOCUMENTS: 3, FLIGHTS: 4, AGENDA: 5, PARTICIPANTS: 6 } as const;
 
@@ -87,8 +90,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
           />
         </Section>
 
-        <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(SECTION.SETTINGS)} onClick={() => handleToggleSection(SECTION.SETTINGS)}>
-          <div className="relative">
+        <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(SECTION.SETTINGS)} onClick={() => handleToggleSection(SECTION.SETTINGS)} disabled={!tripDraft.tripId} disabledMessage={"Questa sezione è disattivata fino al salvataggio della Sezione 1."}>
+          <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <SectionSettingsCard
               values={settingsValues}
               onChange={(k,v)=>setSettingsValues((prev:any)=>({...prev,[k]:v}))}
@@ -112,33 +115,29 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                 } finally { setSavingSection2(false); }
               }}
             />
-            {!tripDraft.tripId && <DisabledOverlay message={"Questa sezione è disattivata fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 3: Documenti" isOpen={openSections.includes(SECTION.DOCUMENTS)} onClick={() => handleToggleSection(SECTION.DOCUMENTS)}>
-          <div className="relative">
+        <Section title="Sezione 3: Documenti" isOpen={openSections.includes(SECTION.DOCUMENTS)} onClick={() => handleToggleSection(SECTION.DOCUMENTS)} disabled={!tripDraft.tripId} disabledMessage={"I Documenti sono bloccati fino al salvataggio della Sezione 1."}>
+          <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <SectionDocumentsCard values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
-            {!tripDraft.tripId && <DisabledOverlay message={"I Documenti sono bloccati fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 4: Dettagli Voli e Trasporti" isOpen={openSections.includes(SECTION.FLIGHTS)} onClick={()=>handleToggleSection(SECTION.FLIGHTS)}>
-          <div className="relative">
+        <Section title="Sezione 4: Dettagli Voli e Trasporti" isOpen={openSections.includes(SECTION.FLIGHTS)} onClick={()=>handleToggleSection(SECTION.FLIGHTS)} disabled={!tripDraft.tripId} disabledMessage={"Dettagli voli disattivati fino al salvataggio della Sezione 1."}>
+          <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <div className="p-4">Dettagli voli (placeholder)</div>
-            {!tripDraft.tripId && <DisabledOverlay message={"Dettagli voli disattivati fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 5: Agenda e Eventi" isOpen={openSections.includes(SECTION.AGENDA)} onClick={()=>handleToggleSection(SECTION.AGENDA)}>
-          <div className="relative">
+        <Section title="Sezione 5: Agenda e Eventi" isOpen={openSections.includes(SECTION.AGENDA)} onClick={()=>handleToggleSection(SECTION.AGENDA)} disabled={!tripDraft.tripId} disabledMessage={"Agenda disattivata fino al salvataggio della Sezione 1."}>
+          <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <div className="p-4">Agenda (placeholder)</div>
-            {!tripDraft.tripId && <DisabledOverlay message={"Agenda disattivata fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 6: Gestione Partecipanti" isOpen={openSections.includes(SECTION.PARTICIPANTS)} onClick={()=>handleToggleSection(SECTION.PARTICIPANTS)} actions={<button className="text-sm font-semibold text-white bg-green-600 hover:bg-green-700 flex items-center px-3 py-1.5 rounded-lg transition-colors"><CheckIcon className="w-4 h-4 mr-1.5" /> Importa da Google Sheets</button>}>
-          <div className="relative">
+        <Section title="Sezione 6: Gestione Partecipanti" isOpen={openSections.includes(SECTION.PARTICIPANTS)} onClick={()=>handleToggleSection(SECTION.PARTICIPANTS)} actions={<button className="text-sm font-semibold text-white bg-green-600 hover:bg-green-700 flex items-center px-3 py-1.5 rounded-lg transition-colors"><CheckIcon className="w-4 h-4 mr-1.5" /> Importa da Google Sheets</button>} disabled={!tripDraft.tripId} disabledMessage={"Gestione partecipanti disattivata fino al salvataggio della Sezione 1."}>
+          <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             {tripDraft.tripId ? (
               <div className="p-4 flex items-center justify-between">
                 <div>Gestisci i partecipanti per questo viaggio.</div>
@@ -147,7 +146,6 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             ) : (
               <div className="p-4">Partecipanti (placeholder)</div>
             )}
-            {!tripDraft.tripId && <DisabledOverlay message={"Gestione partecipanti disattivata fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
       </div>
