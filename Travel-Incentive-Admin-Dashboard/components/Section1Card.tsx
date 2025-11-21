@@ -20,8 +20,14 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
       const payload: any = { clientName, name, subtitle, description, startDate, endDate, status: 'draft' };
       if (settings) payload.settings = settings;
       const res = await fetch('/api/trips', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `HTTP ${res.status}`);
+      }
       const json = await res.json();
-      onSaved(json);
+      // normalize id shape
+      const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id)) };
+      onSaved(normalized as any);
     } catch (err) {
       console.error(err);
       alert('Errore salvataggio bozza');

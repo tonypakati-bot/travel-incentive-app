@@ -98,9 +98,14 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                 setSavingSection2(true);
                 try {
                   const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ settings: settingsValues }) });
+                  if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(txt || `HTTP ${res.status}`);
+                  }
                   const json = await res.json();
                   try { toast.showToast('Impostazioni salvate', 'success'); } catch(e) {}
-                  setTripDraft((prev:any)=> ({ ...(prev||{}), ...json }));
+                  const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
+                  setTripDraft((prev:any)=> ({ ...(prev||{}), ...normalized }));
                 } catch (err) {
                   console.error(err);
                   try { toast.showToast('Errore durante il salvataggio', 'error'); } catch(e) {}
