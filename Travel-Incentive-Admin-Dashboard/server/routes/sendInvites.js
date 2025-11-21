@@ -42,8 +42,10 @@ router.post('/send', async (req, res) => {
     function renderForParticipant(template, participant) {
       let out = template;
       try {
-        out = out.replace(/\[NOME_PARTECIPANTE\]/g, participant.name || '');
-        out = out.replace(/\[LINK_REGISTRAZIONE\]/g, `${process.env.REGISTRATION_BASE_URL || 'https://example.com/register'}?id=${participant.id ?? participant._id}`);
+        const displayName = [participant.firstName, participant.lastName].filter(Boolean).join(' ') || participant.name || '';
+        out = out.replace(/\[NOME_PARTECIPANTE\]/g, displayName);
+        const id = participant.id ?? participant._id;
+        out = out.replace(/\[LINK_REGISTRAZIONE\]/g, `${process.env.REGISTRATION_BASE_URL || 'https://example.com/register'}?id=${id}`);
       } catch (e) {}
       return out;
     }

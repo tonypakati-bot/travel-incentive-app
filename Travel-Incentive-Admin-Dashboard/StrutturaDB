@@ -1,0 +1,178 @@
+Panoramica dell'Architettura
+Utilizzeremo un approccio ibrido:
+Referencing (Riferimenti): Per relazioni "Uno-a-Molti" pesanti (es. un Viaggio ha 1000 Partecipanti). I partecipanti avranno il loro ID e un riferimento al viaggio.
+Embedding (Incorporamento): Per dati strettamente legati che vengono letti insieme (es. i dettagli dei voli dentro l'oggetto Viaggio).
+Schema delle Collezioni (Collections)
+Ecco come strutturerei le 7 collezioni principali:
+1. trips (Viaggi)
+È l'entità centrale. Contiene la configurazione, la logistica e lo stato.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  name: "Sales Kick-off Dubai",
+  clientId: String, // o ObjectId se hai una collezione Clienti
+  dates: {
+    start: ISODate("2026-02-20"),
+    end: ISODate("2026-02-25"),
+    registrationDeadline: ISODate("2026-01-15")
+  },
+  status: "Ready", // 'Draft', 'Ready', 'Completed', 'Departed'
+  settings: {
+    allowCompanions: Boolean,
+    businessFlightOption: Boolean,
+    groups: ["Milano", "Roma", "VIP"] // Array di stringhe per i gruppi disponibili
+  },
+  assets: {
+    heroImageUrl: String,
+    logoUrl: String
+  },
+  // Incorporiamo i voli perché sono parte integrante della configurazione del viaggio
+  logistics: {
+    outboundFlights: [
+      { group: "Milano", airline: "Emirates", code: "EK206", departure: Date, arrival: Date, ... }
+    ],
+    returnFlights: [ ... ]
+  },
+  // Incorporiamo i dettagli aggiuntivi (Agenda, Hotel)
+  additionalDetails: [
+    { type: "dress-code", content: "Smart Casual", icon: "hanger" }
+  ],
+  // Riferimenti ai contatti dello staff assegnati a questo viaggio
+  staffAssignments: [
+    { 
+      contactId: ObjectId(...), // Riferimento alla collezione 'contacts'
+      // Staff assignments should reference contacts by `contactId`.
+      // If you need per-trip labels (e.g. Tour Leader), model them explicitly
+      // (e.g. as a separate assignments collection or a sub-document with a
+      // normalized set of allowed labels). Avoid implicit fields in the
+      // participants collection to keep responsibility explicit.
+    }
+  ]
+}
+2. participants (Partecipanti)
+Qui salviamo chi partecipa. Questa collezione crescerà molto.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  tripId: ObjectId(...), // *DIPENDENZA CRUCIALE*: Link al viaggio
+  status: "Invited", // 'To Invite', 'Invited', 'Registered'
+  group: "Milano",
+  personalInfo: {
+    firstName: "Mario",
+    lastName: "Rossi",
+    email: "m.rossi@example.com", // Indice univoco combinato con tripId
+    phone: String
+  },
+  // Qui salviamo le risposte date nel Form di registrazione
+  formData: {
+    allergies: "Glutine",
+    passportNumber: "AB123456",
+    tShirtSize: "L",
+    // ... qualsiasi altro campo dinamico definito nel form
+  },
+  audit: {
+    invitedAt: Date,
+    registeredAt: Date,
+    reminderSentCount: Number
+  }
+}
+3. forms (Configurazione Form)
+Definisce quali domande vengono poste per un viaggio.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  tripId: ObjectId(...), // Un form appartiene a un viaggio
+  title: "Registrazione Base",
+  // Struttura JSON che il frontend usa per renderizzare il form builder
+  sections: [
+    {
+      id: "anagrafica",
+      title: "Dati Personali",
+      fields: [
+        { id: "passaporto", label: "Passaporto", required: true, type: "text" }
+      ]
+    }
+  ]
+}
+4. contacts (Rubrica Staff)
+Questa è la tua anagrafica globale. I contatti esistono indipendentemente dai viaggi.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  firstName: "Laura",
+  lastName: "Verdi",
+  category: "Assistenza Aeroportuale",
+  email: "l.verdi@example.com",
+  phone: "+39 333...",
+  notes: "Disponibile solo su Malpensa"
+}
+5. legal_documents (Privacy & Termini)
+Gestisce la logica "Globale vs Specifica".
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  type: "PRIVACY_POLICY", // o 'TERMS_CONDITIONS'
+  tripId: ObjectId(...) o null, // SE NULL = Documento Globale. SE PRESENTE = Override per quel viaggio.
+  title: "Privacy Policy Ibiza",
+  htmlContent: "<p>Informativa specifica...</p>",
+  lastUpdated: Date
+}
+6. destinations (Info Utili)
+Le schede "Useful Informations" sono riutilizzabili. Se fai 3 viaggi a Dubai, usi la stessa scheda.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  name: "Dubai",
+  country: "Emirati Arabi Uniti",
+  info: {
+    currency: "Dirham (AED)",
+    timezone: "GMT+4",
+    documents: "Passaporto con 6 mesi validità",
+    climate: "Desertico..."
+  }
+}
+7. communications (Log Comunicazioni)
+Storico di inviti e alert inviati.
+code
+JavaScript
+{
+  _id: ObjectId(...),
+  tripId: ObjectId(...),
+  type: "ALERT", // 'INVITE', 'INFO'
+  status: "SENT",
+  subject: "Ritardo Volo",
+  body: "Il volo ha 2 ore di ritardo...",
+  targetFilter: { group: "Milano" }, // Chi ha ricevuto questo messaggio?
+  sentAt: Date
+}
+Mappa delle Dipendenze (Relationships)
+Ecco come interagiscono le collezioni quando costruisci le query nel backend (es. Node.js/Express):
+Creazione Viaggio:
+Crei un documento in trips.
+Se l'utente seleziona "Privacy Globale", non fai nulla. Se crea una "Privacy Specifica", crei un documento in legal_documents con tripId uguale all'ID del viaggio appena creato.
+Quando assegni lo staff, salvi l'ID del contatto (contacts._id) dentro l'array trips.staffAssignments.
+Registrazione Partecipante (Frontend App):
+Il frontend chiama l'API GET /forms?tripId=XYZ.
+Il backend cerca in forms dove tripId == XYZ.
+L'utente compila. Il frontend invia i dati.
+Il backend cerca il documento in participants (tramite token o email+tripId) e aggiorna il campo formData.
+Dashboard - Pagina Partecipanti:
+db.participants.find({ tripId: "ID_VIAGGIO_SELEZIONATO" })
+Questa è una query molto veloce ed efficiente grazie all'indice su tripId.
+Invio Email (Inviti/Reminder):
+Leggi trips per ottenere i dettagli dell'evento.
+Leggi participants filtrando per status: "To Invite".
+Per ogni partecipante, generi l'email e poi aggiorni il suo status in participants a "Invited".
+Salvi un record in communications per tenere traccia dell'invio massivo.
+Consigli per l'Implementazione
+Indici: È fondamentale creare indici in MongoDB per le performance.
+participants: Index su { tripId: 1 } e { email: 1, tripId: 1 } (univocità).
+legal_documents: Index su { tripId: 1 }.
+Stato del Viaggio: Il campo status in trips guiderà la logica della Dashboard. Ad esempio, non puoi mandare inviti se lo stato è Draft.
+Form Dinamici: Dato che MongoDB è "Schema-less" (o flessibile), il campo formData dentro participants è perfetto. Non devi creare colonne rigide come in SQL. Se per il viaggio a Ibiza chiedi "Taglia Maglietta" e per Dubai chiedi "Taglia Scarpe", puoi salvarli nello stesso oggetto formData senza modificare il database.

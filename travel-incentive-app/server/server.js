@@ -13,6 +13,12 @@ const __dirname = dirname(__filename);
 // Connect to database
 await connectDB();
 
+// Enforce JWT secret presence at startup
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is not set in environment. Aborting startup.');
+  process.exit(1);
+}
+
 const app = express();
 
 // Middleware

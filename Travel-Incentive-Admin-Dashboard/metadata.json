@@ -1,0 +1,5 @@
+{
+  "name": "Incentive Travel Admin Dashboard",
+  "description": "An admin dashboard for a Travel Incentive App to manage trips, participants, flights, hotels, communications, and reports for corporate incentive travel.",
+  "requestFramePermissions": []
+}

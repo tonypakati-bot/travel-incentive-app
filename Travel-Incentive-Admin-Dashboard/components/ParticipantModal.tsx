@@ -8,7 +8,8 @@ export type ParticipantStatus = 'Registered' | 'Invited' | 'To Invite';
 export type Participant = {
     id?: string | number;
     _id?: string;
-    name: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     trip: string;
     group: string;
@@ -25,7 +26,8 @@ interface ParticipantModalProps {
 }
 
 const defaultParticipant: Participant = {
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     trip: '',
     group: '',
@@ -57,7 +59,16 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
     useEffect(() => {
         if (isOpen) {
             if (participantToEdit) {
-                setFormData(participantToEdit);
+                // map legacy name -> first/last
+                const legacy = (participantToEdit as any).name;
+                if (legacy && !('firstName' in participantToEdit)) {
+                    const parts = String(legacy).trim().split(/\s+/);
+                    const last = parts.length > 1 ? parts.pop() as string : '';
+                    const first = parts.join(' ');
+                    setFormData({ ...(participantToEdit as any), firstName: first, lastName: last });
+                } else {
+                    setFormData(participantToEdit as any);
+                }
             } else {
                 setFormData({ ...defaultParticipant, trip: defaultTrip ?? '' });
             }
@@ -73,7 +84,8 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
             }, 50);
             // capture initial snapshot for dirty check
             try { initialSnapshotRef.current = JSON.stringify({
-                name: (participantToEdit?.name || '').toString().trim(),
+                firstName: (participantToEdit? (participantToEdit as any).firstName || '' : (participantToEdit as any)?.name || '').toString().trim(),
+                lastName: (participantToEdit? (participantToEdit as any).lastName || '' : '').toString().trim(),
                 email: (participantToEdit?.email || '').toString().trim(),
                 trip: (participantToEdit?.trip || defaultTrip || '').toString().trim(),
                 group: (participantToEdit?.group || '').toString().trim(),
@@ -107,14 +119,17 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
         if ((!final.trip || final.trip.length === 0) && defaultTrip) final.trip = defaultTrip;
 
         // normalize and trim inputs before validation
-        final.name = (final.name || '').toString().trim();
+        // normalize names: prefer firstName/lastName; if missing, try legacy name
+        final.firstName = (final.firstName || (final as any).name || '').toString().trim();
+        final.lastName = (final.lastName || '').toString().trim();
         final.email = (final.email || '').toString().trim();
         final.trip = (final.trip || '').toString().trim();
         final.group = (final.group || '').toString().trim();
 
         // basic client-side validation
         const errors: Record<string,string> = {};
-        if (!final.name || final.name.length < 2) errors.name = 'Name is required (min 2 chars)';
+        if (!final.firstName || final.firstName.length < 1) errors.firstName = 'Nome è richiesto';
+        if (!final.lastName || final.lastName.length < 1) errors.lastName = 'Cognome è richiesto';
         if (!final.email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(final.email)) errors.email = 'Valid email is required';
         if (!final.trip || final.trip.length === 0) errors.trip = 'Trip is required';
 
@@ -142,7 +157,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
             // close modal only after successful save
             toast.showToast('Partecipante salvato', 'success');
             // reset snapshot to avoid dirty prompt after save
-            try { initialSnapshotRef.current = JSON.stringify({ name: final.name, email: final.email, trip: final.trip, group: final.group, status: final.status }); } catch(e){}
+            try { initialSnapshotRef.current = JSON.stringify({ firstName: final.firstName, lastName: final.lastName, email: final.email, trip: final.trip, group: final.group, status: final.status }); } catch(e){}
             onClose();
         } catch (err) {
             setSubmitError('Errore durante il salvataggio. Riprovare.');
@@ -155,7 +170,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
 
     const isDirty = () => {
         try {
-            const snap = JSON.stringify({ name: (formData.name||'').toString().trim(), email: (formData.email||'').toString().trim(), trip: (formData.trip||'').toString().trim(), group: (formData.group||'').toString().trim(), status: formData.status });
+            const snap = JSON.stringify({ firstName: (formData.firstName||'').toString().trim(), lastName: (formData.lastName||'').toString().trim(), email: (formData.email||'').toString().trim(), trip: (formData.trip||'').toString().trim(), group: (formData.group||'').toString().trim(), status: formData.status });
             return snap !== initialSnapshotRef.current;
         } catch (e) { return false; }
     };
@@ -188,10 +203,16 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ isOpen, onClose, on
                             </ul>
                         </div>
                     )}
-                    <FormField label="Name" required>
-                        <Input ref={nameInputRef} data-testid={process.env.NODE_ENV === 'development' ? 'participant-name' : undefined} name="name" value={formData.name} onChange={handleChange} placeholder="es. Marco Rossi" disabled={isSaving} aria-invalid={fieldErrors.name ? 'true' : 'false'} required aria-required />
-                        {fieldErrors.name && <div className="text-xs text-red-600 mt-1">{fieldErrors.name}</div>}
-                    </FormField>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField label="Nome" required>
+                                        <Input ref={nameInputRef} data-testid={process.env.NODE_ENV === 'development' ? 'participant-firstName' : undefined} name="firstName" value={formData.firstName || ''} onChange={handleChange} placeholder="es. Marco" disabled={isSaving} aria-invalid={fieldErrors.firstName ? 'true' : 'false'} required aria-required />
+                                        {fieldErrors.firstName && <div className="text-xs text-red-600 mt-1">{fieldErrors.firstName}</div>}
+                                    </FormField>
+                        <FormField label="Cognome" required>
+                            <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-lastName' : undefined} name="lastName" value={formData.lastName || ''} onChange={handleChange} placeholder="es. Rossi" disabled={isSaving} aria-invalid={fieldErrors.lastName ? 'true' : 'false'} required aria-required />
+                            {fieldErrors.lastName && <div className="text-xs text-red-600 mt-1">{fieldErrors.lastName}</div>}
+                        </FormField>
+                    </div>
                     <FormField label="Email" required>
                         <Input data-testid={process.env.NODE_ENV === 'development' ? 'participant-email' : undefined} name="email" value={formData.email} onChange={handleChange} placeholder="m.rossi@example.com" disabled={isSaving} aria-invalid={fieldErrors.email ? 'true' : 'false'} required aria-required />
                         {fieldErrors.email && <div className="text-xs text-red-600 mt-1">{fieldErrors.email}</div>}

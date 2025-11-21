@@ -1,0 +1,37 @@
+IncentiveTravel
+
+Admin Panel
+
+Dashboard
+Manage Trip
+Manage Contacts
+Manage Participants
+Invites
+Forms
+Communications
+Useful Informations
+Privacy Policy
+Terms & Conditions
+Documents
+Reports
+Create Template
+
+Design your email invitation.
+
+Back to List
+Seleziona Viaggio *
+-- Seleziona un viaggio --
+Trip to Ibiza
+Sales Kick-off Dubai
+Team Retreat Mykonos
+Ski Trip to Aspen
+Mittente *
+Oggetto *
+Corpo della mail *
+[NOME_PARTECIPANTE]
+[LINK_REGISTRAZIONE]
+verranno sostituiti automaticamente.
+Invia Test
+Salva Template
+Compila tutti i campi obbligatori.
+Template salvato con successo.

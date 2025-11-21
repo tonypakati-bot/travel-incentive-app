@@ -45,11 +45,14 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
         handleCloseModal();
     };
 
-    const filteredContacts = contacts.filter(c => 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredContacts = contacts.filter(c => {
+        const full = `${(c.firstName || '').toString()} ${(c.lastName || '').toString()}`.trim();
+        return (
+            full.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.category || '').toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const toast = (() => { try { return useToast(); } catch { return null as any; } })();
@@ -57,24 +60,46 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files && e.target.files[0];
         if (!f) return;
+        console.log('ManageContacts: handleFileImport triggered', f && f.name, 'size', f && f.size);
+        try { toast && toast.showToast('Import avviato', 'info'); } catch (e) {}
         const reader = new FileReader();
         reader.onload = (ev) => {
             const data = ev.target?.result;
             try {
-                const wb = XLSX.read(data as string, { type: 'binary' });
+                // prefer ArrayBuffer for compatibility
+                let wb;
+                if (data instanceof ArrayBuffer) {
+                    wb = XLSX.read(data, { type: 'array' });
+                } else {
+                    wb = XLSX.read(data as string, { type: 'binary' });
+                }
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[];
-                const imported = json.map((row) => ({
-                    name: row['name'] || row['Name'] || row['Nome'] || row['nome'] || '',
-                    category: row['category'] || row['Category'] || row['Categoria'] || 'Tour Leader',
-                    phone: row['phone'] || row['Phone'] || row['Telefono'] || '',
-                    email: row['email'] || row['Email'] || '',
-                    notes: row['notes'] || row['Notes'] || row['Note'] || ''
-                }));
+                const imported = json.map((row) => {
+                    const first = row['firstName'] || row['FirstName'] || row['First Name'] || row['Nome'] || '';
+                    const last = row['lastName'] || row['LastName'] || row['Last Name'] || row['Cognome'] || '';
+                    let f = first || '';
+                    let l = last || '';
+                    if (!f && !l) {
+                        const legacy = row['name'] || row['Name'] || row['Nome'] || row['nome'] || '';
+                        const parts = String(legacy).trim().split(/\s+/);
+                        l = parts.length > 1 ? parts.pop() as string : '';
+                        f = parts.join(' ');
+                    }
+                    return {
+                        firstName: (f || '').toString(),
+                        lastName: (l || '').toString(),
+                        category: row['category'] || row['Category'] || row['Categoria'] || 'Tour Leader',
+                        phone: row['phone'] || row['Phone'] || row['Telefono'] || '',
+                        email: row['email'] || row['Email'] || '',
+                        notes: row['notes'] || row['Notes'] || row['Note'] || ''
+                    };
+                });
                 const validated: Contact[] = [];
                 const seen = new Set(contacts.map(c => (c.email || '').toLowerCase()));
                 imported.forEach((imp) => {
-                    if (!imp.name || !imp.email) return;
+                    const full = `${(imp.firstName||'').toString()} ${(imp.lastName||'').toString()}`.trim();
+                    if (!full || !imp.email) return;
                     const emailLower = (imp.email || '').toLowerCase();
                     if (seen.has(emailLower)) return;
                     seen.add(emailLower);
@@ -84,19 +109,30 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                     setContacts(prev => [...validated, ...prev]);
                     try { toast && toast.showToast(`${validated.length} contatti importati`, 'success'); } catch (e) {}
                 }
+                // clear input so same file can be re-selected later
+                try { if (e.currentTarget) (e.currentTarget as HTMLInputElement).value = ''; } catch (err) { console.warn('Could not clear input in onload', err); }
             } catch (err) {
                 console.error('Import error', err);
                 try { toast && toast.showToast('Errore durante l\'import del file', 'error'); } catch (e) {}
                 alert('Errore durante l\'import del file. Controlla il formato.');
+                try { if (e.currentTarget) (e.currentTarget as HTMLInputElement).value = ''; } catch (err) { console.warn('Could not clear input in error handler', err); }
             }
         };
-        reader.readAsBinaryString(f);
-        e.currentTarget.value = '';
+        reader.onerror = (err) => {
+            console.error('File read error', err);
+            try { toast && toast.showToast('Errore lettura file', 'error'); } catch (e) {}
+            alert('Errore durante la lettura del file.');
+            try { if (e.currentTarget) (e.currentTarget as HTMLInputElement).value = ''; } catch (err) { console.warn('Could not clear input in onerror', err); }
+        };
+        // read as ArrayBuffer (more compatible across browsers)
+        reader.readAsArrayBuffer(f as Blob);
     };
 
     const handleExportFile = () => {
         try {
-            const ws = XLSX.utils.json_to_sheet(filteredContacts);
+            // map contacts to expected export columns: Nome, Cognome, Category, Phone, Email, Notes
+            const exportData = filteredContacts.map(c => ({ Nome: c.firstName || (c as any).name || '', Cognome: c.lastName || '', Categoria: c.category || '', Telefono: c.phone || '', Email: c.email || '', Note: c.notes || '' }));
+            const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Contacts');
             const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
@@ -141,8 +177,8 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                             />
                         </div>
                         <div className="flex items-center gap-2">
-                            <input ref={fileInputRef} onChange={handleFileImport} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" type="file" className="hidden" />
-                            <button onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition">Import</button>
+                            <input id="contacts-file-input" ref={fileInputRef} onChange={handleFileImport} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" type="file" className="hidden" />
+                            <label htmlFor="contacts-file-input" onClick={() => fileInputRef.current?.click()} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition cursor-pointer">Import</label>
                             <button onClick={handleExportFile} className="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition">Export</button>
                             <button 
                                 onClick={handleOpenCreateModal}
@@ -170,7 +206,7 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                                 {filteredContacts.map((contact) => (
                                     <tr key={contact.id} className="bg-white border-b last:border-b-0 hover:bg-gray-50">
                                         <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            {contact.name}
+                                            {`${(contact.firstName || (contact as any).name || '').toString()} ${(contact.lastName || '').toString()}`.trim()}
                                         </th>
                                         <td className="px-6 py-4">{contact.category}</td>
                                         <td className="px-6 py-4">{contact.phone}</td>

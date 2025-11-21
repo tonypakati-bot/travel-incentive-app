@@ -56,13 +56,15 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     await addBtn.click();
 
     // Wait for modal fields
-    await page.waitForSelector('[data-testid="participant-name"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="participant-firstName"]', { timeout: 10000 });
 
     const unique = Date.now();
-    const testName = `Test User ${unique}`;
+    const testFirst = `Test${unique}`;
+    const testLast = `User${unique}`;
     const testEmail = `test+${unique}@example.com`;
 
-    await page.type('[data-testid="participant-name"]', testName);
+    await page.type('[data-testid="participant-firstName"]', testFirst);
+    await page.type('[data-testid="participant-lastName"]', testLast);
     await page.type('[data-testid="participant-email"]', testEmail);
     // trip field may be hidden if defaultTrip provided; only set if present
     const tripField = await page.$('[data-testid="participant-trip"]');
@@ -83,7 +85,8 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     // Try to add duplicate: open modal again
     await page.click('[data-testid="add-new-participant"]');
     await page.waitForSelector('[data-testid="participant-email"]', { timeout: 5000 });
-    await page.type('[data-testid="participant-name"]', `Dup ${unique}`);
+    await page.type('[data-testid="participant-firstName"]', `Dup${unique}`);
+    await page.type('[data-testid="participant-lastName"]', `Check`);
     await page.type('[data-testid="participant-email"]', testEmail);
     await page.click('[data-testid="participant-save"]');
 
@@ -100,6 +103,83 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     fs.writeFileSync('ui-participants-body.txt', bodyText, 'utf8');
     await page.screenshot({ path: 'ui-participants.png', fullPage: true });
     console.log('Artifacts saved: ui-participants-body.txt, ui-participants.png');
+
+    // --- Import test: upload contacts-template.csv and verify imported row ---
+    try {
+      console.log('Starting import test');
+      // Navigate to Manage Contacts / Import area
+      await page.goto('http://localhost:3000/?view=manage-contacts', { waitUntil: 'networkidle2', timeout: 15000 });
+      // Wait for import button/input
+      const importInput = await page.$('input[type=file][data-testid="contacts-import-input"]');
+      if (!importInput) {
+        // Try label-based input if file input hidden
+        const label = await page.$('label[data-testid="contacts-import-label"]');
+        if (label) {
+          // get associated input selector
+          const htmlFor = await page.evaluate(el => el.getAttribute('for'), label);
+          if (htmlFor) {
+            const sel = `#${htmlFor}`;
+            const fileInput = await page.$(sel);
+            if (fileInput) {
+              await fileInput.uploadFile('../import_templates/contacts-template.csv');
+            } else {
+              // fallback to known id used in ManageContacts.tsx
+              const fallback = await page.$('#contacts-file-input');
+              if (fallback) {
+                await fallback.uploadFile('../import_templates/contacts-template.csv');
+              } else {
+                throw new Error('Import file input not found');
+              }
+            }
+          } else {
+            // fallback to known id used in ManageContacts.tsx
+            const fallback = await page.$('#contacts-file-input');
+            if (fallback) {
+              await fallback.uploadFile('../import_templates/contacts-template.csv');
+            } else {
+              throw new Error('Label-driven import input not found');
+            }
+          }
+        } else {
+          // final fallback: try known id
+          const fallback = await page.$('#contacts-file-input');
+          if (fallback) {
+            await fallback.uploadFile('../import_templates/contacts-template.csv');
+          } else {
+            throw new Error('No import input or label found on manage-contacts');
+          }
+        }
+      } else {
+        // upload directly
+        await importInput.uploadFile('../import_templates/contacts-template.csv');
+      }
+
+      // Wait a bit for import processing and toast
+      await sleep(1500);
+      const importToast = await page.evaluate(() => {
+        // @ts-ignore
+        if (typeof window !== 'undefined' && (window).__LAST_TOAST) return (window).__LAST_TOAST.message;
+        const a = document.querySelector('[aria-live]'); return a ? a.innerText : null;
+      });
+      console.log('IMPORT_TOAST:', importToast);
+
+      // Verify imported contact appears in table by searching for its email from the template
+      const templateCsv = fs.readFileSync(new URL('../import_templates/contacts-template.csv', import.meta.url), 'utf8');
+      const firstRow = templateCsv.split('\n').slice(1).find(Boolean);
+      if (firstRow) {
+        const cols = firstRow.split(',');
+        const email = cols.find(c => c.toLowerCase().includes('@')) || '';
+        if (email) {
+          await page.waitForSelector('table', { timeout: 5000 });
+          const found = await page.evaluate((e) => {
+            return Array.from(document.querySelectorAll('table tbody tr')).some(tr => tr.innerText.includes(e.trim()));
+          }, email);
+          console.log('Imported email found in table:', found);
+        }
+      }
+    } catch (impErr) {
+      console.error('Import test failed', impErr);
+    }
 
   } catch (e) {
     console.error('E2E script error', e);

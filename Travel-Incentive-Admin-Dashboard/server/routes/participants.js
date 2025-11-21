@@ -11,6 +11,21 @@ router.post('/', async (req, res) => {
   const payload = { ...req.body };
   delete payload._id;
   delete payload.id;
+  console.debug('[participants] create payload received:', JSON.stringify(payload));
+  // Backwards-compat: if client provided `name` but not firstName/lastName, split it
+  if (!payload.firstName && !payload.lastName) {
+    // Try common alternatives
+    const candidate = payload.name || payload.fullName || payload.displayName || payload.nome || payload['Nome Cognome'] || '';
+    if (candidate) {
+      const tokens = String(candidate).trim().split(/\s+/);
+      payload.lastName = tokens.length > 1 ? tokens.pop() : '';
+      payload.firstName = tokens.join(' ');
+    }
+  }
+  // Validation: require both firstName and lastName
+  if (!payload.firstName || !payload.lastName) {
+    return res.status(400).json({ error: 'firstName and lastName are required' });
+  }
   const created = await Participant.create(payload);
   res.status(201).json(created);
 });
@@ -19,6 +34,19 @@ router.put('/:id', async (req, res) => {
   const payload = { ...req.body };
   delete payload._id;
   delete payload.id;
+  // Backwards-compat split
+  if (!payload.firstName && !payload.lastName) {
+    const candidate = payload.name || payload.fullName || payload.displayName || payload.nome || payload['Nome Cognome'] || '';
+    if (candidate) {
+      const tokens = String(candidate).trim().split(/\s+/);
+      payload.lastName = tokens.length > 1 ? tokens.pop() : '';
+      payload.firstName = tokens.join(' ');
+    }
+  }
+  // Validation: require both firstName and lastName
+  if (!payload.firstName || !payload.lastName) {
+    return res.status(400).json({ error: 'firstName and lastName are required' });
+  }
   const updated = await Participant.findByIdAndUpdate(req.params.id, payload, { new: true });
   res.json(updated);
 });

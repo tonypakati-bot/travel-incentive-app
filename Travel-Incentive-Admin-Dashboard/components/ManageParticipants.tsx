@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useToast } from '../contexts/ToastContext';
+import * as XLSX from 'xlsx';
 import ParticipantModal from './ParticipantModal';
 import ConfirmModal from './ConfirmModal';
 import { SearchIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, UploadIcon, ChevronDownIcon, DownloadIcon, PlusIcon, UsersIcon, CheckCircleIcon } from './icons';
@@ -10,7 +11,9 @@ type ParticipantStatus = 'Registered' | 'Invited' | 'To Invite';
 type Participant = {
     id?: string | number;
     _id?: string;
-    name: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     trip: string;
     group: string;
@@ -54,8 +57,51 @@ interface TripParticipantsViewProps {
 }
 
 const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, participants, onBack, onSendReminder, onSendInvite, onSaveParticipant, onDeleteParticipant }) => {
-    const [searchTerm, setSearchTerm] = useState('');
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const toast = useToast();
+    const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        console.log('[ManageParticipants] import triggered', f.name, f.size);
+        try { toast.showToast('Import avviato', 'info'); } catch (err) {}
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const data = ev.target?.result;
+            try {
+                let wb;
+                if (data instanceof ArrayBuffer) wb = XLSX.read(data, { type: 'array' });
+                else wb = XLSX.read(data as string, { type: 'binary' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[];
+                let importedCount = 0;
+                json.forEach(row => {
+                    const name = row['name'] || row['Name'] || row['Nome'] || '';
+                    const email = row['email'] || row['Email'] || '';
+                    const group = row['group'] || row['Group'] || row['Gruppo'] || '';
+                    if (!name || !email) return;
+                    importedCount += 1;
+                    const parts = String(name).trim().split(/\s+/);
+                    const last = parts.length > 1 ? parts.pop() as string : '';
+                    const first = parts.join(' ');
+                    const p: Participant = { id: Date.now() + Math.floor(Math.random()*10000), name, firstName: first, lastName: last, email, trip: tripName, group, status: 'To Invite' };
+                    try { if (onSaveParticipant) onSaveParticipant(p); } catch (err) { console.warn('onSaveParticipant error', err); }
+                });
+                try { toast.showToast(`${importedCount} partecipanti importati`, 'success'); } catch (err) {}
+            } catch (err) {
+                console.error('[ManageParticipants] import error', err);
+                try { toast.showToast('Errore import file', 'error'); } catch (e) {}
+                alert('Errore durante l\'import dei partecipanti. Controlla il formato.');
+            }
+            try { if (e.currentTarget) (e.currentTarget as HTMLInputElement).value = ''; } catch {};
+        };
+        reader.onerror = (err) => {
+            console.error('[ManageParticipants] file read error', err);
+            try { if (toast) toast.showToast('Errore lettura file', 'error'); } catch (e) {}
+            try { if (e.currentTarget) (e.currentTarget as HTMLInputElement).value = ''; } catch {};
+        };
+        reader.readAsArrayBuffer(f as Blob);
+    };
+    const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<ParticipantStatus | 'all'>('all');
     const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
     const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
@@ -70,20 +116,28 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
     const filteredParticipants = useMemo(() => {
         let filtered = [...participants]
             .filter(p => statusFilter === 'all' || p.status === statusFilter)
-            .filter(p =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.group.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            .filter(p => {
+                const fullName = (((p.firstName || p.name) as string) + ' ' + (p.lastName || '')).trim();
+                return (
+                    fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    p.group.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            });
 
         if (sortConfig !== null) {
             filtered.sort((a, b) => {
-                if (a[sortConfig.key] < b[sortConfig.key]) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (sortConfig.key === 'name') {
+                    const aName = (((a.firstName || a.name) as string) + ' ' + (a.lastName || '')).trim();
+                    const bName = (((b.firstName || b.name) as string) + ' ' + (b.lastName || '')).trim();
+                    if (aName < bName) return sortConfig.direction === 'ascending' ? -1 : 1;
+                    if (aName > bName) return sortConfig.direction === 'ascending' ? 1 : -1;
+                    return 0;
                 }
-                if (a[sortConfig.key] > b[sortConfig.key]) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
+                const av = a[sortConfig.key] as any;
+                const bv = b[sortConfig.key] as any;
+                if (av < bv) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (av > bv) return sortConfig.direction === 'ascending' ? 1 : -1;
                 return 0;
             });
         }
@@ -130,10 +184,12 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
     };
 
     const handleExport = () => {
-        const headers = ['ID', 'Name', 'Email', 'Trip', 'Group', 'Status'];
+        const headers = ['ID', 'Nome', 'Cognome', 'Email', 'Trip', 'Group', 'Status'];
         const csvRows = [headers.join(',')];
         filteredParticipants.forEach(p => {
-            const row = [p.id, p.name, p.email, p.trip, p.group, p.status].map(val => `"${val}"`).join(',');
+            const nome = (p.firstName || p.name || '').toString();
+            const cognome = (p.lastName || '').toString();
+            const row = [p.id, nome, cognome, p.email, p.trip, p.group, p.status].map(val => `"${String(val || '')}"`).join(',');
             csvRows.push(row);
         });
         const csvString = csvRows.join('\n');
@@ -214,7 +270,7 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                 participantToEdit={participantToEditLocal}
                 defaultTrip={tripName}
                 existingParticipants={participants}
-                onSave={(p) => {
+                    onSave={(p: Participant) => {
                     if (onSaveParticipant) {
                         const res = onSaveParticipant(p);
                         // return promise if parent provided one so modal can await
@@ -279,9 +335,10 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                             <button data-testid={process.env.NODE_ENV === 'development' ? 'add-new-participant' : undefined} onClick={handleAddNew} className="bg-blue-600 text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
                                 <PlusIcon className="w-4 h-4 mr-2" /> Aggiungi partecipante
                             </button>
-                            <button className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm">
+                            <input id="participants-file-input" ref={fileInputRef} onChange={handleFileImport} accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" type="file" className="hidden" />
+                            <label htmlFor="participants-file-input" onClick={() => fileInputRef.current?.click()} className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm cursor-pointer">
                                 <UploadIcon className="w-4 h-4 mr-2" /> Importa
-                            </button>
+                            </label>
                             <button onClick={handleExport} className="bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 flex items-center shadow-sm">
                                 <DownloadIcon className="w-4 h-4 mr-2" /> Esporta
                             </button>
@@ -335,10 +392,10 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                                         <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 text-sm">
-                                                    {participant.name.charAt(0)}
+                                                    {((((participant.firstName || participant.name) as string) || (participant.lastName || '')).charAt(0) || '').toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-bold text-gray-900">{participant.name}</div>
+                                                    <div className="text-sm font-bold text-gray-900">{(((participant.firstName || participant.name) as string) + ' ' + (participant.lastName || '')).trim()}</div>
                                                     <div className="text-xs text-gray-500 font-normal">{participant.email}</div>
                                                 </div>
                                             </div>

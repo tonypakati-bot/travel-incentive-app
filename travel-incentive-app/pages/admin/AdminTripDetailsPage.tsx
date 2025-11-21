@@ -210,9 +210,9 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
         }
         return out;
       });
-      const payload = { ...(travelInfo || {}), emergencyContacts: updatedContacts };
+      const payload = { emergencyContacts: updatedContacts };
         const res = await api.put('/travel-info', payload);
-        setTravelInfo(res.data);
+        setTravelInfo(JSON.parse(JSON.stringify(res.data)));
         setIsEditingEmergency(false);
         setEditedEmergency(null);
       } catch (err) {
@@ -928,7 +928,21 @@ const AdminTripDetailsPage: React.FC<AdminTripDetailsPageProps> = ({ tripId, onB
                     </div>
                     <div>
                       <label className="text-xs text-gray-600">Categoria</label>
-                      <input readOnly={!isEditingEmergency} value={isEditingEmergency ? (c.type || '') : (c.type || '')} onChange={(e) => updateEditedEmergency(idx, 'type', e.target.value)} placeholder="Categoria" className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2" />
+                      {isEditingEmergency ? (
+                        (() => {
+                          const typeOptions = Array.from(new Set([...(travelInfo?.emergencyContactsType || []), c.type].filter(Boolean)));
+                          return (
+                            <select value={c.type || ''} onChange={(e) => updateEditedEmergency(idx, 'type', e.target.value)} className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">
+                              <option value="">Seleziona categoria</option>
+                              {typeOptions.map((type: string) => (
+                                <option key={type} value={type}>{type}</option>
+                              ))}
+                            </select>
+                          );
+                        })()
+                      ) : (
+                        <div className="mt-1 block w-full rounded-md border-gray-200 bg-gray-50 text-gray-700 p-2">{c.type || ''}</div>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs text-gray-600">Telefono</label>

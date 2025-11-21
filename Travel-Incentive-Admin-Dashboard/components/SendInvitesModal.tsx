@@ -4,7 +4,7 @@ import { XIcon, InformationCircleIcon } from './icons';
 interface SendInvitesModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSend: (emailBody: string) => void;
+    onSend: (emailBody: string, saveAsTemplate?: boolean) => Promise<void> | void;
     tripName: string;
     inviteeCount: number;
     initialBody?: string;

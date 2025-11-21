@@ -50,7 +50,10 @@ export interface Flight {
 export interface EmergencyContact {
   id: string;
   departureGroup?: string;
-  name: string;
+  // New schema: prefer `firstName`/`lastName`, keep `name` for backward compatibility
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   phone: string;
   email?: string;
   type: string;
