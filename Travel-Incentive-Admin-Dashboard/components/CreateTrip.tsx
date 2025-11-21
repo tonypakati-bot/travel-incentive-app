@@ -45,8 +45,10 @@ const DisabledOverlay: React.FC<{ message?: string }> = ({ message }) => (
   </div>
 );
 
+const SECTION = { INFO: 1, SETTINGS: 2, DOCUMENTS: 3, FLIGHTS: 4, AGENDA: 5, PARTICIPANTS: 6 } as const;
+
 const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = false }) => {
-  const [openSections, setOpenSections] = useState<number[]>([1]);
+  const [openSections, setOpenSections] = useState<number[]>([SECTION.INFO]);
   const [tripDraft, setTripDraft] = useState<{ tripId?: string; name?: string; startDate?: string; endDate?: string }>({});
   const [docValues, setDocValues] = useState<Record<string,string>>({});
   const [settingsValues, setSettingsValues] = useState<any>({});
@@ -56,11 +58,9 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const toast = useToast();
 
   const handleToggleSection = (index: number) => {
-    // Prevent opening other sections until Section 1 is saved (tripDraft.tripId exists)
-    if (index !== 1 && !(tripDraft && (tripDraft as any).tripId)) {
-      // open Section 1 to guide the user
-      setOpenSections(prev => prev.includes(1) ? prev : [...prev, 1]);
-      return;
+    // Allow opening any section, but guide the user to Section 1 if trip isn't saved yet
+    if (index !== SECTION.INFO && !(tripDraft && (tripDraft as any).tripId)) {
+      setOpenSections(prev => prev.includes(SECTION.INFO) ? prev : [...prev, SECTION.INFO]);
     }
     setOpenSections(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
   };
@@ -73,7 +73,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
       </header>
 
       <div className="space-y-4">
-        <Section title="Sezione 1: Informazioni Base del Viaggio" isOpen={openSections.includes(1)} onClick={() => handleToggleSection(1)}>
+        <Section title="Sezione 1: Informazioni Base del Viaggio" isOpen={openSections.includes(SECTION.INFO)} onClick={() => handleToggleSection(SECTION.INFO)}>
           <Section1Card
             initial={{ clientName: (tripDraft as any).clientName, name: tripDraft.name, subtitle: (tripDraft as any).subtitle, description: (tripDraft as any).description, startDate: tripDraft.startDate, endDate: tripDraft.endDate }}
             settings={settingsValues}
@@ -81,13 +81,13 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
               setTripDraft(trip);
               setSavedTripName(trip.name);
               setShowSavedModal(true);
-              setOpenSections(prev => prev.includes(2) ? prev : [...prev, 2]);
+              setOpenSections(prev => prev.includes(SECTION.SETTINGS) ? prev : [...prev, SECTION.SETTINGS]);
               try { toast.showToast('Bozza salvata con successo', 'success'); } catch (e) {}
             }}
           />
         </Section>
 
-        <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(2)} onClick={() => handleToggleSection(2)}>
+        <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(SECTION.SETTINGS)} onClick={() => handleToggleSection(SECTION.SETTINGS)}>
           <div className="relative">
             <SectionSettingsCard
               values={settingsValues}
@@ -111,28 +111,28 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
           </div>
         </Section>
 
-        <Section title="Sezione 3: Documenti" isOpen={openSections.includes(3)} onClick={() => handleToggleSection(3)}>
+        <Section title="Sezione 3: Documenti" isOpen={openSections.includes(SECTION.DOCUMENTS)} onClick={() => handleToggleSection(SECTION.DOCUMENTS)}>
           <div className="relative">
             <SectionDocumentsCard values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
             {!tripDraft.tripId && <DisabledOverlay message={"I Documenti sono bloccati fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 3: Dettagli Voli e Trasporti" isOpen={openSections.includes(3)} onClick={()=>handleToggleSection(3)}>
+        <Section title="Sezione 4: Dettagli Voli e Trasporti" isOpen={openSections.includes(SECTION.FLIGHTS)} onClick={()=>handleToggleSection(SECTION.FLIGHTS)}>
           <div className="relative">
             <div className="p-4">Dettagli voli (placeholder)</div>
             {!tripDraft.tripId && <DisabledOverlay message={"Dettagli voli disattivati fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 4: Agenda e Eventi" isOpen={openSections.includes(4)} onClick={()=>handleToggleSection(4)}>
+        <Section title="Sezione 5: Agenda e Eventi" isOpen={openSections.includes(SECTION.AGENDA)} onClick={()=>handleToggleSection(SECTION.AGENDA)}>
           <div className="relative">
             <div className="p-4">Agenda (placeholder)</div>
             {!tripDraft.tripId && <DisabledOverlay message={"Agenda disattivata fino al salvataggio della Sezione 1."} />}
           </div>
         </Section>
 
-        <Section title="Sezione 5: Gestione Partecipanti" isOpen={openSections.includes(5)} onClick={()=>handleToggleSection(5)} actions={<button className="text-sm font-semibold text-white bg-green-600 hover:bg-green-700 flex items-center px-3 py-1.5 rounded-lg transition-colors"><CheckIcon className="w-4 h-4 mr-1.5" /> Importa da Google Sheets</button>}>
+        <Section title="Sezione 6: Gestione Partecipanti" isOpen={openSections.includes(SECTION.PARTICIPANTS)} onClick={()=>handleToggleSection(SECTION.PARTICIPANTS)} actions={<button className="text-sm font-semibold text-white bg-green-600 hover:bg-green-700 flex items-center px-3 py-1.5 rounded-lg transition-colors"><CheckIcon className="w-4 h-4 mr-1.5" /> Importa da Google Sheets</button>}>
           <div className="relative">
             {tripDraft.tripId ? (
               <div className="p-4 flex items-center justify-between">
