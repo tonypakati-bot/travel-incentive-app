@@ -56,9 +56,8 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
     // TODO: navigate to the Create Trip flow if the app requires specific steps.
     // For simplicity assume CreateTrip component is on root and visible.
 
-    // Wait for the documents section selector to appear
+    // define documents selector test id
     const selectTestId = '[data-testid="doc-selector-usefulInformations"]';
-    await page.waitForSelector(selectTestId, { timeout: 15000 });
     console.log('Page loaded — trying to open CreateTrip');
     // Click the Dashboard 'Create New Trip' button to open CreateTrip
     const [createTripBtn] = await page.$x("//button[contains(., 'Create New Trip')]");
