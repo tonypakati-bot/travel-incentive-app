@@ -64,8 +64,8 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
     const [createTripBtn] = await page.$x("//button[contains(., 'Create New Trip')]");
     if (createTripBtn) {
       await createTripBtn.click();
-      // wait a bit for CreateTrip to render
-      await page.waitForTimeout(500);
+      // wait for CreateTrip header to appear
+      await page.waitForXPath("//h1[contains(., 'Crea Nuovo Viaggio') or contains(., 'Modifica Viaggio') ]", { timeout: 10000 }).catch(()=>{});
     } else {
       // fallback: try clicking sidebar Manage Trip button
       const [manageTripBtn] = await page.$x("//button[contains(., 'Manage Trip')]");
@@ -73,6 +73,14 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
         await manageTripBtn.click();
         await page.waitForTimeout(500);
       }
+    }
+
+    // Expand Section 3 (Documenti) in CreateTrip so the DocumentDropdown renders
+    console.log('Expanding Sezione 3: Documenti');
+    const [sec3Btn] = await page.$x("//div[@role='button' and .//h2[contains(., 'Sezione 3')]]");
+    if (sec3Btn) {
+      await sec3Btn.click();
+      await page.waitForTimeout(300);
     }
 
     // Now wait for documents selector inside CreateTrip
