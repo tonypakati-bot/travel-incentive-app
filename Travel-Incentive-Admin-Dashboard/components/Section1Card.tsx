@@ -38,6 +38,7 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
 
   // Expose E2E helpers for tests to validate and trigger save
   useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     const w = (window as any) || {};
     try {
       w.__E2E_isSection1Valid = () => Boolean(valid);

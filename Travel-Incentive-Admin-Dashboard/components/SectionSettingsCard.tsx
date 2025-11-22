@@ -70,15 +70,17 @@ const SectionSettingsCard: React.FC<Props> = ({ values = {}, onChange, onSave, d
 };
 
 // Expose a dev-only hook to programmatically trigger section 2 save from E2E tests
-try {
-  const w = (window as any);
-  if (w) {
-    w.__E2E_saveSection2 = async () => {
-      // This hook will be a no-op here; actual onSave comes from parent at runtime.
-      // Tests should call the onSave by simulating click on `[data-testid="save-section-2"]`.
-      return { ok: false, reason: 'no-op' };
-    };
-  }
-} catch (e) {}
+if ((import.meta as any).env && (import.meta as any).env.DEV) {
+  try {
+    const w = (window as any);
+    if (w) {
+      w.__E2E_saveSection2 = async () => {
+        // This hook will be a no-op here; actual onSave comes from parent at runtime.
+        // Tests should call the onSave by simulating click on `[data-testid="save-section-2"]`.
+        return { ok: false, reason: 'no-op' };
+      };
+    }
+  } catch (e) {}
+}
 
 export default SectionSettingsCard;

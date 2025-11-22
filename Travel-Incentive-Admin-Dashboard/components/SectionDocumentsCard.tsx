@@ -25,11 +25,24 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
     let mounted = true;
     setLoading(true);
     fetchDocumentOptions().then(res => {
+      console.debug('[E2E] initial fetchDocumentOptions', res);
       if (!mounted) return;
       if (res && res.length) setOptions(res);
       setLoading(false);
-    }).catch(() => setLoading(false));
-    return () => { mounted = false };
+    }).catch((e) => { console.debug('[E2E] initial fetchDocumentOptions error', e); setLoading(false); });
+    // also listen for global documents changed events to refresh options
+    const handler = async () => {
+      console.debug('[E2E] documents:changed handler triggered - refreshing options');
+      setLoading(true);
+      try {
+        const res = await fetchDocumentOptions();
+        console.debug('[E2E] documents:changed fetchDocumentOptions', res);
+        if (mounted && res && res.length) setOptions(res);
+      } catch (e) { console.debug('[E2E] documents:changed fetch error', e); }
+      setLoading(false);
+    };
+    window.addEventListener('documents:changed', handler as EventListener);
+    return () => { mounted = false; window.removeEventListener('documents:changed', handler as EventListener); };
   }, []);
 
   return (

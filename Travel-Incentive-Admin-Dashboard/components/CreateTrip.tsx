@@ -56,11 +56,13 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [docValues, setDocValues] = useState<Record<string,string>>({});
   const [settingsValues, setSettingsValues] = useState<any>({});
   const [savingSection2, setSavingSection2] = useState(false);
+  const [savingSection3, setSavingSection3] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
   const toast = useToast();
 
   useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       (window as any).__E2E_setTripDraft = (trip: any) => {
         setTripDraft(trip);
@@ -79,6 +81,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
   // Expose dev hook to programmatically set selected document and trigger final save
   useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       (window as any).__E2E_selectDocumentAndSave = async (docId: string) => {
         try {
@@ -106,6 +109,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
   // Expose a dev-only hook to allow tests to programmatically trigger Section 2 save
   useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       const w = (window as any) || {};
       w.__E2E_saveSection2 = async (overrideSettings?: any) => {
@@ -132,8 +136,44 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     } catch (e) {}
   }, [tripDraft, settingsValues]);
 
+  // Expose a dev-only hook to allow tests to programmatically trigger Section 3 save
+  useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
+    try {
+      const w = (window as any) || {};
+      w.__E2E_saveSection3 = async () => {
+        console.debug('[E2E] __E2E_saveSection3 called', { tripDraft, docValues, settingsValues });
+        if (!tripDraft || !(tripDraft as any).tripId) return { ok: false, reason: 'no-trip' };
+        try {
+          const docsArray = Object.values((docValues||{})).filter(Boolean);
+          const payload: any = { documents: docsArray };
+          if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
+          console.debug('[E2E] __E2E_saveSection3 payload', payload);
+          const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) {
+            const txt = await res.text();
+            console.debug('[E2E] __E2E_saveSection3 response-not-ok', { status: res.status, text: txt });
+            throw new Error(txt || `HTTP ${res.status}`);
+          }
+          const json = await res.json();
+          console.debug('[E2E] __E2E_saveSection3 response-json', json);
+          const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
+          setTripDraft((prev:any) => ({ ...(prev||{}), ...normalized }));
+          try { toast.showToast('Documenti salvati', 'success'); } catch(e){}
+          return { ok: true, trip: normalized };
+        } catch (err) {
+          console.error(err);
+          try { toast.showToast('Errore durante il salvataggio dei documenti', 'error'); } catch(e){}
+          return { ok: false, reason: err && err.message };
+        }
+      };
+      return () => { try { delete (window as any).__E2E_saveSection3; } catch(e){} };
+    } catch (e) {}
+  }, [tripDraft, docValues, settingsValues]);
+
   // expose setter for Section 2 values for E2E tests
   useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       const w = (window as any) || {};
       w.__E2E_setSection2Values = (values: any) => {
@@ -207,6 +247,44 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         <Section title="Sezione 3: Documenti" isOpen={openSections.includes(SECTION.DOCUMENTS)} onClick={() => handleToggleSection(SECTION.DOCUMENTS)} disabled={!tripDraft.tripId} disabledMessage={"I Documenti sono bloccati fino al salvataggio della Sezione 1."}>
           <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <SectionDocumentsCard values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                data-testid="save-section-3"
+                onClick={async () => {
+                  console.debug('[E2E] Save Documents button clicked', { tripDraft, docValues, settingsValues });
+                  if (!tripDraft || !(tripDraft as any).tripId) return;
+                  setSavingSection3(true);
+                  try {
+                    const docsArray = Object.values(docValues || {}).filter(Boolean);
+                    const payload: any = { documents: docsArray };
+                    // also include settings if present to avoid clobbering
+                    if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
+                    console.debug('[E2E] Save Documents payload', payload);
+                    const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!res.ok) {
+                      const txt = await res.text();
+                      console.debug('[E2E] Save Documents response-not-ok', { status: res.status, text: txt });
+                      throw new Error(txt || `HTTP ${res.status}`);
+                    }
+                    const json = await res.json();
+                    console.debug('[E2E] Save Documents response-json', json);
+                    const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
+                    setTripDraft((prev:any) => ({ ...(prev||{}), ...normalized }));
+                    try { toast.showToast('Documenti salvati', 'success'); } catch(e){}
+                  } catch (err) {
+                    console.error(err);
+                    try { toast.showToast('Errore durante il salvataggio dei documenti', 'error'); } catch(e){}
+                  } finally {
+                    setSavingSection3(false);
+                  }
+                }}
+                disabled={!tripDraft.tripId || savingSection3}
+                className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {savingSection3 ? 'Salvando...' : 'Salva Documenti'}
+              </button>
+            </div>
           </div>
         </Section>
 

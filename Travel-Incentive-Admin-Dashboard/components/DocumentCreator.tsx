@@ -22,14 +22,19 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
 
   // expose dev hook to create a document directly with same logic
   React.useEffect(() => {
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       (window as any).__E2E_forceCreateDocument = async (payload: any) => {
         try {
           const { title: pt = '', content: pc = '', usefulInfo = {} } = payload || {};
+          console.debug('[E2E] __E2E_forceCreateDocument called', { payload });
           if (!pt || !pt.trim()) return { ok: false, reason: 'title_required' };
           const res = await createDocument({ title: pt.trim(), content: pc, usefulInfo });
+          console.debug('[E2E] __E2E_forceCreateDocument createDocument result', res);
+          try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
           if (!res) return { ok: false, reason: 'create_failed' };
           try { toast.push('Documento creato con successo', 'success'); } catch(e){}
+          try { window.dispatchEvent(new CustomEvent('documents:changed')); } catch (e) {}
           return { ok: true, doc: res };
         } catch (e) { return { ok: false, reason: e && e.message }; }
       };
@@ -37,19 +42,103 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     return () => { try { delete (window as any).__E2E_forceCreateDocument; } catch (e) {} };
   }, []);
 
+  // dev hooks: allow tests to set modal fields directly and invoke create
+  React.useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    try {
+      (window as any).__E2E_setDocCreatorFields = (payload: any) => {
+        try {
+          if (!payload) return { ok: false, reason: 'no-payload' };
+          if (payload.title !== undefined) setTitle(payload.title);
+          if (payload.content !== undefined) setContent(payload.content);
+          if (payload.destinationName !== undefined) setDestinationName(payload.destinationName);
+          if (payload.country !== undefined) setCountry(payload.country);
+          if (payload.documents !== undefined) setDocumentsField(payload.documents);
+          if (payload.timeZone !== undefined) setTimeZone(payload.timeZone);
+          if (payload.currency !== undefined) setCurrency(payload.currency);
+          if (payload.language !== undefined) setLanguage(payload.language);
+          if (payload.climate !== undefined) setClimate(payload.climate);
+          if (payload.vaccinationsHealth !== undefined) setVaccinationsHealth(payload.vaccinationsHealth);
+          console.debug('[E2E] __E2E_setDocCreatorFields applied', payload);
+          try { (window as any).__E2E_lastSetPayload = payload; } catch (e) {}
+          return { ok: true };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+      (window as any).__E2E_invokeCreate = async (opts?: any) => {
+        try {
+          // call doCreate with override when provided, otherwise use last set payload
+          let overrides = undefined;
+          if (opts && (opts.title || opts.content || opts.usefulInfo)) overrides = { title: opts.title, content: opts.content, usefulInfo: opts.usefulInfo };
+          if (!overrides) {
+            try { overrides = (window as any).__E2E_lastSetPayload || undefined; } catch (e) { overrides = undefined; }
+          }
+          await doCreate(overrides);
+          const start = Date.now();
+          let last = (window as any).__E2E_lastCreateResult || null;
+          while (!last && Date.now() - start < 3000) {
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise(r => setTimeout(r, 100));
+            last = (window as any).__E2E_lastCreateResult || null;
+          }
+          return { ok: !!last, doc: last };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+    } catch (e) {}
+    return () => {
+      try { delete (window as any).__E2E_setDocCreatorFields; } catch(e){}
+      try { delete (window as any).__E2E_invokeCreate; } catch(e){}
+    };
+  }, []);
+
+  // debug: log mount/unmount and attach a capturing click listener to the create button
+  React.useEffect(() => {
+    console.debug('[E2E] DocumentCreator mounted, open=', open);
+    if (!open) return;
+    let attached = false;
+    const attach = () => {
+      try {
+        const btn = document.querySelector('[data-testid="doc-creator-create"]');
+        if (btn && !attached) {
+          attached = true;
+          btn.addEventListener('click', (e) => {
+            try {
+              console.debug('[E2E] capturing click on doc-creator-create', { disabled: btn.disabled });
+            } catch (err) {}
+          }, true);
+        }
+      } catch (err) {}
+    };
+    // try immediately and after a short delay to ensure button exists
+    attach();
+    const t = setTimeout(attach, 200);
+    return () => { clearTimeout(t); console.debug('[E2E] DocumentCreator unmounted'); };
+  }, [open]);
+
   if (!open) return null;
 
-  const handleCreate = async () => {
-    if (!title.trim()) return setError('Titolo richiesto');
+  async function doCreate(override?: { title?: string; content?: string; usefulInfo?: any }) {
+    try { (window as any).__E2E_lastCreateAttempt = Date.now(); } catch (e) {}
+    const localTitle = override && override.title !== undefined ? String(override.title || '') : title;
+    const localContent = override && override.content !== undefined ? override.content : content;
+    const ui = override && override.usefulInfo !== undefined ? override.usefulInfo : {
+      destinationName, country, documents: documentsField, timeZone, currency, language, climate, vaccinationsHealth
+    };
+    if (!localTitle || !String(localTitle).trim()) return setError('Titolo richiesto');
     setSaving(true);
     setError(null);
-    const res = await createDocument({ title: title.trim(), content, usefulInfo: {
-      destinationName, country, documents: documentsField, timeZone, currency, language, climate, vaccinationsHealth
-    }});
+    const payload = { title: String(localTitle).trim(), content: localContent, usefulInfo: ui };
+    console.debug('[E2E] DocumentCreator.doCreate payload', payload);
+    const res = await createDocument(payload);
+    console.debug('[E2E] DocumentCreator.doCreate result', res);
+    try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
     setSaving(false);
-    if (!res) return setError('Errore durante la creazione');
+    if (!res) {
+      console.debug('[E2E] DocumentCreator.doCreate failed to create');
+      return setError('Errore durante la creazione');
+    }
     // show toast then close
     toast.push('Documento creato con successo', 'success');
+    try { window.dispatchEvent(new CustomEvent('documents:changed')); } catch (e) {}
     setTimeout(() => onCreated(res), 250);
   };
 
@@ -105,7 +194,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
         {error && <div className="text-sm text-red-600 mt-3">{error}</div>}
         <footer className="flex justify-end gap-3 mt-4">
           <button data-testid="doc-creator-cancel" onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
-          <button data-testid="doc-creator-create" onClick={handleCreate} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">{saving ? 'Creating...' : 'Create'}</button>
+          <button data-testid="doc-creator-create" onClick={() => { doCreate(); }} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">{saving ? 'Creating...' : 'Create'}</button>
         </footer>
       </div>
     </div>

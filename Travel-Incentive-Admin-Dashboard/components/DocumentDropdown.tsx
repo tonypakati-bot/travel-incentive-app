@@ -16,6 +16,7 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
   const [creating, setCreating] = useState(false);
   useEffect(() => {
     if (!testId) return;
+    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     const w = window as any;
     w.__E2E_openDocCreator = w.__E2E_openDocCreator || {};
     w.__E2E_openDocCreator[testId] = () => setCreating(true);
