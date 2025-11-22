@@ -39,7 +39,10 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
           <button type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
         </div>
       </div>
-      {creating && <div className="mt-2"><DocumentCreator onCreated={handleCreated} onCancel={() => setCreating(false)} /></div>}
+      <DocumentCreator open={creating} onCreated={(opt) => {
+        setCreating(false);
+        onChange(opt.value);
+      }} onClose={() => setCreating(false)} />
     </div>
   );
 };
