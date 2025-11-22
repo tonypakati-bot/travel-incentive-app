@@ -76,7 +76,7 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
         if (btn) { btn.click(); return true; }
         return false;
       });
-      if (clickedManage) await page.waitForTimeout(500);
+      if (clickedManage) await new Promise(r => setTimeout(r, 500));
     }
 
     // Expand Section 3 (Documenti) in CreateTrip so the DocumentDropdown renders
@@ -93,7 +93,7 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
       }
       return false;
     });
-    if (clickedSec3) await page.waitForTimeout(300);
+    if (clickedSec3) await new Promise(r => setTimeout(r, 300));
 
     // Now wait for documents selector inside CreateTrip (either data-testid or select id)
     console.log('Waiting for documents selector inside CreateTrip');
