@@ -83,9 +83,25 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
       await page.waitForTimeout(300);
     }
 
-    // Now wait for documents selector inside CreateTrip
+    // Now wait for documents selector inside CreateTrip (either data-testid or select id)
     console.log('Waiting for documents selector inside CreateTrip');
-    await page.waitForSelector(selectTestId, { timeout: 15000 });
+    const selectors = [selectTestId, 'select#doc-usefulInformations'];
+    let found = false;
+    const maxWait = 20000;
+    const start = Date.now();
+    while (!found && Date.now() - start < maxWait) {
+      for (const s of selectors) {
+        const el = await page.$(s);
+        if (el) { found = true; break; }
+      }
+      if (!found) await page.waitForTimeout(500);
+    }
+    if (!found) {
+      // dump a snapshot for debugging
+      const html = await page.content();
+      await import('fs').then(fs => fs.promises.writeFile('scripts/e2e-failure-snapshot.html', html));
+      throw new Error('Document selector not found; snapshot written to scripts/e2e-failure-snapshot.html');
+    }
 
     // Click 'Crea nuovo' next to the useful informations selector
     const createBtn = await page.$('[data-testid="doc-selector-usefulInformations-create"]');
