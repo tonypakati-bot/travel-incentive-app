@@ -30,4 +30,41 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET /api/documents/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const d = await Document.findById(req.params.id).lean();
+    if (!d) return res.status(404).json({ error: 'not found' });
+    res.json(d);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'error' });
+  }
+});
+
+// PATCH /api/documents/:id
+router.patch('/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const d = await Document.findByIdAndUpdate(req.params.id, updates, { new: true }).lean();
+    if (!d) return res.status(404).json({ error: 'not found' });
+    res.json(d);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'error' });
+  }
+});
+
+// DELETE /api/documents/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const d = await Document.findByIdAndDelete(req.params.id).lean();
+    if (!d) return res.status(404).json({ error: 'not found' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'error' });
+  }
+});
+
 export default router;
