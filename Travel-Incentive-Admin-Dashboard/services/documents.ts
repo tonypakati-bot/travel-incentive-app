@@ -30,3 +30,26 @@ export async function createDocument(payload: { title: string; content?: string;
     return null;
   }
 }
+
+export async function getDocumentById(id: string, baseUrl = ''): Promise<any | null> {
+  try {
+    const res = await fetch(baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents/${id}` : `/api/documents/${id}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) { return null; }
+}
+
+export async function updateDocument(id: string, payload: any, baseUrl = ''): Promise<any | null> {
+  try {
+    const res = await fetch(baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents/${id}` : `/api/documents/${id}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) { return null; }
+}
+
+export async function deleteDocument(id: string, baseUrl = ''): Promise<boolean> {
+  try {
+    const res = await fetch(baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents/${id}` : `/api/documents/${id}`, { method: 'DELETE' });
+    return res.ok;
+  } catch (err) { return false; }
+}
