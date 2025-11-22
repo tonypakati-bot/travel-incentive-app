@@ -35,8 +35,8 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
         {options.map(o => <option key={o.value} data-testid={`${testId}-option-${o.value}`} value={o.value}>{o.label}</option>)}
         </select>
         <div className="flex flex-col ml-2">
-          <button type="button" onClick={() => setCreating(true)} disabled={disabled} className="text-sm text-green-600 hover:underline">Crea nuovo</button>
-          <button type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
+          <button data-testid={`${testId}-create`} type="button" onClick={() => setCreating(true)} disabled={disabled} className="text-sm text-green-600 hover:underline">Crea nuovo</button>
+          <button data-testid={`${testId}-remove`} type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
         </div>
       </div>
       <DocumentCreator open={creating} onCreated={(opt) => {

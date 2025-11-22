@@ -23,7 +23,7 @@ const headless = argv.includes('--headless');
 const ADMIN_CREATE_TRIP_PATH = '/'; // adjust if admin route differs
 const FULL_URL = baseUrl + ADMIN_CREATE_TRIP_PATH;
 
-const apiBase = 'http://localhost:5001'; // backend
+const apiBase = process.env.API_BASE || 'http://localhost:5001'; // backend
 
 async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
   const start = Date.now();
@@ -51,26 +51,24 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
 
   try {
     console.log('Opening admin page:', FULL_URL);
-    await page.goto(FULL_URL, { waitUntil: 'networkidle2' });
+    await page.goto(FULL_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
     // TODO: navigate to the Create Trip flow if the app requires specific steps.
     // For simplicity assume CreateTrip component is on root and visible.
 
     // Wait for the documents section selector to appear
     const selectTestId = '[data-testid="doc-selector-usefulInformations"]';
-    await page.waitForSelector(selectTestId, { timeout: 5000 });
+    await page.waitForSelector(selectTestId, { timeout: 15000 });
     console.log('Found documents selector');
 
     // Optionally select an existing option if present (not necessary)
     // Now click 'Crea nuovo' next to the useful informations selector
-    const createBtnXpath = "//label[contains(., 'Useful Informations')]/following::button[contains(., 'Crea nuovo')][1]";
-    const [createBtn] = await page.$x(createBtnXpath);
+    const createBtn = await page.$('[data-testid="doc-selector-usefulInformations-create"]');
     if (!createBtn) throw new Error('Create button not found');
     await createBtn.click();
     console.log('Opened create modal');
-
-    // Wait for modal title or the title input
-    await page.waitForSelector('input[aria-label="Title"] , input[placeholder="Title"], input#title', { timeout: 5000 }).catch(()=>{});
+    // Wait for modal title input (we added data-testid to title input)
+    await page.waitForSelector('[data-testid="doc-creator-title"]', { timeout: 15000 });
 
     // Fill fields by label text mapping — rely on placeholders/labels used in modal
     // We'll use simple selectors based on label text proximity
@@ -89,31 +87,22 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
     const rand = Math.floor(Math.random()*9000)+1000;
     const title = `E2E Doc ${Date.now()}-${rand}`;
 
-    await setByLabel('title', title);
-    await setByLabel('destination name', 'Test Destination');
-    await setByLabel('country', 'Testland');
-    await setByLabel('content', 'This is sample content created by E2E script.');
-    await setByLabel('documents', 'Passport, Visa');
-    await setByLabel('time zone', 'GMT+1');
-    await setByLabel('currency', 'TST');
-    await setByLabel('language', 'Testish');
-    await setByLabel('climate', 'Warm');
-    await setByLabel('vaccinations', 'None required');
+    await page.type('[data-testid="doc-creator-title"]', title);
+    await page.type('[data-testid="doc-creator-destinationName"]', 'Test Destination');
+    await page.type('[data-testid="doc-creator-country"]', 'Testland');
+    await page.type('[data-testid="doc-creator-content"]', 'This is sample content created by E2E script.');
+    await page.type('[data-testid="doc-creator-documents"]', 'Passport, Visa');
+    await page.type('[data-testid="doc-creator-timeZone"]', 'GMT+1');
+    await page.type('[data-testid="doc-creator-currency"]', 'TST');
+    await page.type('[data-testid="doc-creator-language"]', 'Testish');
+    await page.type('[data-testid="doc-creator-climate"]', 'Warm');
+    await page.type('[data-testid="doc-creator-vaccinations"]', 'None required');
 
     // Click the create button — look for a button with text 'Create' or 'Crea documento' or 'Crea'
-    const createButtonXPath = "//button[contains(., 'Create') or contains(., 'Crea') or contains(., 'Crea documento')]";
-    const [createBtnFinal] = await page.$x(createButtonXPath);
-    if (!createBtnFinal) {
-      // fallback: try buttons in modal footer
-      const footBtns = await page.$$('div[role="dialog"] button, div[role="dialog"] input[type="button"]');
-      if (footBtns && footBtns.length) {
-        await footBtns[footBtns.length-1].click();
-      } else {
-        throw new Error('Create final button not found');
-      }
-    } else {
-      await createBtnFinal.click();
-    }
+    // Click the create button (we added data-testid)
+    const createBtnFinal = await page.$('[data-testid="doc-creator-create"]');
+    if (!createBtnFinal) throw new Error('Create final button not found');
+    await createBtnFinal.click();
     console.log('Clicked create in modal, waiting for backend to list document:', title);
 
     // Poll backend until the new doc appears
