@@ -19,7 +19,7 @@ export async function fetchDocumentOptions(baseUrl = ''): Promise<DocOption[]> {
   }
 }
 
-export async function createDocument(payload: { title: string; content?: string }, baseUrl = ''): Promise<DocOption | null> {
+export async function createDocument(payload: { title: string; content?: string; usefulInfo?: any; visible?: boolean; author?: string }, baseUrl = ''): Promise<DocOption | null> {
   const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
   try {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
