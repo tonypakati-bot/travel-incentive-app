@@ -60,27 +60,40 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
     const selectTestId = '[data-testid="doc-selector-usefulInformations"]';
     console.log('Page loaded — trying to open CreateTrip');
     // Click the Dashboard 'Create New Trip' button to open CreateTrip
-    const [createTripBtn] = await page.$x("//button[contains(., 'Create New Trip')]");
-    if (createTripBtn) {
-      await createTripBtn.click();
+    // Try clicking 'Create New Trip' on Dashboard via DOM
+    const clickedCreate = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Create New Trip'));
+      if (btn) { btn.click(); return true; }
+      return false;
+    });
+    if (clickedCreate) {
       // wait for CreateTrip header to appear
-      await page.waitForXPath("//h1[contains(., 'Crea Nuovo Viaggio') or contains(., 'Modifica Viaggio') ]", { timeout: 10000 }).catch(()=>{});
+      await page.waitForFunction(() => !!document.querySelector('h1') && (document.querySelector('h1').textContent.includes('Crea Nuovo Viaggio') || document.querySelector('h1').textContent.includes('Modifica Viaggio')), { timeout: 10000 }).catch(()=>{});
     } else {
-      // fallback: try clicking sidebar Manage Trip button
-      const [manageTripBtn] = await page.$x("//button[contains(., 'Manage Trip')]");
-      if (manageTripBtn) {
-        await manageTripBtn.click();
-        await page.waitForTimeout(500);
-      }
+      // fallback: try clicking sidebar Manage Trip button via DOM
+      const clickedManage = await page.evaluate(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Manage Trip'));
+        if (btn) { btn.click(); return true; }
+        return false;
+      });
+      if (clickedManage) await page.waitForTimeout(500);
     }
 
     // Expand Section 3 (Documenti) in CreateTrip so the DocumentDropdown renders
     console.log('Expanding Sezione 3: Documenti');
-    const [sec3Btn] = await page.$x("//div[@role='button' and .//h2[contains(., 'Sezione 3')]]");
-    if (sec3Btn) {
-      await sec3Btn.click();
-      await page.waitForTimeout(300);
-    }
+    // Expand Section 3 header by finding a button element whose inner h2 contains 'Sezione 3'
+    const clickedSec3 = await page.evaluate(() => {
+      const candidates = Array.from(document.querySelectorAll('div[role="button"]'));
+      for (const c of candidates) {
+        const h2 = c.querySelector('h2');
+        if (h2 && h2.textContent && h2.textContent.includes('Sezione 3')) {
+          c.click();
+          return true;
+        }
+      }
+      return false;
+    });
+    if (clickedSec3) await page.waitForTimeout(300);
 
     // Now wait for documents selector inside CreateTrip (either data-testid or select id)
     console.log('Waiting for documents selector inside CreateTrip');
