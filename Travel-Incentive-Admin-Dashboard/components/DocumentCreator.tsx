@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons';
 import { createDocument } from '../services/documents';
+import { useToast } from './ToastContext';
 
 type Props = { open: boolean; onCreated: (opt:{ value:string; label:string })=>void; onClose: ()=>void };
 
@@ -17,7 +18,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
   const [vaccinationsHealth, setVaccinationsHealth] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const toast = useToast();
 
   if (!open) return null;
 
@@ -30,12 +31,9 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     }});
     setSaving(false);
     if (!res) return setError('Errore durante la creazione');
-    // show a small success message, then close
-    setSuccess('Documento creato con successo');
-    setTimeout(() => {
-      setSuccess(null);
-      onCreated(res);
-    }, 900);
+    // show toast then close
+    toast.push('Documento creato con successo', 'success');
+    setTimeout(() => onCreated(res), 250);
   };
 
   return (
@@ -48,50 +46,49 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium">Destination Name</label>
-            <input value={destinationName} onChange={e=>setDestinationName(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-destinationName" value={destinationName} onChange={e=>setDestinationName(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div>
             <label className="text-sm font-medium">Country</label>
-            <input value={country} onChange={e=>setCountry(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-country" value={country} onChange={e=>setCountry(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium">Title</label>
-            <input value={title} onChange={e=>setTitle(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-title" value={title} onChange={e=>setTitle(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium">Content</label>
-            <textarea value={content} onChange={e=>setContent(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={4} />
+            <textarea data-testid="doc-creator-content" value={content} onChange={e=>setContent(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={4} />
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium">Documents</label>
-            <textarea value={documentsField} onChange={e=>setDocumentsField(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={2} />
+            <textarea data-testid="doc-creator-documents" value={documentsField} onChange={e=>setDocumentsField(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={2} />
           </div>
           <div>
             <label className="text-sm font-medium">Time Zone</label>
-            <input value={timeZone} onChange={e=>setTimeZone(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-timeZone" value={timeZone} onChange={e=>setTimeZone(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div>
             <label className="text-sm font-medium">Currency</label>
-            <input value={currency} onChange={e=>setCurrency(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-currency" value={currency} onChange={e=>setCurrency(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div>
             <label className="text-sm font-medium">Language</label>
-            <input value={language} onChange={e=>setLanguage(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-language" value={language} onChange={e=>setLanguage(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div>
             <label className="text-sm font-medium">Climate</label>
-            <input value={climate} onChange={e=>setClimate(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+            <input data-testid="doc-creator-climate" value={climate} onChange={e=>setClimate(e.target.value)} className="mt-1 p-2 border rounded w-full" />
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium">Vaccinations & Health</label>
-            <textarea value={vaccinationsHealth} onChange={e=>setVaccinationsHealth(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={2} />
+            <textarea data-testid="doc-creator-vaccinations" value={vaccinationsHealth} onChange={e=>setVaccinationsHealth(e.target.value)} className="mt-1 p-2 border rounded w-full" rows={2} />
           </div>
         </div>
         {error && <div className="text-sm text-red-600 mt-3">{error}</div>}
-        {success && <div className="text-sm text-green-600 mt-3">{success}</div>}
         <footer className="flex justify-end gap-3 mt-4">
-          <button onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
-          <button onClick={handleCreate} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">{saving ? 'Creating...' : 'Create'}</button>
+          <button data-testid="doc-creator-cancel" onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
+          <button data-testid="doc-creator-create" onClick={handleCreate} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">{saving ? 'Creating...' : 'Create'}</button>
         </footer>
       </div>
     </div>

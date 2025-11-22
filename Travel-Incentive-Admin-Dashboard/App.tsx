@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useToast } from './contexts/ToastContext';
+import { ToastProvider, useToast } from './components/ToastContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Trip from './components/Trip';
@@ -159,7 +159,7 @@ const App: React.FC = () => {
         }
       } catch (err) {
         console.error('Invite save error', err);
-        toast.showToast('Errore durante il salvataggio del template. Vedi console per dettagli.', 'error');
+        toast.push('Errore durante il salvataggio del template. Vedi console per dettagli.', 'error');
       }
     };
 
@@ -171,7 +171,7 @@ const App: React.FC = () => {
         setInvitesTemplates(prev => prev.filter(i => String(i.id) !== sid));
       } catch (err) {
         console.error('Invite delete error', err);
-        toast.showToast('Errore durante la cancellazione del template. Vedi console per dettagli.', 'error');
+        toast.push('Errore durante la cancellazione del template. Vedi console per dettagli.', 'error');
       }
   };
 
@@ -191,7 +191,7 @@ const App: React.FC = () => {
   };
 
   const handleSendReminder = (subject: string, body: string) => {
-    toast.showToast(`Invio del promemoria a ${reminderParticipantCount} partecipanti in corso... Oggetto: ${subject}`, 'info');
+    toast.push(`Invio del promemoria a ${reminderParticipantCount} partecipanti in corso... Oggetto: ${subject}`, 'info');
     if (onReminderSentCallback) {
       onReminderSentCallback();
     }
@@ -227,7 +227,7 @@ const App: React.FC = () => {
       if (!res.ok) throw new Error('Send failed');
       const summary = await res.json();
       // Show toast
-      toast.showToast(`Invio completato: ${summary.sent} inviati, ${summary.failed} falliti`, 'success');
+      toast.push(`Invio completato: ${summary.sent} inviati, ${summary.failed} falliti`, 'success');
 
       // Optionally save template
       if (saveAsTemplate) {
@@ -262,7 +262,7 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error('Error sending invites', err);
-      toast.showToast('Errore durante l\'invio degli inviti. Vedi console per dettagli.', 'error');
+      toast.push('Errore durante l\'invio degli inviti. Vedi console per dettagli.', 'error');
     } finally {
       handleCloseInvitesModal();
     }
@@ -308,7 +308,7 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error('Participant save error', err);
-      toast.showToast('Errore durante il salvataggio del partecipante. Vedi console.', 'error');
+      toast.push('Errore durante il salvataggio del partecipante. Vedi console.', 'error');
     }
   };
 
@@ -320,7 +320,7 @@ const App: React.FC = () => {
       setParticipants(prev => prev.filter(p => String(p.id) !== sid));
     } catch (err) {
       console.error('Participant delete error', err);
-      toast.showToast('Errore durante la cancellazione del partecipante. Vedi console.', 'error');
+      toast.push('Errore durante la cancellazione del partecipante. Vedi console.', 'error');
     }
   };
 
@@ -370,26 +370,28 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex">
-      <Sidebar activeView={activeView} setActiveView={handleSetView} />
-      <main className="flex-1 h-screen overflow-y-auto">
-        {renderContent()}
-      </main>
-      <SendReminderModal
-        isOpen={isReminderModalOpen}
-        onClose={handleCloseReminderModal}
-        onSend={handleSendReminder}
-        participantCount={reminderParticipantCount}
-      />
-      <SendInvitesModal
-        isOpen={isInvitesModalOpen}
-        onClose={handleCloseInvitesModal}
-        onSend={handleConfirmSendInvites}
-        tripName={invitesModalData?.tripName || ''}
-        inviteeCount={invitesModalData?.inviteeCount || 0}
-        initialBody={invitesModalData?.emailBody}
-      />
-    </div>
+    <ToastProvider>
+      <div className="bg-gray-100 min-h-screen flex">
+        <Sidebar activeView={activeView} setActiveView={handleSetView} />
+        <main className="flex-1 h-screen overflow-y-auto">
+          {renderContent()}
+        </main>
+        <SendReminderModal
+          isOpen={isReminderModalOpen}
+          onClose={handleCloseReminderModal}
+          onSend={handleSendReminder}
+          participantCount={reminderParticipantCount}
+        />
+        <SendInvitesModal
+          isOpen={isInvitesModalOpen}
+          onClose={handleCloseInvitesModal}
+          onSend={handleConfirmSendInvites}
+          tripName={invitesModalData?.tripName || ''}
+          inviteeCount={invitesModalData?.inviteeCount || 0}
+          initialBody={invitesModalData?.emailBody}
+        />
+      </div>
+    </ToastProvider>
   );
 };
 
