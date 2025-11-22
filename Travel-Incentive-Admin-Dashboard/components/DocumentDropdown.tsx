@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DocumentCreator from './DocumentCreator';
 
 type Option = { value: string; label: string };
@@ -14,6 +14,19 @@ type Props = {
 
 export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', options, onChange, disabled = false, testId }) => {
   const [creating, setCreating] = useState(false);
+  useEffect(() => {
+    if (!testId) return;
+    const w = window as any;
+    w.__E2E_openDocCreator = w.__E2E_openDocCreator || {};
+    w.__E2E_openDocCreator[testId] = () => setCreating(true);
+    return () => {
+      try {
+        delete w.__E2E_openDocCreator[testId];
+      } catch (e) {
+        /* ignore */
+      }
+    };
+  }, [testId]);
   const handleCreated = (opt:{value:string;label:string}) => {
     setCreating(false);
     onChange(opt.value);

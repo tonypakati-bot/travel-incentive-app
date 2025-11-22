@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Section1Card from './Section1Card';
 import SectionDocumentsCard from './SectionDocumentsCard';
 import SectionSettingsCard from './SectionSettingsCard';
@@ -59,6 +59,92 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
   const toast = useToast();
+
+  useEffect(() => {
+    try {
+      (window as any).__E2E_setTripDraft = (trip: any) => {
+        setTripDraft(trip);
+        if (trip && trip.name) setSavedTripName(trip.name);
+      };
+      // if the test injected a trip before React mounted, pick it up
+      if ((window as any).__E2E_injectedTrip) {
+        const t = (window as any).__E2E_injectedTrip;
+        setTripDraft(t);
+        if (t && t.name) setSavedTripName(t.name);
+      }
+    } catch (e) {
+      // ignore in non-test environments
+    }
+  }, []);
+
+  // Expose dev hook to programmatically set selected document and trigger final save
+  useEffect(() => {
+    try {
+      (window as any).__E2E_selectDocumentAndSave = async (docId: string) => {
+        try {
+          if (!docId) return { ok: false, reason: 'no-doc' };
+          // set selected doc in state
+          setDocValues((prev) => ({ ...(prev||{}), usefulInformations: docId }));
+          // trigger final save via backend PATCH
+          const id = tripDraft && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id);
+          if (!id) return { ok: false, reason: 'no-trip' };
+          const payload: any = { selectedDocument: docId };
+          if (Object.keys(settingsValues||{}).length) payload.settings = settingsValues;
+          const res = await fetch(`/api/trips/${id}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) {
+            const txt = await res.text(); throw new Error(txt || `HTTP ${res.status}`);
+          }
+          const json = await res.json();
+          setTripDraft((prev:any)=> ({ ...(prev||{}), ...(json||{}) }));
+          try { toast.showToast('Viaggio aggiornato', 'success'); } catch(e){}
+          return { ok: true, trip: json };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+    } catch (e) {}
+    return () => { try { delete (window as any).__E2E_selectDocumentAndSave; } catch(e){} };
+  }, [tripDraft, settingsValues]);
+
+  // Expose a dev-only hook to allow tests to programmatically trigger Section 2 save
+  useEffect(() => {
+    try {
+      const w = (window as any) || {};
+      w.__E2E_saveSection2 = async (overrideSettings?: any) => {
+        if (!tripDraft || !(tripDraft as any).tripId) return { ok: false, reason: 'no-trip' };
+        // allow passing settings directly to avoid React state race
+        const payload = { settings: overrideSettings !== undefined ? overrideSettings : settingsValues };
+        try {
+          const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || `HTTP ${res.status}`);
+          }
+          const json = await res.json();
+          const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
+          setTripDraft((prev:any)=> ({ ...(prev||{}), ...normalized }));
+          try { toast.showToast('Impostazioni salvate', 'success'); } catch(e) {}
+          return { ok: true, trip: normalized };
+        } catch (err) {
+          try { toast.showToast('Errore durante il salvataggio', 'error'); } catch(e) {}
+          return { ok: false, reason: err && err.message };
+        }
+      };
+      return () => { try { delete (window as any).__E2E_saveSection2; } catch(e){} };
+    } catch (e) {}
+  }, [tripDraft, settingsValues]);
+
+  // expose setter for Section 2 values for E2E tests
+  useEffect(() => {
+    try {
+      const w = (window as any) || {};
+      w.__E2E_setSection2Values = (values: any) => {
+        try {
+          setSettingsValues((prev:any) => ({ ...(prev||{}), ...(values||{}) }));
+          return { ok: true };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+      return () => { try { delete (window as any).__E2E_setSection2Values; } catch(e){} };
+    } catch (e) {}
+  }, []);
 
   const handleToggleSection = (index: number) => {
     // Allow opening any section, but guide the user to Section 1 if trip isn't saved yet

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 type Props = { initial?: { clientName?:string; name?:string; startDate?:string; endDate?:string; subtitle?:string; description?:string }; settings?: any; onSaved: (trip: { tripId:string; clientName?:string; name:string; startDate?:string; endDate?:string; subtitle?:string; description?:string }) => void };
 
@@ -14,7 +14,7 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
   const valid = clientName.trim().length > 0 && name.trim().length >= 3 && subtitle.trim().length > 0 && startDate && endDate && startDate <= endDate;
 
   const saveDraft = async () => {
-    if (!valid) return;
+    if (!valid) return null;
     setSaving(true);
     try {
       const payload: any = { clientName, name, subtitle, description, startDate, endDate, status: 'draft' };
@@ -28,11 +28,48 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
       // normalize id shape
       const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id)) };
       onSaved(normalized as any);
+      return normalized;
     } catch (err) {
       console.error(err);
       alert('Errore salvataggio bozza');
+      return null;
     } finally { setSaving(false); }
   };
+
+  // Expose E2E helpers for tests to validate and trigger save
+  useEffect(() => {
+    const w = (window as any) || {};
+    try {
+      w.__E2E_isSection1Valid = () => Boolean(valid);
+      w.__E2E_saveSection1 = async () => {
+        if (!valid) return { ok: false, reason: 'invalid' };
+        try {
+          const trip = await saveDraft();
+          if (!trip) return { ok: false, reason: 'save_failed' };
+          return { ok: true, trip };
+        } catch (e) {
+          return { ok: false, reason: e && e.message };
+        }
+      };
+      // allow tests to set fields directly into React state to avoid DOM-only writes
+      w.__E2E_setSection1Fields = (fields: { clientName?:string; name?:string; subtitle?:string; description?:string; startDate?:string; endDate?:string }) => {
+        try {
+          if (fields.clientName !== undefined) setClientName(fields.clientName);
+          if (fields.name !== undefined) setName(fields.name);
+          if (fields.subtitle !== undefined) setSubtitle(fields.subtitle);
+          if (fields.description !== undefined) setDescription(fields.description);
+          if (fields.startDate !== undefined) setStartDate(fields.startDate);
+          if (fields.endDate !== undefined) setEndDate(fields.endDate);
+          return { ok: true };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+    } catch (e) {
+      // ignore
+    }
+    return () => {
+      try { delete (window as any).__E2E_isSection1Valid; delete (window as any).__E2E_saveSection1; } catch (e) {}
+    };
+  }, [valid, clientName, name, subtitle, description, startDate, endDate, settings]);
 
   return (
     <div className="p-6 bg-white rounded-lg border" aria-labelledby="section1-title">

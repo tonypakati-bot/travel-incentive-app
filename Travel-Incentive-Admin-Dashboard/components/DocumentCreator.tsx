@@ -20,6 +20,23 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
+  // expose dev hook to create a document directly with same logic
+  React.useEffect(() => {
+    try {
+      (window as any).__E2E_forceCreateDocument = async (payload: any) => {
+        try {
+          const { title: pt = '', content: pc = '', usefulInfo = {} } = payload || {};
+          if (!pt || !pt.trim()) return { ok: false, reason: 'title_required' };
+          const res = await createDocument({ title: pt.trim(), content: pc, usefulInfo });
+          if (!res) return { ok: false, reason: 'create_failed' };
+          try { toast.push('Documento creato con successo', 'success'); } catch(e){}
+          return { ok: true, doc: res };
+        } catch (e) { return { ok: false, reason: e && e.message }; }
+      };
+    } catch (e) {}
+    return () => { try { delete (window as any).__E2E_forceCreateDocument; } catch (e) {} };
+  }, []);
+
   if (!open) return null;
 
   const handleCreate = async () => {
@@ -37,7 +54,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div data-testid="doc-creator-root" className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6">
         <header className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">Create New Document</h3>

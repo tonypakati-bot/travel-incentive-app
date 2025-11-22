@@ -11,10 +11,9 @@
     "prepare": "npx tailwindcss -i ./src/index.css -o ./dist/output.css --minify"
   },
   "dependencies": {
-    "puppeteer": "^24.30.0",
-    "xlsx": "^0.18.5",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
@@ -22,7 +21,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.14",
+    "node-fetch": "^2.7.0",
     "postcss": "^8.4.21",
+    "puppeteer": "^24.31.0",
     "tailwindcss": "^3.4.7",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
