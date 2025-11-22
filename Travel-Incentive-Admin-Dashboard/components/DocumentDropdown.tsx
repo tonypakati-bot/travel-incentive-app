@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import DocumentCreator from './DocumentCreator';
 
 type Option = { value: string; label: string };
 type Props = {
@@ -12,10 +13,16 @@ type Props = {
 };
 
 export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', options, onChange, disabled = false, testId }) => {
+  const [creating, setCreating] = useState(false);
+  const handleCreated = (opt:{value:string;label:string}) => {
+    setCreating(false);
+    onChange(opt.value);
+  };
   return (
     <div className="flex flex-col">
       <label htmlFor={id} className="text-sm font-medium mb-1">{label}</label>
-      <select
+      <div className="flex gap-2 items-center">
+        <select
         id={id}
         data-testid={testId}
         value={value}
@@ -26,7 +33,13 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
         className={`mt-1 p-2 border rounded ${disabled ? 'bg-gray-100' : 'bg-white'}`}>
         <option data-testid={`${testId}-option-empty`} value="">-- Seleziona --</option>
         {options.map(o => <option key={o.value} data-testid={`${testId}-option-${o.value}`} value={o.value}>{o.label}</option>)}
-      </select>
+        </select>
+        <div className="flex flex-col ml-2">
+          <button type="button" onClick={() => setCreating(true)} disabled={disabled} className="text-sm text-green-600 hover:underline">Crea nuovo</button>
+          <button type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
+        </div>
+      </div>
+      {creating && <div className="mt-2"><DocumentCreator onCreated={handleCreated} onCancel={() => setCreating(false)} /></div>}
     </div>
   );
 };
