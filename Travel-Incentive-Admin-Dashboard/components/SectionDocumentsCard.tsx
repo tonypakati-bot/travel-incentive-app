@@ -18,8 +18,8 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
   ];
 
   return (
-    <div className={`p-6 bg-white rounded-lg border ${disabled ? 'opacity-60 pointer-events-none' : ''}`} aria-labelledby="section2-title">
-      <h3 id="section2-title" className="font-bold">Sezione 2 — Documenti</h3>
+    <div className={`p-6 bg-white rounded-lg border`} aria-labelledby="section-documents-title">
+      <h3 id="section-documents-title" className="font-bold">Sezione 3 — Documenti</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         {docs.map(d => (
           <DocumentDropdown

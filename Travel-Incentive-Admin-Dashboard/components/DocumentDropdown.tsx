@@ -21,10 +21,11 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
+        aria-disabled={disabled}
         aria-label={label}
         className={`mt-1 p-2 border rounded ${disabled ? 'bg-gray-100' : 'bg-white'}`}>
-        <option value="">-- Seleziona --</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        <option data-testid={`${testId}-option-empty`} value="">-- Seleziona --</option>
+        {options.map(o => <option key={o.value} data-testid={`${testId}-option-${o.value}`} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
