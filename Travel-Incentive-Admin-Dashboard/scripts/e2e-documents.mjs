@@ -59,10 +59,27 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
     // Wait for the documents section selector to appear
     const selectTestId = '[data-testid="doc-selector-usefulInformations"]';
     await page.waitForSelector(selectTestId, { timeout: 15000 });
-    console.log('Found documents selector');
+    console.log('Page loaded — trying to open CreateTrip');
+    // Click the Dashboard 'Create New Trip' button to open CreateTrip
+    const [createTripBtn] = await page.$x("//button[contains(., 'Create New Trip')]");
+    if (createTripBtn) {
+      await createTripBtn.click();
+      // wait a bit for CreateTrip to render
+      await page.waitForTimeout(500);
+    } else {
+      // fallback: try clicking sidebar Manage Trip button
+      const [manageTripBtn] = await page.$x("//button[contains(., 'Manage Trip')]");
+      if (manageTripBtn) {
+        await manageTripBtn.click();
+        await page.waitForTimeout(500);
+      }
+    }
 
-    // Optionally select an existing option if present (not necessary)
-    // Now click 'Crea nuovo' next to the useful informations selector
+    // Now wait for documents selector inside CreateTrip
+    console.log('Waiting for documents selector inside CreateTrip');
+    await page.waitForSelector(selectTestId, { timeout: 15000 });
+
+    // Click 'Crea nuovo' next to the useful informations selector
     const createBtn = await page.$('[data-testid="doc-selector-usefulInformations-create"]');
     if (!createBtn) throw new Error('Create button not found');
     await createBtn.click();
