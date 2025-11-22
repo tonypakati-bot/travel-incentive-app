@@ -32,7 +32,7 @@ const initialForms: Form[] = [
     { id: 3, name: 'Post-Trip Feedback', trip: 'Team Retreat Mykonos', responses: '145/150' },
 ];
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [tripFormMode, setTripFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
   const [isCommFormVisible, setIsCommFormVisible] = useState(false);
@@ -120,7 +120,7 @@ const App: React.FC = () => {
     setIsCommFormVisible(false);
     setCommInitialType(undefined);
   };
-  
+
   // Form handlers
   const handleCreateForm = () => setFormFormMode('create');
   const handleCloseForm = () => setFormFormMode('hidden');
@@ -394,5 +394,11 @@ const App: React.FC = () => {
     </ToastProvider>
   );
 };
+
+const App: React.FC = () => (
+  <ToastProvider>
+    <AppContent />
+  </ToastProvider>
+);
 
 export default App;
