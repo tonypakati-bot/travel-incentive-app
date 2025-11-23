@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { SearchIcon, PencilIcon, TrashIcon } from './icons';
+import ConfirmModal from './ConfirmModal';
 import UsefulInformationModal, { UsefulInfoData } from './UsefulInformationModal';
 
 export type UsefulInfoEntry = {
-    id: number;
+    id: string;
     destinationName: string;
     country: string;
     dateAdded: string;
@@ -12,7 +13,7 @@ export type UsefulInfoEntry = {
 
 export const initialInformations: UsefulInfoEntry[] = [
     { 
-        id: 2,
+        id: '2',
         destinationName: 'Ibiza', 
         country: 'Spagna', 
         dateAdded: '15 Mag, 2026',
@@ -28,7 +29,7 @@ export const initialInformations: UsefulInfoEntry[] = [
         }
     },
     { 
-        id: 3,
+        id: '3',
         destinationName: 'Mykonos', 
         country: 'Grecia', 
         dateAdded: '01 Dic, 2025',
@@ -43,8 +44,8 @@ export const initialInformations: UsefulInfoEntry[] = [
             vaccinationsHealth: 'No specific vaccinations required. European Health Insurance Card (EHIC) is recommended.'
         }
     },
-     { 
-        id: 1, 
+      { 
+          id: '1', 
         destinationName: 'Abu Dhabi', 
         country: 'Emirati Arabi Uniti', 
         dateAdded: '22 Lug, 2026',
@@ -68,49 +69,122 @@ interface UsefulInformationsProps {
 
 const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, setInformations }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingInfoId, setEditingInfoId] = useState<number | null>(null);
+    const [editingInfoId, setEditingInfoId] = useState<string | null>(null);
+    const [editingInfoData, setEditingInfoData] = useState<UsefulInfoData | null>(null);
     
-    const infoToEdit = informations.find(info => info.id === editingInfoId)?.fullData || null;
+    const infoToEdit = editingInfoData;
 
     const handleOpenCreateModal = () => {
         setEditingInfoId(null);
+        setEditingInfoData(null);
         setIsModalOpen(true);
     };
 
-    const handleOpenEditModal = (info: UsefulInfoEntry) => {
+    const handleOpenEditModal = async (info: UsefulInfoEntry) => {
         setEditingInfoId(info.id);
-        setIsModalOpen(true);
+        setEditingInfoData(null);
+        setIsModalOpen(true); // open immediately to show spinner or placeholder if modal supports it
+
+        try {
+            const res = await fetch(`http://localhost:5001/api/useful-informations/${info.id}`);
+            if (!res.ok) throw new Error(`Failed to fetch useful info ${info.id}`);
+            const full = await res.json();
+            // server returns object with usefulInfo field
+            setEditingInfoData(full.usefulInfo || null);
+        } catch (err) {
+            console.error('Failed to load full useful info for editing', err);
+            // leave editingInfoData as null so modal can handle empty state
+        }
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingInfoId(null);
+        setEditingInfoData(null);
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm('Are you sure you want to delete this information?')) {
-            setInformations(prev => prev.filter(info => info.id !== id));
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setToDeleteId(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (toDeleteId === null) return;
+        try {
+            const res = await fetch(`http://localhost:5001/api/useful-informations/${toDeleteId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+            setInformations(prev => prev.filter(info => info.id !== toDeleteId));
+        } catch (err) {
+            console.error('Failed to delete useful info', err);
+            // Optionally show user-facing error
+        } finally {
+            setConfirmOpen(false);
+            setToDeleteId(null);
         }
     };
 
-    const handleSaveInfo = (data: UsefulInfoData) => {
-        if (editingInfoId !== null) { // Editing
-            setInformations(prev => prev.map(info => 
-                info.id === editingInfoId
-                ? { ...info, destinationName: data.destinationName, country: data.country, fullData: data } 
-                : info
-            ));
-        } else { // Creating
-            const newInfo: UsefulInfoEntry = {
-                id: Date.now(),
-                destinationName: data.destinationName,
-                country: data.country,
-                dateAdded: new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', ''),
-                fullData: data,
-            };
-            setInformations(prev => [newInfo, ...prev]);
+    const handleCancelDelete = () => {
+        setConfirmOpen(false);
+        setToDeleteId(null);
+    };
+
+    const handleSaveInfo = async (data: UsefulInfoData) => {
+        // If editing, send PATCH, otherwise POST
+        if (editingInfoId !== null) {
+            try {
+                const res = await fetch(`http://localhost:5001/api/useful-informations/${editingInfoId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usefulInfo: data, title: data.destinationName, content: '' }),
+                });
+                if (!res.ok) throw new Error('Update failed');
+                const updated = await res.json();
+                // Map server returned object to UsefulInfoEntry
+                setInformations(prev => prev.map(info => info.id === editingInfoId
+                    ? {
+                        id: String(updated._id || updated.id || editingInfoId),
+                        destinationName: updated.usefulInfo?.destinationName || data.destinationName,
+                        country: updated.usefulInfo?.country || data.country,
+                        dateAdded: prev.find(p => p.id === editingInfoId)?.dateAdded || new Date().toLocaleDateString('it-IT'),
+                        fullData: updated.usefulInfo || data,
+                    }
+                    : info
+                ));
+            } catch (err) {
+                console.error('Failed to update useful info', err);
+            } finally {
+                handleCloseModal();
+            }
+        } else {
+            try {
+                const titleFallback = (data.destinationName && data.destinationName.trim()) || (data.country && data.country.trim()) || (data.documents && String(data.documents).split('\n')[0].slice(0, 60)) || 'Untitled Useful Information';
+                const payload = { title: titleFallback, usefulInfo: data, content: '' };
+                console.debug('Creating useful info with payload:', payload);
+
+                const res = await fetch('http://localhost:5001/api/useful-informations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error('Create failed');
+                const created = await res.json();
+                const newInfo: UsefulInfoEntry = {
+                    id: String(created._id || created.id || Date.now()),
+                    destinationName: created.usefulInfo?.destinationName || data.destinationName,
+                    country: created.usefulInfo?.country || data.country,
+                    dateAdded: new Date(created.createdAt || Date.now()).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', ''),
+                    fullData: created.usefulInfo || data,
+                };
+                setInformations(prev => [newInfo, ...prev]);
+            } catch (err) {
+                console.error('Failed to create useful info', err);
+            } finally {
+                handleCloseModal();
+            }
         }
-        handleCloseModal();
     };
 
     return (
@@ -180,6 +254,16 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
                 onClose={handleCloseModal}
                 onSave={handleSaveInfo}
                 infoToEdit={infoToEdit}
+            />
+            <ConfirmModal
+                open={confirmOpen}
+                title="Conferma eliminazione"
+                message="Sei sicuro di voler eliminare questa informazione? Questa azione è irreversibile."
+                confirmLabel="Elimina"
+                cancelLabel="Annulla"
+                variant="danger"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
             />
         </>
     );

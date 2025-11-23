@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { SearchIcon, PencilIcon, TrashIcon } from './icons';
+import ConfirmModal from './ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import * as XLSX from 'xlsx';
 import AddContactModal, { Contact, ContactData } from './AddContactModal';
@@ -29,10 +30,23 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
         setEditingContact(null);
     };
 
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState<number | null>(null);
+
     const handleDelete = (id: number) => {
-        if (window.confirm('Are you sure you want to delete this contact?')) {
-            setContacts(prev => prev.filter(contact => contact.id !== id));
-        }
+        setToDeleteId(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (toDeleteId !== null) setContacts(prev => prev.filter(contact => contact.id !== toDeleteId));
+        setConfirmOpen(false);
+        setToDeleteId(null);
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmOpen(false);
+        setToDeleteId(null);
     };
     
     const handleSave = (data: ContactData, id?: number) => {
@@ -240,6 +254,16 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                 onClose={handleCloseModal}
                 onSave={handleSave}
                 contactToEdit={editingContact}
+            />
+            <ConfirmModal
+                open={confirmOpen}
+                title="Conferma eliminazione"
+                message="Sei sicuro di voler eliminare questo contatto? Questa azione è irreversibile."
+                confirmLabel="Elimina"
+                cancelLabel="Annulla"
+                variant="danger"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
             />
         </>
     );

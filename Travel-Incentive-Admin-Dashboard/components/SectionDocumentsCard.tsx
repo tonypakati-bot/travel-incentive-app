@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DocumentDropdown from './DocumentDropdown';
-import { fetchDocumentOptions, DocOption } from '../services/documents';
+import { fetchDocumentOptions, fetchPrivacyPolicyOptions, DocOption } from '../services/documents';
 
 type Props = { values?: Record<string,string>; onChange: (k:string,v:string)=>void; disabled?: boolean };
 
@@ -19,25 +19,35 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
   ];
 
   const [options, setOptions] = useState<DocOption[]>(placeholderOptions);
+  const [privacyOptions, setPrivacyOptions] = useState<DocOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    // fetch generic document options
     fetchDocumentOptions().then(res => {
       console.debug('[E2E] initial fetchDocumentOptions', res);
       if (!mounted) return;
       if (res && res.length) setOptions(res);
-      setLoading(false);
-    }).catch((e) => { console.debug('[E2E] initial fetchDocumentOptions error', e); setLoading(false); });
+    }).catch((e) => { console.debug('[E2E] initial fetchDocumentOptions error', e); }).finally(() => { if (mounted) setLoading(false); });
+
+    // fetch privacy-specific options
+    fetchPrivacyPolicyOptions().then(res => {
+      if (!mounted) return;
+      if (res && res.length) setPrivacyOptions(res);
+    }).catch(e => { console.debug('[E2E] initial fetchPrivacyPolicyOptions error', e); });
+
     // also listen for global documents changed events to refresh options
-    const handler = async () => {
+    const handler = async (ev?: Event) => {
+      try { console.debug('[E2E] documents:changed handler triggered - event detail', (ev as any)?.detail); } catch (e) {}
       console.debug('[E2E] documents:changed handler triggered - refreshing options');
       setLoading(true);
       try {
-        const res = await fetchDocumentOptions();
-        console.debug('[E2E] documents:changed fetchDocumentOptions', res);
-        if (mounted && res && res.length) setOptions(res);
+        const [dRes, pRes] = await Promise.all([fetchDocumentOptions(), fetchPrivacyPolicyOptions()]);
+        console.debug('[E2E] documents:changed fetch results', { dRes, pRes });
+        if (mounted && dRes && dRes.length) setOptions(dRes);
+        if (mounted && pRes && pRes.length) setPrivacyOptions(pRes);
       } catch (e) { console.debug('[E2E] documents:changed fetch error', e); }
       setLoading(false);
     };
@@ -55,7 +65,7 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
             id={`doc-${d.key}`}
             label={d.label}
             value={values[d.key] || ''}
-            options={options}
+            options={d.key === 'privacyPolicy' ? privacyOptions : options}
             onChange={(v) => onChange(d.key, v)}
             disabled={disabled}
             testId={`doc-selector-${d.key}`}

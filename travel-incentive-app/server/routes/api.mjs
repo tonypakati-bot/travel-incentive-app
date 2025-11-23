@@ -2,6 +2,7 @@ import express from 'express';
 import * as tripController from '../controllers/tripController.mjs';
 import * as photoController from '../controllers/photoController.mjs';
 import * as documentController from '../controllers/documentController.mjs';
+import * as privacyController from '../controllers/privacyController.mjs';
 import auth from '../middleware/auth.mjs';
 
 const router = express.Router();
@@ -20,6 +21,12 @@ router.delete('/announcements/:id', auth, tripController.deleteAnnouncement);
 router.get('/trip/documents', auth, photoController.getDocuments);
 router.get('/documents/legal', auth, documentController.getLegalDocuments);
 router.get('/documents/me', auth, documentController.getUserDocuments);
+// Privacy policies
+router.get('/documents/privacy', auth, privacyController.listPrivacyPolicies);
+router.post('/documents/privacy', auth, privacyController.createPrivacyPolicy);
+router.get('/documents/privacy/:id', auth, privacyController.getPrivacyPolicy);
+router.patch('/documents/privacy/:id', auth, privacyController.updatePrivacyPolicy);
+router.delete('/documents/privacy/:id', auth, privacyController.deletePrivacyPolicy);
 
 // Registration Routes
 router.post('/trip/registration', auth, tripController.submitRegistration);

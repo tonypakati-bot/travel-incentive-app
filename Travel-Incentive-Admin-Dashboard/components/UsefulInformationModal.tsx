@@ -60,7 +60,7 @@ const UsefulInformationModal: React.FC<UsefulInformationModalProps> = ({ isOpen,
     useEffect(() => {
         if (isOpen) {
             if (infoToEdit) {
-                setFormData(infoToEdit);
+                setFormData({ ...defaultInfo, ...infoToEdit });
             } else {
                 setFormData(defaultInfo);
             }
@@ -78,6 +78,8 @@ const UsefulInformationModal: React.FC<UsefulInformationModalProps> = ({ isOpen,
         onSave(formData);
     };
 
+    const isSaveDisabled = !formData.destinationName || !String(formData.destinationName).trim();
+
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
@@ -91,8 +93,11 @@ const UsefulInformationModal: React.FC<UsefulInformationModalProps> = ({ isOpen,
                 <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField label="Destination Name">
-                            <Input name="destinationName" value={formData.destinationName} onChange={handleChange} />
-                        </FormField>
+                                <Input name="destinationName" value={formData.destinationName} onChange={handleChange} />
+                                {isSaveDisabled && (
+                                    <p className="text-xs text-red-500 mt-1">Please provide a destination name before saving.</p>
+                                )}
+                            </FormField>
                         <FormField label="Country">
                             <Input name="country" value={formData.country} onChange={handleChange} />
                         </FormField>
@@ -125,7 +130,8 @@ const UsefulInformationModal: React.FC<UsefulInformationModalProps> = ({ isOpen,
                     </button>
                     <button
                         onClick={handleSaveClick}
-                        className="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        disabled={isSaveDisabled}
+                        className={`bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg transition-colors ${isSaveDisabled ? 'opacity-60 cursor-not-allowed hover:bg-blue-600' : 'hover:bg-blue-700'}`}>
                         Save
                     </button>
                 </footer>

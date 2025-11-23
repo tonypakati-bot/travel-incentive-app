@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons';
-import { createDocument } from '../services/documents';
+import { createDocument, createUsefulInfo } from '../services/documents';
 import { useToast } from './ToastContext';
 
 type Props = { open: boolean; onCreated: (opt:{ value:string; label:string })=>void; onClose: ()=>void };
@@ -22,19 +22,26 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
 
   // expose dev hook to create a document directly with same logic
   React.useEffect(() => {
-    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
+    let meta: any = undefined;
+    try { meta = (import.meta as any); } catch (e) { meta = undefined; }
+    if (!meta || !meta.env || !meta.env.DEV) return;
     try {
       (window as any).__E2E_forceCreateDocument = async (payload: any) => {
         try {
           const { title: pt = '', content: pc = '', usefulInfo = {} } = payload || {};
           console.debug('[E2E] __E2E_forceCreateDocument called', { payload });
           if (!pt || !pt.trim()) return { ok: false, reason: 'title_required' };
-          const res = await createDocument({ title: pt.trim(), content: pc, usefulInfo });
+          let res = null;
+          if (usefulInfo && Object.keys(usefulInfo).length > 0) {
+            res = await createUsefulInfo({ title: pt.trim(), content: pc, usefulInfo });
+          } else {
+            res = await createDocument({ title: pt.trim(), content: pc, usefulInfo });
+          }
           console.debug('[E2E] __E2E_forceCreateDocument createDocument result', res);
           try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
           if (!res) return { ok: false, reason: 'create_failed' };
           try { toast.push('Documento creato con successo', 'success'); } catch(e){}
-          try { window.dispatchEvent(new CustomEvent('documents:changed')); } catch (e) {}
+          try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { action: 'create', doc: res } })); } catch (e) {}
           return { ok: true, doc: res };
         } catch (e) { return { ok: false, reason: e && e.message }; }
       };
@@ -44,7 +51,9 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
 
   // dev hooks: allow tests to set modal fields directly and invoke create
   React.useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    let meta2: any = undefined;
+    try { meta2 = (import.meta as any); } catch (e) { meta2 = undefined; }
+    if (!meta2 || !meta2.env || !meta2.env.DEV) return;
     try {
       (window as any).__E2E_setDocCreatorFields = (payload: any) => {
         try {
@@ -102,7 +111,8 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
           attached = true;
           btn.addEventListener('click', (e) => {
             try {
-              console.debug('[E2E] capturing click on doc-creator-create', { disabled: btn.disabled });
+              const b = btn as HTMLButtonElement | null;
+              console.debug('[E2E] capturing click on doc-creator-create', { disabled: b ? b.disabled : undefined });
             } catch (err) {}
           }, true);
         }
@@ -128,9 +138,14 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     setError(null);
     const payload = { title: String(localTitle).trim(), content: localContent, usefulInfo: ui };
     console.debug('[E2E] DocumentCreator.doCreate payload', payload);
-    const res = await createDocument(payload);
+    let res = null;
+    if (payload && payload.usefulInfo && Object.keys(payload.usefulInfo).length > 0) {
+      res = await createUsefulInfo(payload);
+    } else {
+      res = await createDocument(payload);
+    }
     console.debug('[E2E] DocumentCreator.doCreate result', res);
-    try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
+          try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
     setSaving(false);
     if (!res) {
       console.debug('[E2E] DocumentCreator.doCreate failed to create');
@@ -138,7 +153,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     }
     // show toast then close
     toast.push('Documento creato con successo', 'success');
-    try { window.dispatchEvent(new CustomEvent('documents:changed')); } catch (e) {}
+          try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { action: 'create', doc: res } })); } catch (e) {}
     setTimeout(() => onCreated(res), 250);
   };
 

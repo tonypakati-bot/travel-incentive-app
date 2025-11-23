@@ -434,6 +434,7 @@ const TripParticipantsView: React.FC<TripParticipantsViewProps> = ({ tripName, p
                     message={`Eliminare questo partecipante?`}
                     confirmLabel="Elimina"
                     cancelLabel="Annulla"
+                    variant="danger"
                     onCancel={() => { setIsConfirmOpen(false); setParticipantToDeleteLocal(null); }}
                     onConfirm={() => {
                         if (participantToDeleteLocal && onDeleteParticipant) {

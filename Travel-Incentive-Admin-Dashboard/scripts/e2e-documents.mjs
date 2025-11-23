@@ -52,7 +52,9 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
 async function findExistingDocumentByPayload(payload) {
   // Try to find an existing document that matches key fields from payload to avoid duplicates
   try {
-    const res = await fetch(`${apiBase}/api/documents`);
+    // if payload looks like useful info, search the useful-informations endpoint instead
+    const endpoint = payload && payload.usefulInfo ? `${apiBase}/api/useful-informations` : `${apiBase}/api/documents`;
+    const res = await fetch(endpoint);
     if (!res || !res.ok) return null;
     const list = await res.json();
     if (!Array.isArray(list)) return null;
@@ -666,7 +668,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
           } catch (e) { console.warn('Attach-to-trip hook failed', e); }
           // verify via backend
           try {
-            const rCheck = await fetch(`${backend}/api/documents/${docId}`);
+            // verify using proper endpoint depending on where we posted
+            const verifyEndpoint = (payload && payload.usefulInfo) ? `${backend}/api/useful-informations/${docId}` : `${backend}/api/documents/${docId}`;
+            const rCheck = await fetch(verifyEndpoint);
             if (rCheck && rCheck.ok) {
               const saved = await rCheck.json();
               console.log('DB check (fallback) created document:', saved && (saved.title || saved.label));
@@ -737,7 +741,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     if (!createdDocFromHook) {
       // click and capture POST /api/documents response by dispatching MouseEvent to ensure React handlers run
       [docResp] = await Promise.all([
-        page.waitForResponse(r => r.url().includes('/api/documents') && r.request().method() === 'POST', { timeout: 15000 }).catch(()=>null),
+        page.waitForResponse(r => (r.url().includes('/api/documents') || r.url().includes('/api/useful-informations')) && r.request().method() === 'POST', { timeout: 15000 }).catch(()=>null),
         page.evaluate(() => {
           const b = document.querySelector('[data-testid="doc-creator-create"]');
           if (b) {
@@ -766,7 +770,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
           dj = existing;
           console.log('Reusing existing document in fallback create branch', dj && (dj._id || dj.id));
         } else {
-          const resp = await fetch(`${backend}/api/documents`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          // choose endpoint: useful-informations for usefulInfo payloads, otherwise documents
+          const postEndpoint = payload && payload.usefulInfo ? `${backend}/api/useful-informations` : `${backend}/api/documents`;
+          const resp = await fetch(postEndpoint, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
           if (!resp || !resp.ok) throw new Error('Backend create failed');
           dj = await resp.json();
         }
@@ -782,7 +788,8 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
           console.log('Fallback: created/selected document via backend fallback', docId);
 
           try {
-            const rCheck = await fetch(`${backend}/api/documents/${docId}`);
+            const verifyEndpoint = (dj && dj.usefulInfo) ? `${backend}/api/useful-informations/${docId}` : `${backend}/api/documents/${docId}`;
+            const rCheck = await fetch(verifyEndpoint);
             if (rCheck && rCheck.ok) { const saved = await rCheck.json(); console.log('DB check created document (fallback):', saved && (saved.title || saved.label)); }
           } catch (e) { console.warn('Fallback DB verify failed', e); }
 
@@ -857,15 +864,26 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
             let docCheck = null;
             if (docJson && (docJson._id || docJson.id)) {
               const id = docJson._id || docJson.id;
-              const r = await fetch(`${backend}/api/documents/${id}`);
+              const verifyEndpoint = (docJson && docJson.usefulInfo) ? `${backend}/api/useful-informations/${id}` : `${backend}/api/documents/${id}`;
+              const r = await fetch(verifyEndpoint);
               if (r && r.ok) docCheck = await r.json();
             }
             if (!docCheck) {
               // fallback: search by title
-              const list2 = await fetch(`${backend}/api/documents`);
-              if (list2 && list2.ok) {
-                const arr = await list2.json();
-                docCheck = arr.find(d => (d.title || d.label) === title) || null;
+              // fallback: try both endpoints (useful-informations first)
+              try {
+                const listUseful = await fetch(`${backend}/api/useful-informations`);
+                if (listUseful && listUseful.ok) {
+                  const arr = await listUseful.json();
+                  docCheck = (Array.isArray(arr) ? arr.find(d => (d.title || d.label) === title) : null) || docCheck;
+                }
+              } catch (e) {}
+              if (!docCheck) {
+                const listDocs = await fetch(`${backend}/api/documents`);
+                if (listDocs && listDocs.ok) {
+                  const arr2 = await listDocs.json();
+                  docCheck = arr2.find(d => (d.title || d.label) === title) || null;
+                }
               }
             }
             console.log('DB check created document:', docCheck && (docCheck.title || docCheck.label));

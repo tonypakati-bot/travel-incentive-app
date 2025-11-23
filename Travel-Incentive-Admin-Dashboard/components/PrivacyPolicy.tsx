@@ -1,56 +1,19 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import ConfirmModal from './ConfirmModal';
+import DOMPurify from 'dompurify';
 import { PencilIcon, TrashIcon, PlusIcon, XIcon } from './icons';
-
-const globalPrivacyText = `CONSENSO AL TRATTAMENTO DEI DATI PERSONALI FORNITI
-Preso atto della specifica informativa di cui all’art. 10 della legge n. 675/96 e del seguente decreto legislativo n. 467 del 28 dicembre 2001, acconsento, al trattamento e alla comunicazione dei miei dati personali, forniti con il modulo di adesione al viaggio, a opera dei soggetti indicati nella predetta informativa e nei limiti di cui alla stessa, vale a dire in funzione di una corretta gestione delle finalità indicate nell’informativa stessa.
-
-Rimane fermo che tale consenso è condizionato al rispetto delle disposizioni della vigente normativa.
-
-Acconsento, inoltre, alla pubblicazione delle immagini sul sito web dell’organizzatore www.sararossoincentive.com per utilizzarle, senza fini di lucro, come documentazione del viaggio svolto. L'utilizzo delle immagini è da considerarsi effettuato in forma del tutto gratuita.
-
-Il partecipante al viaggio prende atto e riconosce che [NOME CLIENTE] e la società organizzativa SaraRosso Incentive Sa, non saranno in alcun modo responsabili per danni di ogni genere che il partecipante dovesse subire o causare per qualsivoglia ragione, in occasione del viaggio.`;
-
-const ibizaPrivacyText = `INFORMATIVA SPECIFICA PER IL VIAGGIO A IBIZA
-
-CONDIVISIONE DATI CON AUTORITÀ LOCALI
-Si informa che, in ottemperanza alle normative locali delle Isole Baleari, i dati del passaporto e i nominativi dei partecipanti saranno condivisi con le autorità portuali per le escursioni marittime previste.
-
-IMMAGINI E VIDEO DURANTE EVENTI ESCLUSIVI
-Durante il "White Party" e le attività in catamarano, verranno effettuate riprese video professionali. La partecipazione a tali eventi implica il consenso esplicito all'utilizzo di tale materiale per video aziendali interni.`;
 
 // Type definition
 export type PrivacyDocument = {
-    id: number;
+    id: number | string;
     title: string;
     trip: string | null; // null for global
     content: string;
 };
 
-// Helper to convert text to HTML
-const createInitialHtml = (text: string): string => {
-    const textWithLink = text.replace(
-        'www.sararossoincentive.com',
-        '<a href="http://www.sararossoincentive.com" target="_blank" rel="noopener noreferrer">www.sararossoincentive.com</a>'
-    );
-    return textWithLink.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br />')}</p>`).join('');
-};
+// (Removed hard-coded initial documents — UI should load them from the server)
 
-export const initialPrivacyDocuments: PrivacyDocument[] = [
-    {
-        id: 1,
-        title: 'Global Privacy Policy',
-        trip: null,
-        content: createInitialHtml(globalPrivacyText),
-    },
-    {
-        id: 2,
-        title: 'Privacy Policy - Trip to Ibiza',
-        trip: 'Trip to Ibiza',
-        content: createInitialHtml(ibizaPrivacyText),
-    }
-];
-
-const tripsForSelect = ['Trip to Ibiza', 'Sales Kick-off Dubai', 'Team Retreat Mykonos'];
+// tripsForSelect removed: privacy modal now creates global documents only
 
 // --- Shared UI Components ---
 
@@ -93,50 +56,64 @@ const Toolbar: React.FC<{ editorRef: React.RefObject<HTMLDivElement> }> = ({ edi
 interface PrivacyModalProps {
     documentToEdit: PrivacyDocument | null;
     onClose: () => void;
-    onSave: (document: Omit<PrivacyDocument, 'id' | 'content'> & { id?: number, content: string }) => void;
+    onSave: (document: Omit<PrivacyDocument, 'id' | 'content'> & { id?: number | string, content: string }) => void;
     globalDocExists: boolean;
+    isOpen: boolean;
 }
 
-const PrivacyModal: React.FC<PrivacyModalProps> = ({ documentToEdit, onClose, onSave, globalDocExists }) => {
+export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, documentToEdit, onClose, onSave, globalDocExists }) => {
+    if (!isOpen) return null;
     const [title, setTitle] = useState('');
-    const [trip, setTrip] = useState<string | null>(null);
     const editorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (documentToEdit) {
             setTitle(documentToEdit.title);
-            setTrip(documentToEdit.trip);
         } else {
             const isGlobalPossible = !globalDocExists;
-            const initialTrip = isGlobalPossible ? null : (tripsForSelect[0] || null);
-            const initialTitle = isGlobalPossible ? 'Global Privacy Policy' : `Privacy Policy - ${initialTrip}`;
-            
+            const initialTitle = isGlobalPossible ? 'Global Privacy Policy' : `Privacy Policy`;
             setTitle(initialTitle);
-            setTrip(initialTrip);
         }
-    }, [documentToEdit, globalDocExists]);
+    }, [documentToEdit, globalDocExists, isOpen]);
 
-    const handleTripChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedTrip = e.target.value || null;
-        setTrip(selectedTrip);
-        if (selectedTrip) {
-            setTitle(`Privacy Policy - ${selectedTrip}`);
-        } else {
-            setTitle('Global Privacy Policy');
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => {
+                if (editorRef.current) {
+                    editorRef.current.focus();
+                    // place caret at the end
+                    const sel = window.getSelection();
+                    if (sel && editorRef.current?.lastChild) {
+                        const range = document.createRange();
+                        range.selectNodeContents(editorRef.current);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+            }, 50);
         }
-    };
+    }, [isOpen]);
+
 
     const handleSave = () => {
-        const content = editorRef.current?.innerHTML || '';
+        if (!title.trim()) {
+            alert('Il titolo non può essere vuoto.');
+            return;
+        }
+        const raw = editorRef.current?.innerHTML || '';
+        const clean = DOMPurify.sanitize(raw, {
+            ALLOWED_TAGS: ['a','p','br','strong','b','em','i','u','ul','ol','li','img'],
+            ALLOWED_ATTR: ['href','target','rel','src','alt']
+        });
         onSave({
             id: documentToEdit?.id,
-            title,
-            trip,
-            content
+            title: title.trim(),
+            trip: null,
+            content: clean
         });
     };
     
-    const isEditingGlobal = documentToEdit?.trip === null;
 
     const commonEditorClasses = `w-full p-4 text-gray-800 leading-relaxed 
         [&_p]:mb-4 [&_a]:text-blue-600 [&_a:hover]:underline
@@ -163,20 +140,7 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ documentToEdit, onClose, on
                                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Viaggio Associato (Opzionale)</label>
-                            <select 
-                                value={trip || ''}
-                                onChange={handleTripChange}
-                                disabled={isEditingGlobal}
-                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                            >
-                                {(isEditingGlobal || (!documentToEdit && !globalDocExists)) && (
-                                    <option value="">Nessuno (Globale)</option>
-                                )}
-                                {tripsForSelect.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
+                        {/* Removed trip select - all privacy documents are global from this modal */}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contenuto</label>
@@ -184,6 +148,9 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ documentToEdit, onClose, on
                         <div
                             ref={editorRef}
                             contentEditable={true}
+                            role="textbox"
+                            aria-multiline="true"
+                            aria-label="Contenuto privacy"
                             dangerouslySetInnerHTML={{ __html: documentToEdit?.content || '' }}
                             className={`${commonEditorClasses} border border-gray-300 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white min-h-[250px]`}
                         />
@@ -232,35 +199,91 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ documents, setDocuments }
         setIsModalOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm('Sei sicuro di voler eliminare questo documento? Questa azione non può essere annullata.')) {
-            setDocuments(docs => docs.filter(d => d.id !== id));
+    const handleDelete = async (id: number | string) => {
+        // Open confirm modal before deleting (handled via state below)
+        openConfirm(id);
+    };
+
+    // Confirm modal state
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState<number | string | null>(null);
+
+    const openConfirm = (id: number | string) => {
+        setToDeleteId(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!toDeleteId) return;
+        try {
+            const res = await fetch(`/api/privacy-policies/${toDeleteId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Delete failed');
+            setDocuments(docs => docs.filter(d => d.id !== toDeleteId));
+        } catch (err) {
+            console.error(err);
+            alert('Errore durante l\'eliminazione del documento');
+        } finally {
+            setConfirmOpen(false);
+            setToDeleteId(null);
         }
     };
 
-    const handleSave = (docData: Omit<PrivacyDocument, 'id' | 'content'> & { id?: number, content: string }) => {
-        if (docData.id) {
-            // Update existing
-            setDocuments(docs => docs.map(d => d.id === docData.id ? { ...d, ...docData } : d));
-        } else {
-            // Create new
-            const newDoc = { ...docData, id: Date.now() };
-            setDocuments(docs => [...docs, newDoc]);
+    const handleCancelDelete = () => {
+        setConfirmOpen(false);
+        setToDeleteId(null);
+    };
+
+    const handleSave = async (docData: Omit<PrivacyDocument, 'id' | 'content'> & { id?: number | string, content: string }) => {
+        try {
+            if (docData.id) {
+                // Update existing on server
+                const res = await fetch(`/api/privacy-policies/${docData.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: docData.title, content: docData.content, trip: docData.trip }),
+                });
+                if (!res.ok) throw new Error('Failed to update policy');
+                const updated = await res.json();
+                setDocuments(docs => docs.map(d => (d.id === docData.id ? { ...d, ...updated } : d)));
+            } else {
+                // Create new on server
+                const res = await fetch('/api/privacy-policies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: docData.title, content: docData.content, trip: null }),
+                });
+                if (!res.ok) throw new Error('Failed to create policy');
+                const created = await res.json();
+                const newDoc: PrivacyDocument = { ...docData, id: created.id };
+                setDocuments(docs => [...docs, newDoc]);
+            }
+            setIsModalOpen(false);
+            setEditingDocument(null);
+        } catch (err) {
+            console.error(err);
+            alert('Errore durante il salvataggio del documento. Controlla la console.');
         }
-        setIsModalOpen(false);
-        setEditingDocument(null);
     };
 
     return (
     <>
-        {isModalOpen && (
-            <PrivacyModal 
-                documentToEdit={editingDocument}
-                onClose={() => setIsModalOpen(false)}
-                onSave={handleSave}
-                globalDocExists={globalDocExists}
-            />
-        )}
+        <PrivacyModal 
+            isOpen={isModalOpen}
+            documentToEdit={editingDocument}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSave}
+            globalDocExists={globalDocExists}
+        />
+        <ConfirmModal
+            open={confirmOpen}
+            title="Conferma eliminazione"
+            message="Sei sicuro di voler eliminare questo documento? Questa azione non può essere annullata."
+            confirmLabel="Elimina"
+            cancelLabel="Annulla"
+            variant="danger"
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+        />
         <div className="p-8">
             <div className="flex justify-between items-center mb-8">
                 <div>
@@ -271,16 +294,16 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ documents, setDocuments }
                     onClick={handleCreateNew}
                     className="bg-blue-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
                     <PlusIcon className="w-5 h-5 mr-2" />
-                    Create New Document
+                    Crea Nuovo Documento
                 </button>
             </div>
             <div className="space-y-4">
-                {documents.map(doc => (
-                    <div key={doc.id} className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
+                {documents.map((doc, idx) => (
+                    <div key={doc.id || `privacy-${idx}`} className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-800">{doc.title}</h2>
                             <p className={`text-sm ${doc.trip ? 'text-gray-500' : 'text-blue-600 font-medium'}`}>
-                                {doc.trip ? `Specifico per: ${doc.trip}` : 'Documento Globale'}
+                                {doc.trip ? `Specifico per: ${doc.trip}` : null}
                             </p>
                         </div>
                         <div className="flex items-center space-x-3">
@@ -291,15 +314,14 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ documents, setDocuments }
                             >
                                 <PencilIcon className="w-5 h-5" />
                             </button>
-                            {doc.trip !== null && ( // Prevent deleting global doc via UI logic if desired, though here we allow it but show icon
-                                <button 
-                                    onClick={() => handleDelete(doc.id)}
-                                    className="p-2 text-red-500 hover:text-red-700 rounded-md transition-colors hover:bg-red-100"
-                                    aria-label="Delete document"
-                                >
-                                    <TrashIcon className="w-5 h-5" />
-                                </button>
-                            )}
+                            <button 
+                                onClick={() => handleDelete(doc.id)}
+                                className="p-2 text-red-500 hover:text-red-700 rounded-md transition-colors hover:bg-red-100"
+                                aria-label="Elimina documento"
+                                title="Elimina documento"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
                 ))}

@@ -7,6 +7,9 @@ import sendInvitesRouter from './routes/sendInvites.js';
 import participantsRouter from './routes/participants.js';
 import tripsRouter from './routes/trips.js';
 import documentsRouter from './routes/documents.js';
+import privacyPoliciesRouter from './routes/privacyPolicies.js';
+import termsDocumentsRouter from './routes/termsDocuments.js';
+import usefulInformationsRouter from './routes/usefulInformations.js';
 
 dotenv.config();
 
@@ -19,6 +22,9 @@ app.use('/api/participants', participantsRouter);
 app.use('/api/invites', sendInvitesRouter);
 app.use('/api/trips', tripsRouter);
 app.use('/api/documents', documentsRouter);
+app.use('/api/privacy-policies', privacyPoliciesRouter);
+app.use('/api/terms-documents', termsDocumentsRouter);
+app.use('/api/useful-informations', usefulInformationsRouter);
 
 const PORT = process.env.PORT || 5001;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travel-db';

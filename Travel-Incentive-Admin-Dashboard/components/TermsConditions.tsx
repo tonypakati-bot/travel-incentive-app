@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PencilIcon, TrashIcon, PlusIcon, XIcon } from './icons';
+import ConfirmModal from './ConfirmModal';
+import { fetchTermsDocuments, createTermsDocument, updateTermsDocument, deleteTermsDocument } from '../services/documents';
 
 const termsText = `PENALI, RIMBORSI E ASSICURAZIONI
 
@@ -30,10 +32,10 @@ ASSICURAZIONE AGGIUNTIVA
 
 // Type definition for a document
 export type TermsDocument = {
-  id: number;
-  title: string;
-  trip: string | null; // null for global
-  content: string;
+    id: string;
+    title: string;
+    trip: string | null; // null for global
+    content: string;
 };
 
 // Function to convert plain text to structured HTML with clickable email
@@ -49,14 +51,14 @@ const createInitialHtml = (text: string): string => {
 
 export const initialDocuments: TermsDocument[] = [
     {
-        id: 1,
-        title: 'Global Terms & Conditions',
+        id: '1',
+        title: 'Termini e Condizioni',
         trip: null,
         content: createInitialHtml(termsText),
     },
     {
-        id: 2,
-        title: 'Termini e Condizioni - Trip to Ibiza',
+        id: '2',
+        title: 'Termini e Condizioni',
         trip: 'Trip to Ibiza',
         content: createInitialHtml(tripSpecificText),
     },
@@ -105,7 +107,7 @@ const Toolbar: React.FC<{ editorRef: React.RefObject<HTMLDivElement> }> = ({ edi
 interface TermsModalProps {
     documentToEdit: TermsDocument | null;
     onClose: () => void;
-    onSave: (document: Omit<TermsDocument, 'id' | 'content'> & { id?: number, content: string }) => void;
+    onSave: (document: Omit<TermsDocument, 'id' | 'content'> & { id?: string, content: string }) => void;
     globalDocExists: boolean;
 }
 
@@ -121,8 +123,8 @@ const TermsModal: React.FC<TermsModalProps> = ({ documentToEdit, onClose, onSave
         } else {
             const isGlobalPossible = !globalDocExists;
             const initialTrip = isGlobalPossible ? null : (tripsForSelect[0] || null);
-            const initialTitle = isGlobalPossible ? 'Global Terms & Conditions' : `Termini e Condizioni - ${initialTrip}`;
-            
+            const initialTitle = isGlobalPossible ? 'Termini e Condizioni' : 'Termini e Condizioni';
+
             setTitle(initialTitle);
             setTrip(initialTrip);
         }
@@ -165,20 +167,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ documentToEdit, onClose, onSave
                                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Viaggio Associato (Opzionale)</label>
-                            <select 
-                                value={trip || ''}
-                                onChange={(e) => setTrip(e.target.value || null)}
-                                disabled={isEditingGlobal}
-                                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                            >
-                                {(isEditingGlobal || (!documentToEdit && !globalDocExists)) && (
-                                    <option value="">Nessuno (Globale)</option>
-                                )}
-                                {tripsForSelect.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                        </div>
+                        {/* 'Viaggio Associato' field intentionally removed per request */}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contenuto</label>
@@ -221,8 +210,31 @@ interface TermsConditionsProps {
 const TermsConditions: React.FC<TermsConditionsProps> = ({ documents, setDocuments }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<TermsDocument | null>(null);
+    const [loading, setLoading] = useState(false);
     
     const globalDocExists = useMemo(() => documents.some(d => d.trip === null), [documents]);
+
+    useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            setLoading(true);
+            const items = await fetchTermsDocuments();
+            if (!mounted) return;
+            // map server objects to TermsDocument with id as string
+            const mapped = items.map((it: any, i: number) => ({ id: String(it._id ?? it.id ?? `terms-${i}`), title: it.title ?? (it.label ?? ''), trip: it.trip ?? null, content: it.content ?? '' }));
+            // dedupe by id preserving order
+            const seen = new Set<string>();
+            const deduped = mapped.filter(m => {
+                if (seen.has(m.id)) return false;
+                seen.add(m.id);
+                return true;
+            });
+            setDocuments(deduped as TermsDocument[]);
+            setLoading(false);
+        };
+        load();
+        return () => { mounted = false; };
+    }, [setDocuments]);
 
     const handleCreateNew = () => {
         setEditingDocument(null);
@@ -234,20 +246,47 @@ const TermsConditions: React.FC<TermsConditionsProps> = ({ documents, setDocumen
         setIsModalOpen(true);
     };
 
-    const handleDelete = (id: number) => {
-        if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-            setDocuments(docs => docs.filter(d => d.id !== id));
-        }
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [toDeleteId, setToDeleteId] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setToDeleteId(id);
+        setConfirmOpen(true);
     };
 
-    const handleSave = (docData: Omit<TermsDocument, 'id' | 'content'> & { id?: number, content: string }) => {
+    const handleConfirmDelete = async () => {
+        if (toDeleteId !== null) {
+            // call API
+            const ok = await deleteTermsDocument(toDeleteId);
+            if (ok) {
+                setDocuments(docs => docs.filter(d => d.id !== toDeleteId));
+            }
+        }
+        setConfirmOpen(false);
+        setToDeleteId(null);
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmOpen(false);
+        setToDeleteId(null);
+    };
+
+    const handleSave = async (docData: Omit<TermsDocument, 'id' | 'content'> & { id?: string, content: string }) => {
         if (docData.id) {
-            // Update existing document
-            setDocuments(docs => docs.map(d => d.id === docData.id ? { ...d, ...docData } : d));
+            // Update existing document via API
+            const updated = await updateTermsDocument(docData.id, { title: docData.title, trip: docData.trip, content: docData.content });
+            if (updated) {
+                setDocuments(docs => docs.map(d => d.id === docData.id ? { ...d, title: updated.title ?? docData.title, trip: updated.trip ?? docData.trip, content: updated.content ?? docData.content } : d));
+            }
         } else {
-            // Create new document
-            const newDoc = { ...docData, id: Date.now() };
-            setDocuments(docs => [...docs, newDoc]);
+            // Create new document via API
+            const created = await createTermsDocument({ title: docData.title, content: docData.content, trip: docData.trip });
+            if (created) {
+                // fetch the created full object to get content and trip
+                const all = await fetchTermsDocuments();
+                const mapped = all.map((it: any) => ({ id: it._id ?? it.id ?? '', title: it.title ?? '', trip: it.trip ?? null, content: it.content ?? '' }));
+                setDocuments(mapped as TermsDocument[]);
+            }
         }
         setIsModalOpen(false);
         setEditingDocument(null);
@@ -263,6 +302,16 @@ const TermsConditions: React.FC<TermsConditionsProps> = ({ documents, setDocumen
                 globalDocExists={globalDocExists}
             />
         )}
+        <ConfirmModal
+            open={confirmOpen}
+            title="Conferma eliminazione"
+            message="Sei sicuro di voler eliminare questo documento? Questa azione è irreversibile."
+            confirmLabel="Elimina"
+            cancelLabel="Annulla"
+            variant="danger"
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+        />
         <div className="p-8">
             <div className="flex justify-between items-center mb-8">
                 <div>
@@ -277,8 +326,8 @@ const TermsConditions: React.FC<TermsConditionsProps> = ({ documents, setDocumen
                 </button>
             </div>
             <div className="space-y-4">
-                {documents.map(doc => (
-                    <div key={doc.id} className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
+                {documents.map((doc, idx) => (
+                    <div key={doc.id || `terms-${idx}`} className="bg-white rounded-2xl shadow-sm p-6 flex justify-between items-center">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-800">{doc.title}</h2>
                             <p className={`text-sm ${doc.trip ? 'text-gray-500' : 'text-blue-600 font-medium'}`}>

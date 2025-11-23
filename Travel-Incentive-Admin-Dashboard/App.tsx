@@ -11,7 +11,7 @@ import CreateForm from './components/CreateForm';
 import ManageParticipants from './components/ManageParticipants';
 import ManageContacts from './components/ManageContacts';
 import Reports from './components/Reports';
-import PrivacyPolicy, { initialPrivacyDocuments, PrivacyDocument } from './components/PrivacyPolicy';
+import PrivacyPolicy, { PrivacyDocument } from './components/PrivacyPolicy';
 import TermsConditions, { initialDocuments, TermsDocument } from './components/TermsConditions';
 import SendReminderModal from './components/SendReminderModal';
 import SendInvitesModal from './components/SendInvitesModal';
@@ -48,7 +48,7 @@ const AppContent: React.FC = () => {
   
   const [usefulInformations, setUsefulInformations] = useState<UsefulInfoEntry[]>(initialInformations);
   const [termsDocuments, setTermsDocuments] = useState<TermsDocument[]>(initialDocuments);
-  const [privacyDocuments, setPrivacyDocuments] = useState<PrivacyDocument[]>(initialPrivacyDocuments);
+  const [privacyDocuments, setPrivacyDocuments] = useState<PrivacyDocument[]>([]);
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
   const [forms, setForms] = useState<Form[]>(initialForms);
   const [invitesTemplates, setInvitesTemplates] = useState<Invite[]>([]);
@@ -76,6 +76,38 @@ const AppContent: React.FC = () => {
       } catch (e) {
         console.error('Error loading admin data', e);
       }
+        try {
+          // Load privacy policies from server so UI shows DB content instead of local initial values
+          const ppRes = await fetch('http://localhost:5001/api/privacy-policies');
+          if (ppRes.ok) {
+            const policies = await ppRes.json();
+            setPrivacyDocuments(policies.map((p: any) => ({
+              id: p._id ?? p.id,
+              title: p.title,
+              trip: p.trip ?? null,
+              content: p.content || ''
+            })));
+          }
+          } catch (e) {
+            console.error('Error loading privacy policies', e);
+          }
+          try {
+            // Load useful informations summary from server (lightweight)
+            const uiRes = await fetch('http://localhost:5001/api/useful-informations/summary');
+            if (uiRes.ok) {
+              const data = await uiRes.json();
+              const items = data.items || data; // backward compat
+              setUsefulInformations(items.map((u: any) => ({
+                id: u.id ?? u._id ?? u._id,
+                destinationName: u.title || '',
+                country: '',
+                dateAdded: new Date(u.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', ''),
+                fullData: {}
+              })));
+            }
+          } catch (e) {
+            console.error('Error loading useful informations', e);
+          }
     };
     load();
     // Dev-only: if URL contains __test/invites/create, open Invites create view
