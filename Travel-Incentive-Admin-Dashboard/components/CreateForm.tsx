@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createForm } from '../services/forms';
 import { ChevronDownIcon, TrashIcon, GripVerticalIcon, PencilIcon } from './icons';
 import CustomizeFieldsModal, { Field, sectionFieldsData } from './CustomizeFieldsModal';
+import { useToast } from '../contexts/ToastContext';
 
 interface CreateFormProps {
     onCancel: () => void;
@@ -69,6 +70,9 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
     const [title, setTitle] = useState<string>('Dietary Restrictions & Allergies');
     const [description, setDescription] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState<{ title?: string }>({});
+    const toast = useToast();
     const [editingSection, setEditingSection] = useState<Section | null>(null);
     const [sectionFieldsMap, setSectionFieldsMap] = useState<Record<string, Field[]>>(() => {
         return Object.keys(sectionFieldsData).reduce((acc, key) => {
@@ -94,6 +98,20 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
         console.log('Saving fields for', sectionId, updatedFields);
         setSectionFieldsMap(prev => ({ ...prev, [sectionId]: updatedFields.map((f, idx) => ({ ...f, order: idx })) }));
         handleCloseModal();
+    };
+
+    const titleRef = React.useRef<HTMLInputElement | null>(null);
+
+    const validate = () => {
+        const nextErrors: { title?: string } = {};
+        if (!title || title.trim() === '') nextErrors.title = 'Il titolo del form è obbligatorio.';
+        else if (title.length > 200) nextErrors.title = 'Il titolo non può superare 200 caratteri.';
+        setErrors(nextErrors);
+        if (nextErrors.title) {
+            // focus title input
+            setTimeout(() => titleRef.current && titleRef.current.focus(), 0);
+        }
+        return Object.keys(nextErrors).length === 0;
     };
 
 
@@ -175,8 +193,9 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
 
             <div className="max-w-7xl mx-auto">
               <div className="bg-white p-8 rounded-2xl shadow-sm space-y-6">
-                 <FormField label="Form Title" required>
-                    <Input placeholder="e.g., Dietary Restrictions & Allergies" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <FormField label="Form Title" required>
+                    <Input ref={titleRef} placeholder="e.g., Dietary Restrictions & Allergies" value={title} onChange={(e) => setTitle(e.target.value)} />
+                    {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title}</p>}
                 </FormField>
                 <FormField label="Form Description">
                     <Textarea placeholder="Provide a brief description or instructions for this form." value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -253,36 +272,44 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
             <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
                 <button 
                     onClick={async () => {
-                        // Save Draft
+                        if (!validate()) return;
+                        setIsSaving(true);
                         const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' };
                         try {
                             const created = await createForm(payload);
                             if (created) {
                                 try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
-                                // Optionally show toast
+                                try { toast.showToast('Bozza salvata.', 'success'); } catch(e){}
                             }
-                        } catch (err) { console.error('Failed saving draft', err); }
+                        } catch (err) { console.error('Failed saving draft', err); try { toast.showToast('Salvataggio bozza fallito.', 'error'); } catch(e){} }
+                        setIsSaving(false);
                         onCancel();
                     }}
-                    className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors">
-                    Save Draft
+                    disabled={isSaving}
+                    className={`bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    {isSaving ? 'Saving…' : 'Save Draft'}
                 </button>
                 <button 
                     onClick={async () => {
-                        // Publish Form
+                        if (!validate()) return;
+                        setIsSaving(true);
                         const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'published' };
                         try {
                             const created = await createForm(payload);
                             if (created) {
                                 try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
+                                try { toast.showToast('Form pubblicato.', 'success'); } catch(e){}
                             }
-                        } catch (err) { console.error('Failed publishing form', err); }
+                        } catch (err) { console.error('Failed publishing form', err); try { toast.showToast('Publish fallito.', 'error'); } catch(e){} }
+                        setIsSaving(false);
                         onSave();
                     }}
-                    className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
-                    Publish Form
+                    disabled={isSaving}
+                    className={`bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    {isSaving ? 'Publishing…' : 'Publish Form'}
                 </button>
             </footer>
+            {/* Toasts handled by ToastProvider */}
         </div>
         </>
     );

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useToast } from '../contexts/ToastContext';
 import { XIcon, PlusIcon, GripVerticalIcon } from './icons';
 
 type Section = {
@@ -72,6 +73,13 @@ const CustomizeFieldsModal: React.FC<CustomizeFieldsModalProps> = ({ section, on
         }
     }, [initialFields, section?.id]);
     const [newFieldName, setNewFieldName] = useState('');
+    const toast = (() => {
+        try {
+            return useToast();
+        } catch (e) {
+            return null;
+        }
+    })();
 
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
@@ -102,10 +110,11 @@ const CustomizeFieldsModal: React.FC<CustomizeFieldsModalProps> = ({ section, on
         };
         setFields([...fields, newField]);
         setNewFieldName('');
+        try { toast && toast.showToast('Campo aggiunto', 'success'); } catch (e) {}
     };
 
     const handleSave = () => {
-        onSave(section.id, fields);
+        try { onSave(section.id, fields); try { toast && toast.showToast('Campi salvati', 'success'); } catch(e){} } catch (e) { try { toast && toast.showToast('Errore salvataggio campi', 'error'); } catch(e){} }
     };
 
     const handleDragStart = (e: React.DragEvent, index: number) => {
