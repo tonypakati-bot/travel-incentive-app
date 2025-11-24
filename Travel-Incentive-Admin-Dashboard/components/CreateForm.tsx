@@ -218,7 +218,20 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
 
                 {/* Form Preview */}
                 <div className="md:col-span-2">
-                    <h2 className="text-xl font-bold text-gray-800 mb-4">Anteprima Form del Viaggio</h2>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-xl font-bold text-gray-800">Anteprima Form del Viaggio</h2>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                        // populate preview with all sections in the canonical order
+                                                        setActiveSections(ALL_SECTIONS.map(s => ({ id: s.id, title: s.title })));
+                                                        setAvailableSections([]);
+                                                }}
+                                                className="text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold"
+                                            >
+                                                Aggiungi tutte le sezioni
+                                            </button>
+                                        </div>
                     <div
                         onDrop={handleDrop}
                         onDragOver={(e) => e.preventDefault()}
