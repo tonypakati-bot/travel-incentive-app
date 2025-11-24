@@ -56,18 +56,13 @@ const Select: React.FC<{ children: React.ReactNode, value?: string | number, onC
 );
 
 const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
-    const initialActiveSections: Section[] = [
-        { id: 'dati-partecipante', title: 'Dati Partecipante' },
-        { id: 'logistica', title: 'Logistica' },
-        { id: 'accompagnatore', title: 'Accompagnatore' },
-        { id: 'fatturazione', title: 'Fatturazione' },
-    ];
+    const initialActiveSections: Section[] = [];
 
     const [activeSections, setActiveSections] = useState<Section[]>(initialActiveSections);
     const [availableSections, setAvailableSections] = useState<Section[]>(() => 
         ALL_SECTIONS.filter(s => !initialActiveSections.some(as => as.id === s.id))
     );
-    const [title, setTitle] = useState<string>('Dietary Restrictions & Allergies');
+    const [title, setTitle] = useState<string>('');
     const [description, setDescription] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
