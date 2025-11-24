@@ -3,7 +3,7 @@ import React from 'react';
 import { SearchIcon, PencilIcon, TrashIcon } from './icons';
 
 export type Form = {
-    id: number;
+    id: string | number;
     name: string;
     trip: string;
     responses: string;

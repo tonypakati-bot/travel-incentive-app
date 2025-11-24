@@ -76,6 +76,17 @@ const AppContent: React.FC = () => {
       } catch (e) {
         console.error('Error loading admin data', e);
       }
+      // Load forms from server (names come from DB; trip and responses remain placeholders until backend provides them)
+      try {
+        const formsRes = await fetch('http://localhost:5001/api/forms');
+        if (formsRes.ok) {
+          const data = await formsRes.json();
+          const items = data.items || data;
+          setForms(items.map((f: any) => ({ id: f._id ?? f.id, name: f.title || f.name || 'Untitled Form', trip: '—', responses: '—' })));
+        }
+      } catch (e) {
+        console.error('Error loading forms', e);
+      }
         try {
           // Load privacy policies from server so UI shows DB content instead of local initial values
           const ppRes = await fetch('http://localhost:5001/api/privacy-policies');
