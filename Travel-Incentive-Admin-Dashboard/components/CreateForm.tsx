@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createForm } from '../services/forms';
 import { ChevronDownIcon, TrashIcon, GripVerticalIcon, PencilIcon } from './icons';
-import CustomizeFieldsModal from './CustomizeFieldsModal';
+import CustomizeFieldsModal, { Field, sectionFieldsData } from './CustomizeFieldsModal';
 
 interface CreateFormProps {
     onCancel: () => void;
@@ -70,7 +70,12 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
     const [description, setDescription] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSection, setEditingSection] = useState<Section | null>(null);
-    const [sectionFieldsMap, setSectionFieldsMap] = useState<Record<string, any[]>>(() => ({}));
+    const [sectionFieldsMap, setSectionFieldsMap] = useState<Record<string, Field[]>>(() => {
+        return Object.keys(sectionFieldsData).reduce((acc, key) => {
+            acc[key] = sectionFieldsData[key].map((f, idx) => ({ ...f, order: idx }));
+            return acc;
+        }, {} as Record<string, Field[]>);
+    });
 
     const dragItem = React.useRef<any>(null);
     const dragOverItem = React.useRef<any>(null);
@@ -85,9 +90,8 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
         setEditingSection(null);
     };
 
-    const handleSaveFields = (sectionId: string, updatedFields: any[]) => {
+    const handleSaveFields = (sectionId: string, updatedFields: Field[]) => {
         console.log('Saving fields for', sectionId, updatedFields);
-        // persist fields to local map
         setSectionFieldsMap(prev => ({ ...prev, [sectionId]: updatedFields.map((f, idx) => ({ ...f, order: idx })) }));
         handleCloseModal();
     };

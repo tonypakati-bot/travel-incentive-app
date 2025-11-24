@@ -20,7 +20,7 @@ interface CustomizeFieldsModalProps {
     initialFields?: Field[];
 }
 
-const sectionFieldsData: Record<string, Field[]> = {
+export const sectionFieldsData: Record<string, Field[]> = {
     'dati-partecipante': [
         { id: 'ragione-sociale', name: 'Ragione Sociale', enabled: true, required: true },
         { id: 'nome', name: 'Nome', enabled: true, required: true },
@@ -31,24 +31,25 @@ const sectionFieldsData: Record<string, Field[]> = {
         { id: 'email', name: 'E-mail', enabled: true, required: true },
         { id: 'passaporto', name: 'Passaporto', enabled: true, required: true },
         { id: 'esigenze-alimentari', name: 'Esigenze Alimentari', enabled: true, required: false },
+        // + possibility to add new fields via UI
     ],
     'logistica': [
         { id: 'tipologia-camera', name: 'Tipologia Camera', enabled: true, required: true },
         { id: 'aeroporto-di-partenza', name: 'Aeroporto di Partenza', enabled: true, required: true },
         { id: 'viaggio-in-business', name: 'Viaggio in Business', enabled: true, required: true },
     ],
-    'accompagnatore': [
-        { id: 'nome', name: 'Nome', enabled: true, required: true },
-        { id: 'cognome', name: 'Cognome', enabled: true, required: true },
-        { id: 'data-di-nascita', name: 'Data di Nascita', enabled: true, required: true },
-        { id: 'nazionalita', name: 'Nazionalità', enabled: true, required: true },
-        { id: 'passaporto', name: 'Passaporto', enabled: true, required: true },
-        { id: 'esigenze-alimentari', name: 'Esigenze Alimentari', enabled: true, required: false },
-        { id: 'partecipazione-meeting', name: 'Partecipazione Meeting', enabled: true, required: false },
-    ],
     'consensi': [
         { id: 'informativa-sulla-privacy', name: 'Informativa sulla Privacy', enabled: true, required: true },
         { id: 'termini-e-condizioni', name: 'Termini e Condizioni', enabled: true, required: true },
+    ],
+    'accompagnatore': [
+        { id: 'nome-accompagnatore', name: 'Nome', enabled: true, required: true },
+        { id: 'cognome-accompagnatore', name: 'Cognome', enabled: true, required: true },
+        { id: 'data-di-nascita-accompagnatore', name: 'Data di Nascita', enabled: true, required: true },
+        { id: 'nazionalita-accompagnatore', name: 'Nazionalità', enabled: true, required: true },
+        { id: 'passaporto-accompagnatore', name: 'Passaporto', enabled: true, required: true },
+        { id: 'esigenze-alimentari-accompagnatore', name: 'Esigenze Alimentari', enabled: true, required: false },
+        { id: 'partecipazione-meeting', name: 'Partecipazione Meeting', enabled: true, required: false },
     ],
     'fatturazione': [
         { id: 'intestatario-fattura', name: 'Intestatario Fattura', enabled: true, required: true },
