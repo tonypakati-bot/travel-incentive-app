@@ -6,7 +6,7 @@ type Section = {
     title: string;
 };
 
-type Field = {
+export type Field = {
     id: string;
     name: string;
     enabled: boolean;
@@ -17,6 +17,7 @@ interface CustomizeFieldsModalProps {
     section: Section;
     onClose: () => void;
     onSave: (sectionId: string, fields: Field[]) => void;
+    initialFields?: Field[];
 }
 
 const sectionFieldsData: Record<string, Field[]> = {
@@ -57,8 +58,18 @@ const sectionFieldsData: Record<string, Field[]> = {
     ],
 };
 
-const CustomizeFieldsModal: React.FC<CustomizeFieldsModalProps> = ({ section, onClose, onSave }) => {
-    const [fields, setFields] = useState<Field[]>(() => sectionFieldsData[section.id] || []);
+const CustomizeFieldsModal: React.FC<CustomizeFieldsModalProps> = ({ section, onClose, onSave, initialFields }) => {
+    const defaultFields = (section && sectionFieldsData[section.id]) ? sectionFieldsData[section.id] : [];
+    const [fields, setFields] = useState<Field[]>(() => (initialFields && initialFields.length ? initialFields : defaultFields));
+
+    // update local fields if initialFields prop changes
+    React.useEffect(() => {
+        if (initialFields && initialFields.length) {
+            setFields(initialFields);
+        } else {
+            setFields(defaultFields);
+        }
+    }, [initialFields, section?.id]);
     const [newFieldName, setNewFieldName] = useState('');
 
     const dragItem = useRef<number | null>(null);

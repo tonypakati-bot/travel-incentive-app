@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createForm } from '../services/forms';
 import { ChevronDownIcon, TrashIcon, GripVerticalIcon, PencilIcon } from './icons';
 import CustomizeFieldsModal from './CustomizeFieldsModal';
 
@@ -65,8 +66,11 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
     const [availableSections, setAvailableSections] = useState<Section[]>(() => 
         ALL_SECTIONS.filter(s => !initialActiveSections.some(as => as.id === s.id))
     );
+    const [title, setTitle] = useState<string>('Dietary Restrictions & Allergies');
+    const [description, setDescription] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSection, setEditingSection] = useState<Section | null>(null);
+    const [sectionFieldsMap, setSectionFieldsMap] = useState<Record<string, any[]>>(() => ({}));
 
     const dragItem = React.useRef<any>(null);
     const dragOverItem = React.useRef<any>(null);
@@ -83,7 +87,8 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
 
     const handleSaveFields = (sectionId: string, updatedFields: any[]) => {
         console.log('Saving fields for', sectionId, updatedFields);
-        // Here you would typically update a larger state object that holds all form configurations
+        // persist fields to local map
+        setSectionFieldsMap(prev => ({ ...prev, [sectionId]: updatedFields.map((f, idx) => ({ ...f, order: idx })) }));
         handleCloseModal();
     };
 
@@ -155,6 +160,7 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
                 section={editingSection} 
                 onClose={handleCloseModal} 
                 onSave={handleSaveFields} 
+                initialFields={sectionFieldsMap[editingSection.id]}
             />
         )}
         <div className="p-8">
@@ -166,10 +172,10 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
             <div className="max-w-7xl mx-auto">
               <div className="bg-white p-8 rounded-2xl shadow-sm space-y-6">
                  <FormField label="Form Title" required>
-                    <Input placeholder="e.g., Dietary Restrictions & Allergies" defaultValue="Dietary Restrictions & Allergies" />
+                    <Input placeholder="e.g., Dietary Restrictions & Allergies" value={title} onChange={(e) => setTitle(e.target.value)} />
                 </FormField>
                 <FormField label="Form Description">
-                    <Textarea placeholder="Provide a brief description or instructions for this form." />
+                    <Textarea placeholder="Provide a brief description or instructions for this form." value={description} onChange={(e) => setDescription(e.target.value)} />
                 </FormField>
               </div>
 
@@ -242,12 +248,33 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
 
             <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
                 <button 
-                    onClick={onCancel}
+                    onClick={async () => {
+                        // Save Draft
+                        const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' };
+                        try {
+                            const created = await createForm(payload);
+                            if (created) {
+                                try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
+                                // Optionally show toast
+                            }
+                        } catch (err) { console.error('Failed saving draft', err); }
+                        onCancel();
+                    }}
                     className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors">
                     Save Draft
                 </button>
                 <button 
-                    onClick={onSave}
+                    onClick={async () => {
+                        // Publish Form
+                        const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'published' };
+                        try {
+                            const created = await createForm(payload);
+                            if (created) {
+                                try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
+                            }
+                        } catch (err) { console.error('Failed publishing form', err); }
+                        onSave();
+                    }}
                     className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
                     Publish Form
                 </button>
