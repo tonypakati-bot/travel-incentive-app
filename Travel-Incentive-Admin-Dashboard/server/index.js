@@ -21,7 +21,15 @@ app.use('/api/invites', invitesRouter);
 app.use('/api/participants', participantsRouter);
 app.use('/api/invites', sendInvitesRouter);
 app.use('/api/trips', tripsRouter);
-app.use('/api/documents', documentsRouter);
+// Legacy documents router: only mount in non-production environments to avoid
+// accidentally writing to a dropped `documents` collection in production.
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/documents', documentsRouter);
+} else {
+  // In production, respond with 410 Gone for safety and to aid debugging if
+  // external clients still attempt to call the legacy endpoint.
+  app.use('/api/documents', (req, res) => res.status(410).json({ error: 'documents endpoint removed; use /api/useful-informations' }));
+}
 app.use('/api/privacy-policies', privacyPoliciesRouter);
 app.use('/api/terms-documents', termsDocumentsRouter);
 app.use('/api/useful-informations', usefulInformationsRouter);

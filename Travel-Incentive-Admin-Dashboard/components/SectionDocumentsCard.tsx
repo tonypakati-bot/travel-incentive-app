@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DocumentDropdown from './DocumentDropdown';
-import { fetchDocumentOptions, fetchPrivacyPolicyOptions, DocOption } from '../services/documents';
+import { fetchDocumentOptions, fetchPrivacyPolicyOptions, fetchTermsDocuments, DocOption } from '../services/documents';
 
 type Props = { values?: Record<string,string>; onChange: (k:string,v:string)=>void; disabled?: boolean };
 
@@ -19,17 +19,22 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
   ];
 
   const [options, setOptions] = useState<DocOption[]>(placeholderOptions);
+  const [usefulOptions, setUsefulOptions] = useState<DocOption[]>([]);
   const [privacyOptions, setPrivacyOptions] = useState<DocOption[]>([]);
+  const [termsOptions, setTermsOptions] = useState<DocOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    // fetch generic document options
+    // fetch generic document options (fallback)
     fetchDocumentOptions().then(res => {
       console.debug('[E2E] initial fetchDocumentOptions', res);
       if (!mounted) return;
-      if (res && res.length) setOptions(res);
+      if (res && res.length) {
+        setOptions(res);
+        setUsefulOptions(res); // prefer useful-informations shape for the Useful Informations select
+      }
     }).catch((e) => { console.debug('[E2E] initial fetchDocumentOptions error', e); }).finally(() => { if (mounted) setLoading(false); });
 
     // fetch privacy-specific options
@@ -38,16 +43,31 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
       if (res && res.length) setPrivacyOptions(res);
     }).catch(e => { console.debug('[E2E] initial fetchPrivacyPolicyOptions error', e); });
 
+    // fetch terms-specific options
+    fetchTermsDocuments().then(res => {
+      if (!mounted) return;
+      if (res && Array.isArray(res) && res.length) {
+        // map server objects to DocOption shape if necessary
+        setTermsOptions(res.map((it: any) => ({ value: it._id ?? it.id ?? it.value ?? '', label: it.title ?? it.label ?? it.name ?? it.filename ?? '' })));
+      }
+    }).catch(e => { console.debug('[E2E] initial fetchTermsDocuments error', e); });
+
     // also listen for global documents changed events to refresh options
     const handler = async (ev?: Event) => {
       try { console.debug('[E2E] documents:changed handler triggered - event detail', (ev as any)?.detail); } catch (e) {}
       console.debug('[E2E] documents:changed handler triggered - refreshing options');
       setLoading(true);
       try {
-        const [dRes, pRes] = await Promise.all([fetchDocumentOptions(), fetchPrivacyPolicyOptions()]);
-        console.debug('[E2E] documents:changed fetch results', { dRes, pRes });
-        if (mounted && dRes && dRes.length) setOptions(dRes);
+        const [dRes, pRes, tRes] = await Promise.all([fetchDocumentOptions(), fetchPrivacyPolicyOptions(), fetchTermsDocuments()]);
+        console.debug('[E2E] documents:changed fetch results', { dRes, pRes, tRes });
+        if (mounted && dRes && dRes.length) {
+          setOptions(dRes);
+          setUsefulOptions(dRes);
+        }
         if (mounted && pRes && pRes.length) setPrivacyOptions(pRes);
+        if (mounted && tRes && Array.isArray(tRes) && tRes.length) {
+          setTermsOptions(tRes.map((it: any) => ({ value: it._id ?? it.id ?? it.value ?? '', label: it.title ?? it.label ?? it.name ?? it.filename ?? '' })));
+        }
       } catch (e) { console.debug('[E2E] documents:changed fetch error', e); }
       setLoading(false);
     };
@@ -65,7 +85,7 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
             id={`doc-${d.key}`}
             label={d.label}
             value={values[d.key] || ''}
-            options={d.key === 'privacyPolicy' ? privacyOptions : options}
+            options={d.key === 'privacyPolicy' ? privacyOptions : (d.key === 'terms' ? termsOptions : (d.key === 'usefulInformations' ? usefulOptions : options))}
             onChange={(v) => onChange(d.key, v)}
             disabled={disabled}
             testId={`doc-selector-${d.key}`}

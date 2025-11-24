@@ -211,6 +211,17 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
               setSavedTripName(trip.name);
               setShowSavedModal(true);
               setOpenSections(prev => prev.includes(SECTION.SETTINGS) ? prev : [...prev, SECTION.SETTINGS]);
+              // Auto-close the saved modal after a short delay so users can continue editing without
+              // having to manually confirm. This keeps the informative modal but avoids blocking UX.
+              setTimeout(() => {
+                setShowSavedModal(false);
+                // ensure Section 2 is open/focused
+                setOpenSections(prev => prev.includes(SECTION.SETTINGS) ? prev : [...prev, SECTION.SETTINGS]);
+                setTimeout(() => {
+                  const el = document.querySelector('[data-testid="trip-image-url"]') as HTMLInputElement | null;
+                  if (el) el.focus();
+                }, 120);
+              }, 700);
               try { toast.showToast('Bozza salvata con successo', 'success'); } catch (e) {}
             }}
           />

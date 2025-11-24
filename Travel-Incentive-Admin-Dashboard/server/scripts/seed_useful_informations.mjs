@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Document from '../models/Document.js';
+import UsefulInfo from '../models/UsefulInfo.js';
 
 dotenv.config();
 
@@ -55,16 +56,16 @@ async function main() {
   for (const item of items) {
     try {
       const filter = { title: item.title, 'usefulInfo.destinationName': item.usefulInfo.destinationName };
-      const existing = await Document.findOne(filter).lean();
+      const existing = await UsefulInfo.findOne(filter).lean();
       if (existing) {
-        console.log(`Updating existing: ${item.title}`);
-        await Document.findByIdAndUpdate(existing._id, { $set: { usefulInfo: item.usefulInfo, content: '' } });
+        console.log(`Updating existing usefulinfo: ${item.title}`);
+        await UsefulInfo.findByIdAndUpdate(existing._id, { $set: { usefulInfo: item.usefulInfo, content: '' } });
       } else {
-        console.log(`Creating: ${item.title}`);
-        await Document.create({ title: item.title, slug: item.title.toLowerCase().replace(/\s+/g, '-'), usefulInfo: item.usefulInfo, content: '', visible: true });
+        console.log(`Creating usefulinfo: ${item.title}`);
+        await UsefulInfo.create({ title: item.title, slug: item.title.toLowerCase().replace(/\s+/g, '-'), usefulInfo: item.usefulInfo, content: '', visible: true });
       }
     } catch (err) {
-      console.error('Error seeding item', item.title, err);
+      console.error('Error seeding usefulinfo', item.title, err);
     }
   }
 

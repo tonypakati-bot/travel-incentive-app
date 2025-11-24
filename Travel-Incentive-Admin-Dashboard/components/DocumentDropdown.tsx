@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DocumentCreator from './DocumentCreator';
 import { PrivacyModal } from './PrivacyPolicy';
-import { createPrivacyPolicy } from '../services/documents';
+import TermsModal from './TermsModal';
+import UsefulInformationModal from './UsefulInformationModal';
+import { createPrivacyPolicy, createTermsDocument, createUsefulInfo } from '../services/documents';
 
 type Option = { value: string; label: string };
 type Props = {
@@ -84,6 +86,56 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
           }}
           globalDocExists={false}
         />
+      ) : id === 'doc-terms' ? (
+        creating ? (
+          <TermsModal
+            documentToEdit={null}
+            onClose={() => setCreating(false)}
+            onSave={async (doc) => {
+            try {
+              const created = await createTermsDocument({ title: doc.title, content: doc.content, trip: doc.trip });
+              if (created) {
+                try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created } })); } catch (e) {}
+                setCreating(false);
+                onChange(String(created.value ?? created.id ?? created._id ?? ''));
+              } else {
+                console.error('createTermsDocument returned null');
+                alert('Errore durante la creazione del documento Terms. Controlla la console.');
+              }
+            } catch (err) {
+              console.error('Error creating terms document', err);
+              alert('Errore durante la creazione del documento Terms. Controlla la console.');
+            }
+            }}
+            globalDocExists={false}
+          />
+        ) : null
+      ) : id === 'doc-usefulInformations' ? (
+        creating ? (
+          <UsefulInformationModal
+            isOpen={creating}
+            infoToEdit={null}
+            onClose={() => setCreating(false)}
+            onSave={async (data) => {
+              try {
+                const titleFallback = (data.destinationName && String(data.destinationName).trim()) || (data.country && String(data.country).trim()) || (data.documents && String(data.documents).split('\n')[0].slice(0, 60)) || 'Untitled Useful Information';
+                const payload = { title: titleFallback, usefulInfo: data, content: '' };
+                const created = await createUsefulInfo(payload);
+                if (created) {
+                  try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created } })); } catch (e) {}
+                  setCreating(false);
+                  onChange(String(created.value ?? created.id ?? created._id ?? ''));
+                } else {
+                  console.error('createUsefulInfo returned null');
+                  alert('Errore durante la creazione della Useful Information. Controlla la console.');
+                }
+              } catch (err) {
+                console.error('Error creating useful information', err);
+                alert('Errore durante la creazione della Useful Information. Controlla la console.');
+              }
+            }}
+          />
+        ) : null
       ) : (
         <DocumentCreator open={creating} onCreated={(opt) => {
           setCreating(false);

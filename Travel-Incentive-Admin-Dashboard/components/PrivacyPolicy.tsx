@@ -62,7 +62,6 @@ interface PrivacyModalProps {
 }
 
 export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, documentToEdit, onClose, onSave, globalDocExists }) => {
-    if (!isOpen) return null;
     const [title, setTitle] = useState('');
     const editorRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +117,8 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, documentToEd
     const commonEditorClasses = `w-full p-4 text-gray-800 leading-relaxed 
         [&_p]:mb-4 [&_a]:text-blue-600 [&_a:hover]:underline
         [&_ul]:list-disc [&_ul]:pl-8 [&_ol]:list-decimal [&_ol]:pl-8`;
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300 animate-fade-in">

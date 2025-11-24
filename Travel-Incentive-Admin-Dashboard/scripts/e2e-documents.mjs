@@ -5,6 +5,7 @@ E2E script for documents flow:
 - Selects an existing document if available
 - Opens DocumentCreator modal, fills all usefulInfo fields and creates a document
 - Polls the backend `/api/documents` until the new document appears (with retry/backoff)
+ - Polls the backend `/api/useful-informations` and `/api/documents` until the new document appears (with retry/backoff)
 
 Usage: node scripts/e2e-documents.mjs [--url http://localhost:3000] [--headless]
 
@@ -34,13 +35,19 @@ async function pollDocumentsUntil(label, timeoutMs = 20000, interval = 1000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
-      const res = await fetch(`${apiBase}/api/documents`);
-      if (!res.ok) {
-        await new Promise(r => setTimeout(r, interval));
-        continue;
+      // check both useful-informations and documents endpoints to find newly created items
+      const [resUseful, resDocs] = await Promise.allSettled([
+        fetch(`${apiBase}/api/useful-informations`).catch(() => null),
+        fetch(`${apiBase}/api/documents`).catch(() => null)
+      ]);
+      let combined = [];
+      if (resUseful && resUseful.status === 'fulfilled' && resUseful.value && resUseful.value.ok) {
+        try { const arr = await resUseful.value.json(); if (Array.isArray(arr)) combined = combined.concat(arr); } catch(e){}
       }
-      const list = await res.json();
-      if (Array.isArray(list) && list.find(it => (it.label || it.title) === label)) return list;
+      if (resDocs && resDocs.status === 'fulfilled' && resDocs.value && resDocs.value.ok) {
+        try { const arr2 = await resDocs.value.json(); if (Array.isArray(arr2)) combined = combined.concat(arr2); } catch(e){}
+      }
+      if (combined.find(it => (it.label || it.title) === label)) return combined;
     } catch (err) {
       // ignore
     }
@@ -635,7 +642,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
             docJson = existing;
             console.log('Reusing existing document instead of creating duplicate', docJson && (docJson._id || docJson.id));
           } else {
-            const resp = await fetch(`${backend}/api/documents`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            // choose endpoint based on payload shape: prefer useful-informations when usefulInfo present
+            const postEndpoint = payload && payload.usefulInfo ? `${backend}/api/useful-informations` : `${backend}/api/documents`;
+            const resp = await fetch(postEndpoint, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
             if (!resp || !resp.ok) throw new Error('Backend create failed');
             docJson = await resp.json();
           }
@@ -739,7 +748,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     // If we already created the document via dev-hook, skip clicking and waiting for POST
     let docResp = null;
     if (!createdDocFromHook) {
-      // click and capture POST /api/documents response by dispatching MouseEvent to ensure React handlers run
+      // click and capture POST to document endpoints by dispatching MouseEvent to ensure React handlers run
       [docResp] = await Promise.all([
         page.waitForResponse(r => (r.url().includes('/api/documents') || r.url().includes('/api/useful-informations')) && r.request().method() === 'POST', { timeout: 15000 }).catch(()=>null),
         page.evaluate(() => {
@@ -760,7 +769,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       console.log('Post-click: window.__E2E_lastCreateAttempt =', lastAttempt);
     } catch (e) {}
     if (!docResp && !createdDocFromHook) {
-      console.warn('Did not observe POST /api/documents directly; attempting backend fallback then poll');
+      console.warn('Did not observe POST to document endpoints directly; attempting backend fallback then poll');
       try {
         const backend = process.env.API_BASE || apiBase || 'http://localhost:5001';
         const payload = { title, content: 'Created by E2E', usefulInfo: { destinationName: 'Test Destination', country: 'Testland', documents: 'Passport', timeZone: 'GMT+1', currency: 'TST', language: 'Testish', climate: 'Warm', vaccinationsHealth: 'None' } };
@@ -832,7 +841,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
         // if we didn't get a network response because we skipped clicking, use dev-hook result
         docJson = { id: createdDocFromHook.value || createdDocFromHook._id || createdDocFromHook.id, _id: createdDocFromHook.value || createdDocFromHook._id || createdDocFromHook.id, title: createdDocFromHook.label || createdDocFromHook.title };
       }
-      console.log('Observed POST /api/documents response', docJson && (docJson._id || docJson.id || docJson.documentId));
+      console.log('Observed POST response for document creation', docJson && (docJson._id || docJson.id || docJson.documentId));
       // Now select the created document in the dropdown
       try {
         const docId = (docJson && (docJson._id || docJson.id || docJson.documentId));
