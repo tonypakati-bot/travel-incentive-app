@@ -14,6 +14,32 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingContact, setEditingContact] = useState<Contact | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    const sortContactsList = (list: Contact[]) => {
+        return list.slice().sort((a,b) => {
+            const an = `${(a.firstName||'') } ${(a.lastName||'')}`.trim().toLowerCase();
+            const bn = `${(b.firstName||'') } ${(b.lastName||'')}`.trim().toLowerCase();
+            if (an < bn) return -1;
+            if (an > bn) return 1;
+            return 0;
+        });
+    };
+
+    const mapServerToContact = (s: any): Contact => {
+        const name = s.name || '';
+        const parts = String(name).trim().split(/\s+/);
+        const last = parts.length > 1 ? parts.pop() as string : '';
+        const first = parts.join(' ');
+        return {
+            id: s.id || s._id || Date.now(),
+            firstName: first || '',
+            lastName: last || '',
+            category: s.category || 'Tour Leader',
+            phone: s.phone || '',
+            email: s.email || '',
+            notes: s.notes || ''
+        } as Contact;
+    };
 
     const handleOpenCreateModal = () => {
         setEditingContact(null);
@@ -21,8 +47,21 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     };
 
     const handleOpenEditModal = (contact: Contact) => {
-        setEditingContact(contact);
-        setIsModalOpen(true);
+        (async () => {
+            try {
+                const res = await fetch(`/api/contacts/${contact.id}`);
+                if (!res.ok) throw new Error('not-found');
+                const json = await res.json();
+                // map server shape to Contact
+                const mapped = mapServerToContact(json);
+                setEditingContact(mapped as any);
+            } catch (e) {
+                console.warn('Could not fetch contact for edit', e);
+                setEditingContact(contact);
+            } finally {
+                setIsModalOpen(true);
+            }
+        })();
     };
 
     const handleCloseModal = () => {
@@ -33,13 +72,22 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [toDeleteId, setToDeleteId] = useState<number | null>(null);
 
-    const handleDelete = (id: number) => {
-        setToDeleteId(id);
+    const handleDelete = (id: string | number) => {
+        setToDeleteId(id as any);
         setConfirmOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (toDeleteId !== null) setContacts(prev => prev.filter(contact => contact.id !== toDeleteId));
+    const handleConfirmDelete = async () => {
+        if (toDeleteId !== null) {
+            try {
+                // try server delete if id looks like ObjectId
+                if (String(toDeleteId).length > 8) {
+                    await fetch(`/api/contacts/${toDeleteId}`, { method: 'DELETE' });
+                }
+            } catch (e) { console.warn('Delete request failed', e); }
+            setContacts(prev => prev.filter(contact => contact.id !== toDeleteId));
+            try { toast && toast.showToast('Contatto eliminato', 'success'); } catch (e) {}
+        }
         setConfirmOpen(false);
         setToDeleteId(null);
     };
@@ -49,14 +97,46 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
         setToDeleteId(null);
     };
     
-    const handleSave = (data: ContactData, id?: number) => {
-        if (id !== undefined) { // Editing
-            setContacts(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
-        } else { // Creating
-            const newContact: Contact = { id: Date.now(), ...data };
-            setContacts(prev => [newContact, ...prev]);
+    const handleSave = async (data: ContactData, id?: string | number) => {
+        try {
+            if (id !== undefined && String(id).length > 8) {
+                // Update remote
+                const res = await fetch(`/api/contacts/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+                if (!res.ok) throw new Error('update-failed');
+                const json = await res.json();
+                const mapped = mapServerToContact(json);
+                setContacts(prev => prev.map(c => c.id === id ? mapped : c));
+                try { toast && toast.showToast('Contatto aggiornato', 'success'); } catch (e) {}
+            } else if (id !== undefined) {
+                // local id (number) -> try create remote but keep local fallback
+                const res = await fetch('/api/contacts', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+                if (res.ok) {
+                    const json = await res.json();
+                    const mapped = mapServerToContact(json);
+                    setContacts(prev => [mapped, ...prev.filter(c => c.id !== id)] as any);
+                    try { toast && toast.showToast('Contatto creato', 'success'); } catch (e) {}
+                } else {
+                    // fallback local update
+                    setContacts(prev => prev.map(c => c.id === id ? { ...c, ...data } as any : c));
+                }
+            } else {
+                // create remote
+                const res = await fetch('/api/contacts', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
+                if (res.ok) {
+                    const json = await res.json();
+                    const mapped = mapServerToContact(json);
+                    setContacts(prev => [mapped, ...prev] as any);
+                    try { toast && toast.showToast('Contatto creato', 'success'); } catch (e) {}
+                } else {
+                    const newContact: Contact = { id: Date.now(), ...data };
+                    setContacts(prev => [newContact, ...prev]);
+                }
+            }
+            handleCloseModal();
+        } catch (err) {
+            console.error('Save contact error', err);
+            try { toast && toast.showToast('Errore durante il salvataggio del contatto', 'error'); } catch (e) {}
         }
-        handleCloseModal();
     };
 
     const filteredContacts = contacts.filter(c => {
@@ -70,6 +150,23 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const toast = (() => { try { return useToast(); } catch { return null as any; } })();
+
+    React.useEffect(() => {
+        // load contacts from server
+        (async () => {
+            try {
+                const res = await fetch('/api/contacts');
+                if (!res.ok) throw new Error('no-contacts');
+                const json = await res.json();
+                // map server shape { id, name, category } -> local Contact shape
+                const mapped: Contact[] = (json||[]).map((c: any) => ({ id: c.id, firstName: (c.name||'').split(' ')[0] || '', lastName: (c.name||'').split(' ').slice(1).join(' ') || '', category: c.category || 'Tour Leader', phone: c.phone || '', email: c.email || '', notes: c.notes || '' }));
+                setContacts(mapped as any);
+                            setContacts(sortContactsList(mapped) as any);
+            } catch (e) {
+                console.warn('Could not load contacts', e);
+            }
+        })();
+    }, []);
 
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files && e.target.files[0];
@@ -120,7 +217,7 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                     validated.push({ id: Date.now() + Math.floor(Math.random()*10000), ...imp });
                 });
                 if (validated.length > 0) {
-                    setContacts(prev => [...validated, ...prev]);
+                    setContacts(prev => sortContactsList([...validated, ...prev] as any));
                     try { toast && toast.showToast(`${validated.length} contatti importati`, 'success'); } catch (e) {}
                 }
                 // clear input so same file can be re-selected later

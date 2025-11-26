@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../contexts/ToastContext';
 import { XIcon } from './icons';
 
 export type ContactCategory = 'Tour Leader' | 'Assistenza Aeroportuale' | 'Assistenza Hotel' | 'Coordinatore';
 export type Contact = {
-    id: number;
+    id: string | number;
     firstName?: string;
     lastName?: string;
     category: ContactCategory;
@@ -70,8 +71,20 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSa
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const toast = (() => { try { return useToast(); } catch { return null as any; } })();
+
     const handleSaveClick = () => {
-        onSave(formData, contactToEdit?.id);
+        // basic validation
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (formData.email && !emailRe.test(formData.email)) {
+            try { toast && toast.showToast('Email non valida', 'error'); } catch (e) {}
+            return;
+        }
+        if (formData.phone && formData.phone.replace(/\D/g,'').length < 6) {
+            try { toast && toast.showToast('Numero di telefono non valido', 'error'); } catch (e) {}
+            return;
+        }
+        onSave(formData, contactToEdit ? (Number(contactToEdit.id) as any) : undefined);
     };
 
     return (

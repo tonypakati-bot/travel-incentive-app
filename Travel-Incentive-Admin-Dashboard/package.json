@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "jest --runInBand",
     "e2e:participants": "node scripts/participants-e2e.mjs",
     "build": "vite build",
     "preview": "vite preview",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.14",
+    "jest": "^29.7.0",
     "node-fetch": "^2.7.0",
     "postcss": "^8.4.21",
     "puppeteer": "^24.31.0",

@@ -1,0 +1,664 @@
+[
+  {
+    "_id": "69243eb23f2ab69645c89f5b",
+    "title": "Test Form API",
+    "description": "API-created form",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "ragione-sociale",
+            "name": "Ragione Sociale",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "cognome",
+            "name": "Cognome",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "data-di-nascita",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "nazionalita",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "n-tel-cellulare",
+            "name": "N. Tel. Cellulare",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "email",
+            "name": "E-mail",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          },
+          {
+            "id": "passaporto",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 7
+          },
+          {
+            "id": "esigenze-alimentari",
+            "name": "Esigenze Alimentari",
+            "enabled": false,
+            "required": false,
+            "order": 8
+          }
+        ]
+      },
+      {
+        "id": "logistica",
+        "title": "logistica",
+        "order": 0,
+        "fields": [
+          {
+            "id": "tipologia-camera",
+            "name": "Tipologia Camera",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "aeroporto-di-partenza",
+            "name": "Aeroporto di Partenza",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "viaggio-in-business",
+            "name": "Viaggio in Business",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "id": "consensi",
+        "title": "consensi",
+        "order": 0,
+        "fields": [
+          {
+            "id": "informativa-sulla-privacy",
+            "name": "Informativa sulla Privacy",
+            "enabled": false,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "termini-e-condizioni",
+            "name": "Termini e Condizioni",
+            "enabled": false,
+            "required": true,
+            "order": 1
+          }
+        ]
+      },
+      {
+        "id": "accompagnatore",
+        "title": "accompagnatore",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome-accompagnatore",
+            "name": "Nome",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "cognome-accompagnatore",
+            "name": "Cognome",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "data-di-nascita-accompagnatore",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "nazionalita-accompagnatore",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "passaporto-accompagnatore",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "esigenze-alimentari-accompagnatore",
+            "name": "Esigenze Alimentari",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "partecipazione-meeting",
+            "name": "Partecipazione Meeting",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          }
+        ]
+      },
+      {
+        "id": "fatturazione",
+        "title": "fatturazione",
+        "order": 0,
+        "fields": [
+          {
+            "id": "intestatario-fattura",
+            "name": "Intestatario Fattura",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "indirizzo-di-fatturazione",
+            "name": "Indirizzo di Fatturazione",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "partita-iva",
+            "name": "Partita IVA",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "codice-sdi",
+            "name": "Codice SDI",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          }
+        ]
+      }
+    ],
+    "status": "draft",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T11:17:06.899Z",
+    "updatedAt": "2025-11-24T11:17:06.899Z",
+    "__v": 0
+  },
+  {
+    "_id": "692440263f2ab69645c89f5d",
+    "title": "UI Fields Test",
+    "description": "Save fields test",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "esigenze-alimentari",
+            "name": "Esigenze Alimentari",
+            "enabled": true,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "ragione-sociale",
+            "name": "Ragione Sociale",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "cognome",
+            "name": "Cognome",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "data-di-nascita",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "nazionalita",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "n-tel-cellulare",
+            "name": "N. Tel. Cellulare",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          },
+          {
+            "id": "email",
+            "name": "E-mail",
+            "enabled": false,
+            "required": false,
+            "order": 7
+          },
+          {
+            "id": "passaporto",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 8
+          }
+        ]
+      },
+      {
+        "id": "logistica",
+        "title": "logistica",
+        "order": 0,
+        "fields": [
+          {
+            "id": "tipologia-camera",
+            "name": "Tipologia Camera",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "aeroporto-di-partenza",
+            "name": "Aeroporto di Partenza",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "viaggio-in-business",
+            "name": "Viaggio in Business",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "id": "consensi",
+        "title": "consensi",
+        "order": 0,
+        "fields": [
+          {
+            "id": "informativa-sulla-privacy",
+            "name": "Informativa sulla Privacy",
+            "enabled": false,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "termini-e-condizioni",
+            "name": "Termini e Condizioni",
+            "enabled": false,
+            "required": true,
+            "order": 1
+          }
+        ]
+      },
+      {
+        "id": "accompagnatore",
+        "title": "accompagnatore",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome-accompagnatore",
+            "name": "Nome",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "cognome-accompagnatore",
+            "name": "Cognome",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "data-di-nascita-accompagnatore",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "nazionalita-accompagnatore",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "passaporto-accompagnatore",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "esigenze-alimentari-accompagnatore",
+            "name": "Esigenze Alimentari",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "partecipazione-meeting",
+            "name": "Partecipazione Meeting",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          }
+        ]
+      },
+      {
+        "id": "fatturazione",
+        "title": "fatturazione",
+        "order": 0,
+        "fields": [
+          {
+            "id": "intestatario-fattura",
+            "name": "Intestatario Fattura",
+            "enabled": false,
+            "required": false,
+            "order": 0
+          },
+          {
+            "id": "indirizzo-di-fatturazione",
+            "name": "Indirizzo di Fatturazione",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "partita-iva",
+            "name": "Partita IVA",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "codice-sdi",
+            "name": "Codice SDI",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T11:23:18.982Z",
+    "updatedAt": "2025-11-24T11:23:18.982Z",
+    "__v": 0
+  },
+  {
+    "_id": "69245e913f2ab69645c89f73",
+    "title": "Test Persistenza Campi",
+    "description": "Test auto fields",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "ragione-sociale",
+            "name": "Ragione Sociale",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "cognome",
+            "name": "Cognome",
+            "enabled": true,
+            "required": true,
+            "order": 1
+          },
+          {
+            "id": "data-di-nascita",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "nazionalita",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "n-tel-cellulare",
+            "name": "N. Tel. Cellulare",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "email",
+            "name": "E-mail",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "passaporto",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          },
+          {
+            "id": "esigenze-alimentari",
+            "name": "Esigenze Alimentari",
+            "enabled": false,
+            "required": false,
+            "order": 7
+          }
+        ]
+      },
+      {
+        "id": "logistica",
+        "title": "Logistica",
+        "order": 1,
+        "fields": [
+          {
+            "id": "tipologia-camera",
+            "name": "Tipologia Camera",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "aeroporto-di-partenza",
+            "name": "Aeroporto di Partenza",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "viaggio-in-business",
+            "name": "Viaggio in Business",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          }
+        ]
+      },
+      {
+        "id": "consensi",
+        "title": "Consensi",
+        "order": 2,
+        "fields": [
+          {
+            "id": "informativa-sulla-privacy",
+            "name": "Informativa sulla Privacy",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "termini-e-condizioni",
+            "name": "Termini e Condizioni",
+            "enabled": false,
+            "required": true,
+            "order": 1
+          }
+        ]
+      },
+      {
+        "id": "accompagnatore",
+        "title": "Accompagnatore",
+        "order": 3,
+        "fields": [
+          {
+            "id": "nome-accompagnatore",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "cognome-accompagnatore",
+            "name": "Cognome",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "data-di-nascita-accompagnatore",
+            "name": "Data di Nascita",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "nazionalita-accompagnatore",
+            "name": "Nazionalità",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          },
+          {
+            "id": "passaporto-accompagnatore",
+            "name": "Passaporto",
+            "enabled": false,
+            "required": false,
+            "order": 4
+          },
+          {
+            "id": "esigenze-alimentari-accompagnatore",
+            "name": "Esigenze Alimentari",
+            "enabled": false,
+            "required": false,
+            "order": 5
+          },
+          {
+            "id": "partecipazione-meeting",
+            "name": "Partecipazione Meeting",
+            "enabled": false,
+            "required": false,
+            "order": 6
+          }
+        ]
+      },
+      {
+        "id": "fatturazione",
+        "title": "Fatturazione",
+        "order": 4,
+        "fields": [
+          {
+            "id": "intestatario-fattura",
+            "name": "Intestatario Fattura",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "indirizzo-di-fatturazione",
+            "name": "Indirizzo di Fatturazione",
+            "enabled": false,
+            "required": false,
+            "order": 1
+          },
+          {
+            "id": "partita-iva",
+            "name": "Partita IVA",
+            "enabled": false,
+            "required": false,
+            "order": 2
+          },
+          {
+            "id": "codice-sdi",
+            "name": "Codice SDI",
+            "enabled": false,
+            "required": false,
+            "order": 3
+          }
+        ]
+      }
+    ],
+    "status": "draft",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T13:33:05.473Z",
+    "updatedAt": "2025-11-24T13:33:05.473Z",
+    "__v": 0
+  }
+]

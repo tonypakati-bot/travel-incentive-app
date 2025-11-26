@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DocumentDropdown from './DocumentDropdown';
 import { fetchDocumentOptions, fetchPrivacyPolicyOptions, fetchTermsDocuments, DocOption } from '../services/documents';
+import { fetchFormOptions } from '../services/forms';
 
 type Props = { values?: Record<string,string>; onChange: (k:string,v:string)=>void; disabled?: boolean };
 
@@ -22,11 +23,17 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
   const [usefulOptions, setUsefulOptions] = useState<DocOption[]>([]);
   const [privacyOptions, setPrivacyOptions] = useState<DocOption[]>([]);
   const [termsOptions, setTermsOptions] = useState<DocOption[]>([]);
+  const [formOptions, setFormOptions] = useState<DocOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    // initial fetch form options
+    fetchFormOptions().then(res => {
+      if (!mounted) return;
+      if (res && res.length) setFormOptions(res.map((it: any) => ({ value: it.value, label: it.label })));
+    }).catch(e => { console.debug('[E2E] initial fetchFormOptions error', e); });
     // fetch generic document options (fallback)
     fetchDocumentOptions().then(res => {
       console.debug('[E2E] initial fetchDocumentOptions', res);
@@ -68,12 +75,26 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
         if (mounted && tRes && Array.isArray(tRes) && tRes.length) {
           setTermsOptions(tRes.map((it: any) => ({ value: it._id ?? it.id ?? it.value ?? '', label: it.title ?? it.label ?? it.name ?? it.filename ?? '' })));
         }
+        // refresh forms options too
+        try {
+          const fRes = await fetchFormOptions();
+          if (mounted && fRes && fRes.length) setFormOptions(fRes.map((it: any) => ({ value: it.value, label: it.label })));
+        } catch (e) { console.debug('[E2E] documents:changed fetchFormOptions error', e); }
       } catch (e) { console.debug('[E2E] documents:changed fetch error', e); }
       setLoading(false);
     };
     window.addEventListener('documents:changed', handler as EventListener);
-    return () => { mounted = false; window.removeEventListener('documents:changed', handler as EventListener); };
+    // also listen for form changes so registration form select updates
+    const formsHandler = async (ev?: Event) => {
+      try {
+        const fRes = await fetchFormOptions();
+        if (mounted && fRes && fRes.length) setFormOptions(fRes.map((it: any) => ({ value: it.value, label: it.label })));
+      } catch (e) { console.debug('[E2E] forms:changed handler error', e); }
+    };
+    window.addEventListener('forms:changed', formsHandler as EventListener);
+    return () => { mounted = false; window.removeEventListener('documents:changed', handler as EventListener); window.removeEventListener('forms:changed', formsHandler as EventListener); };
   }, []);
+
 
   return (
     <div className={`p-6 bg-white rounded-lg border`} aria-labelledby="section-documents-title">
@@ -85,7 +106,7 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
             id={`doc-${d.key}`}
             label={d.label}
             value={values[d.key] || ''}
-            options={d.key === 'privacyPolicy' ? privacyOptions : (d.key === 'terms' ? termsOptions : (d.key === 'usefulInformations' ? usefulOptions : options))}
+            options={d.key === 'privacyPolicy' ? privacyOptions : (d.key === 'terms' ? termsOptions : (d.key === 'registrationForm' ? formOptions : (d.key === 'usefulInformations' ? usefulOptions : options)))}
             onChange={(v) => onChange(d.key, v)}
             disabled={disabled}
             testId={`doc-selector-${d.key}`}

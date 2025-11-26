@@ -37,6 +37,7 @@ const AppContent: React.FC = () => {
   const [tripFormMode, setTripFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
   const [isCommFormVisible, setIsCommFormVisible] = useState(false);
   const [formFormMode, setFormFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
+  const [editingFormData, setEditingFormData] = useState<any | null>(null);
   const [commInitialType, setCommInitialType] = useState<'information' | 'alert' | undefined>(undefined);
 
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
@@ -82,7 +83,7 @@ const AppContent: React.FC = () => {
         if (formsRes.ok) {
           const data = await formsRes.json();
           const items = data.items || data;
-          setForms(items.map((f: any) => ({ id: f._id ?? f.id, name: f.title || f.name || 'Untitled Form', trip: '—', responses: '—' })));
+          setForms(items.map((f: any) => ({ id: f._id ?? f.id, name: f.title || f.name || 'Untitled Form', description: f.description || '', trip: '—', responses: '—', status: f.status || 'draft' })));
         }
       } catch (e) {
         console.error('Error loading forms', e);
@@ -170,6 +171,71 @@ const AppContent: React.FC = () => {
   const handleSaveForm = () => {
     // Logic to save form would go here
     setFormFormMode('hidden');
+  };
+
+  const handleEditForm = async (id: string | number) => {
+    try {
+      const sid = String(id);
+      const res = await fetch(`http://localhost:5001/api/forms/${sid}`);
+      if (!res.ok) throw new Error('Fetch form failed');
+      const data = await res.json();
+      setEditingFormData(data);
+      setFormFormMode('edit');
+    } catch (err) {
+      console.error('Load form for edit failed', err);
+      toast.push('Impossibile caricare il form per la modifica.', 'error');
+    }
+  };
+
+  const handleDeleteForm = async (id: string | number) => {
+    try {
+      const sid = String(id);
+      const res = await fetch(`http://localhost:5001/api/forms/${sid}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error('Delete failed');
+      setForms(prev => prev.filter(f => String(f.id) !== sid));
+      toast.push('Form eliminato.', 'success');
+    } catch (err) {
+      console.error('Delete form error', err);
+      toast.push('Errore durante la cancellazione del form.', 'error');
+    }
+  };
+
+  const handleCloneForm = async (id: string | number) => {
+    try {
+      const sid = String(id);
+      const res = await fetch(`http://localhost:5001/api/forms/${sid}`);
+      if (!res.ok) throw new Error('Fetch form failed');
+      const data = await res.json();
+      // Prepare clone payload
+      const payload = {
+        title: `${data.title || data.name || 'Untitled Form'} (copy)`,
+        description: data.description || data.desc || '',
+        sections: data.sections || [],
+        status: 'draft'
+      };
+      const createRes = await fetch('http://localhost:5001/api/forms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!createRes.ok) throw new Error('Clone failed');
+      const created = await createRes.json();
+      const normalized = { id: created._id ?? created.id, name: created.title ?? created.name ?? 'Untitled Form', trip: '—', responses: '—', status: created.status || 'draft' };
+      setForms(prev => [normalized, ...prev]);
+      toast.push('Form clonato.', 'success');
+    } catch (err) {
+      console.error('Clone form error', err);
+      toast.push('Errore durante la clonazione del form.', 'error');
+    }
+  };
+
+  const handleCreateOrUpdateFormSaved = (saved: any) => {
+    if (!saved) return;
+    const normalized = { id: saved._id ?? saved.id, name: saved.title ?? saved.name ?? 'Untitled Form', description: saved.description || '', trip: '—', responses: '—', status: saved.status || 'draft' };
+    const exists = forms.some(f => String(f.id) === String(normalized.id));
+    if (exists) {
+      setForms(prev => prev.map(f => String(f.id) === String(normalized.id) ? normalized : f));
+    } else {
+      setForms(prev => [normalized, ...prev]);
+    }
+    setFormFormMode('hidden');
+    setEditingFormData(null);
   };
 
   // Invites handlers
@@ -379,7 +445,13 @@ const AppContent: React.FC = () => {
     }
 
     if (formFormMode !== 'hidden') {
-      return <CreateForm onCancel={handleCloseForm} onSave={handleSaveForm} />;
+      const isEditing = formFormMode === 'edit';
+      return <CreateForm onCancel={handleCloseForm} onSave={(saved?: any) => handleCreateOrUpdateFormSaved(saved)} isEditing={isEditing} initialData={editingFormData} onDelete={(id) => {
+        // delegate to existing delete handler and close editor
+        handleDeleteForm(id);
+        setFormFormMode('hidden');
+        setEditingFormData(null);
+      }} />;
     }
     
     switch (activeView) {
@@ -398,7 +470,7 @@ const AppContent: React.FC = () => {
       case 'useful-informations':
         return <UsefulInformations informations={usefulInformations} setInformations={setUsefulInformations} />;
       case 'forms':
-        return <Forms onCreateForm={handleCreateForm} forms={forms} />;
+        return <Forms onCreateForm={handleCreateForm} onEditForm={handleEditForm} onDeleteForm={handleDeleteForm} onCloneForm={handleCloneForm} forms={forms} />;
       case 'privacy-policy':
         return <PrivacyPolicy documents={privacyDocuments} setDocuments={setPrivacyDocuments} />;
       case 'terms-conditions':

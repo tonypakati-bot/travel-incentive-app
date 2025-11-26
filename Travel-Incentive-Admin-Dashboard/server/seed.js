@@ -17,6 +17,12 @@ const participants = [
   { firstName: 'Luca', lastName: 'Azzurri', name: 'Luca Azzurri', email: 'l.azzurri@example.com', trip: 'Team Retreat Mykonos', group: 'Tutti', status: 'Registered' }
 ];
 
+const contacts = [
+  { name: 'Mario Rossi', category: 'Tour Leader', email: 'm.rossi@example.com', phone: '+390123456' },
+  { name: 'Laura Verdi', category: 'Assistenza Aeroportuale', email: 'l.verdi@example.com', phone: '+390987654' },
+  { name: 'Giuseppe Bianchi', category: 'Assistenza Hotel', email: 'g.bianchi@example.com', phone: '+390333222' }
+];
+
 const run = async () => {
   await mongoose.connect(MONGO_URI);
   console.log('Connected to Mongo for seeding');
@@ -24,6 +30,15 @@ const run = async () => {
   await Participant.deleteMany({});
   await Invite.insertMany(invites);
   await Participant.insertMany(participants);
+  // seed contacts if model exists
+  try {
+    const Contact = (await import('./models/Contact.js')).default;
+    await Contact.deleteMany({});
+    await Contact.insertMany(contacts);
+    console.log('Seeded contacts');
+  } catch (e) {
+    console.warn('Contact model not available for seeding', e.message);
+  }
   console.log('Seed complete');
   process.exit(0);
 };

@@ -11,6 +11,7 @@ import privacyPoliciesRouter from './routes/privacyPolicies.js';
 import termsDocumentsRouter from './routes/termsDocuments.js';
 import usefulInformationsRouter from './routes/usefulInformations.js';
 import formsRouter from './routes/forms.js';
+import contactsRouter from './routes/contacts.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/privacy-policies', privacyPoliciesRouter);
 app.use('/api/terms-documents', termsDocumentsRouter);
 app.use('/api/useful-informations', usefulInformationsRouter);
 app.use('/api/forms', formsRouter);
+app.use('/api/contacts', contactsRouter);
 
 const PORT = process.env.PORT || 5001;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travel-db';

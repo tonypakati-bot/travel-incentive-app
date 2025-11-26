@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { createForm } from '../services/forms';
+import { createForm, updateForm } from '../services/forms';
 import { ChevronDownIcon, TrashIcon, GripVerticalIcon, PencilIcon } from './icons';
 import CustomizeFieldsModal, { Field, sectionFieldsData } from './CustomizeFieldsModal';
 import { useToast } from '../contexts/ToastContext';
 
 interface CreateFormProps {
     onCancel: () => void;
-    onSave: () => void;
+    onSave?: (saved?: any) => void;
+    isEditing?: boolean;
+    initialData?: any;
+    onDelete?: (id: string | number) => void;
 }
 
 type Section = {
@@ -22,7 +25,7 @@ const ALL_SECTIONS: Section[] = [
     { id: 'fatturazione', title: 'Fatturazione' },
 ];
 
-const FormField: React.FC<{ label: string; required?: boolean; children: React.ReactNode; className?: string }> = ({ label, required, children, className }) => (
+export const FormField: React.FC<{ label: string; required?: boolean; children: React.ReactNode; className?: string }> = ({ label, required, children, className }) => (
     <div className={className}>
         <label className="block text-sm font-medium text-gray-700 mb-1">
             {label} {required && <span className="text-red-500">*</span>}
@@ -31,20 +34,24 @@ const FormField: React.FC<{ label: string; required?: boolean; children: React.R
     </div>
 );
 
-const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>((props, ref) => (
     <input 
+        ref={ref}
         {...props}
         className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''}`}
     />
-);
+));
+Input.displayName = 'Input';
 
-const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>((props, ref) => (
     <textarea 
+        ref={ref}
         {...props}
         rows={2}
         className={`w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition ${props.className || ''}`}
     />
-);
+));
+Textarea.displayName = 'Textarea';
 
 const Select: React.FC<{ children: React.ReactNode, value?: string | number, onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void}> = ({ children, value, onChange }) => (
     <div className="relative">
@@ -55,10 +62,10 @@ const Select: React.FC<{ children: React.ReactNode, value?: string | number, onC
     </div>
 );
 
-const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
+const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = false, initialData }) => {
     const initialActiveSections: Section[] = [];
 
-    const [activeSections, setActiveSections] = useState<Section[]>(initialActiveSections);
+    const [activeSections, setActiveSections] = useState<Section[]>(() => initialActiveSections);
     const [availableSections, setAvailableSections] = useState<Section[]>(() => 
         ALL_SECTIONS.filter(s => !initialActiveSections.some(as => as.id === s.id))
     );
@@ -66,6 +73,7 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
     const [description, setDescription] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
     const [errors, setErrors] = useState<{ title?: string }>({});
     const toast = useToast();
     const [editingSection, setEditingSection] = useState<Section | null>(null);
@@ -75,6 +83,27 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
             return acc;
         }, {} as Record<string, Field[]>);
     });
+
+    // If initialData provided (editing), hydrate local state
+    React.useEffect(() => {
+        if (initialData) {
+            const data = initialData;
+            setTitle(data.title || data.name || '');
+            setDescription(data.description || data.desc || '');
+            if (Array.isArray(data.sections)) {
+                setActiveSections(data.sections.map((s: any) => ({ id: s.id, title: s.title })));
+                const map: Record<string, Field[]> = {};
+                data.sections.forEach((s: any) => {
+                    map[s.id] = Array.isArray(s.fields) ? s.fields.map((f: any, idx: number) => ({ ...f, order: idx })) : (sectionFieldsMap[s.id] || []);
+                });
+                setSectionFieldsMap(prev => ({ ...prev, ...map }));
+                // Ensure availableSections does not contain sections that are active in the loaded form
+                const activeIds = new Set(data.sections.map((s: any) => s.id));
+                setAvailableSections(ALL_SECTIONS.filter((s) => !activeIds.has(s.id)));
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialData]);
 
     const dragItem = React.useRef<any>(null);
     const dragOverItem = React.useRef<any>(null);
@@ -278,20 +307,38 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
             </div>
 
             <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
+                {isEditing && (
+                    <button
+                        onClick={() => onCancel()}
+                        className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                        Annulla
+                    </button>
+                )}
                 <button 
                     onClick={async () => {
                         if (!validate()) return;
                         setIsSaving(true);
-                        const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' };
-                        try {
-                            const created = await createForm(payload);
-                            if (created) {
-                                try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
-                                try { toast.showToast('Bozza salvata.', 'success'); } catch(e){}
-                            }
-                        } catch (err) { console.error('Failed saving draft', err); try { toast.showToast('Salvataggio bozza fallito.', 'error'); } catch(e){} }
-                        setIsSaving(false);
-                        onCancel();
+                                const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' };
+                                try {
+                                            if (isEditing && initialData && (initialData._id || initialData.id)) {
+                                                const id = String(initialData._id ?? initialData.id);
+                                                const updated = await updateForm(id, payload);
+                                                if (updated) {
+                                                    try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {}
+                                                    try { toast.showToast('Bozza aggiornata.', 'success'); } catch(e){}
+                                                    onSave && onSave(updated);
+                                                }
+                                            } else {
+                                                const created = await createForm(payload);
+                                                if (created) {
+                                                    try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
+                                                    try { toast.showToast('Bozza salvata.', 'success'); } catch(e){}
+                                                    onSave && onSave(created);
+                                                }
+                                            }
+                                } catch (err) { console.error('Failed saving draft', err); try { toast.showToast('Salvataggio bozza fallito.', 'error'); } catch(e){} }
+                                setIsSaving(false);
                     }}
                     disabled={isSaving}
                     className={`bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>
@@ -303,14 +350,25 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave }) => {
                         setIsSaving(true);
                         const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'published' };
                         try {
-                            const created = await createForm(payload);
-                            if (created) {
-                                try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
-                                try { toast.showToast('Form pubblicato.', 'success'); } catch(e){}
+                            if (isEditing && initialData && (initialData._id || initialData.id)) {
+                                const id = String(initialData._id ?? initialData.id);
+                                const updated = await updateForm(id, payload);
+                                if (updated) {
+                                    try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {}
+                                    try { toast.showToast('Form aggiornato.', 'success'); } catch(e){}
+                                    onSave && onSave(updated);
+                                }
+                            } else {
+                                const created = await createForm(payload);
+                                if (created) {
+                                    try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {}
+                                    try { toast.showToast('Form pubblicato.', 'success'); } catch(e){}
+                                    onSave && onSave(created);
+                                }
                             }
                         } catch (err) { console.error('Failed publishing form', err); try { toast.showToast('Publish fallito.', 'error'); } catch(e){} }
                         setIsSaving(false);
-                        onSave();
+                        
                     }}
                     disabled={isSaving}
                     className={`bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>

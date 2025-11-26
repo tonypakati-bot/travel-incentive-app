@@ -71,10 +71,11 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
             try {
               const created = await createPrivacyPolicy({ title: doc.title, content: doc.content, trip: null });
               if (created) {
-                try { (window as any).__E2E_lastCreatePrivacyResult = created; } catch (e) {}
-                try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created } })); } catch (e) { /* ignore */ }
+                const c: any = created;
+                try { (window as any).__E2E_lastCreatePrivacyResult = c; } catch (e) {}
+                try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created: c } })); } catch (e) { /* ignore */ }
                 setCreatingPrivacy(false);
-                onChange(String(created.value));
+                onChange(String(c.value ?? c.id ?? c._id ?? ''));
               } else {
                 console.error('createPrivacyPolicy returned null');
                 alert('Errore durante la creazione della privacy policy. Controlla la console per dettagli.');
@@ -94,11 +95,12 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
             onSave={async (doc) => {
             try {
               const created = await createTermsDocument({ title: doc.title, content: doc.content, trip: doc.trip });
-              if (created) {
-                try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created } })); } catch (e) {}
+                if (created) {
+                const c: any = created;
+                try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created: c } })); } catch (e) {}
                 setCreating(false);
-                onChange(String(created.value ?? created.id ?? created._id ?? ''));
-              } else {
+                onChange(String(c.value ?? c.id ?? c._id ?? ''));
+                } else {
                 console.error('createTermsDocument returned null');
                 alert('Errore durante la creazione del documento Terms. Controlla la console.');
               }
@@ -122,9 +124,10 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
                 const payload = { title: titleFallback, usefulInfo: data, content: '' };
                 const created = await createUsefulInfo(payload);
                 if (created) {
-                  try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created } })); } catch (e) {}
+                  const c: any = created;
+                  try { window.dispatchEvent(new CustomEvent('documents:changed', { detail: { created: c } })); } catch (e) {}
                   setCreating(false);
-                  onChange(String(created.value ?? created.id ?? created._id ?? ''));
+                  onChange(String(c.value ?? c.id ?? c._id ?? ''));
                 } else {
                   console.error('createUsefulInfo returned null');
                   alert('Errore durante la creazione della Useful Information. Controlla la console.');
