@@ -861,7 +861,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                   </div>
                 ) : null}
 
-                {(agenda[activeDayIndex] && (agenda[activeDayIndex].items || [])).map((item, idx) => (
+                {(agenda[activeDayIndex]?.items || []).map((item, idx) => (
                   <div key={String(item.id || idx)} className="border border-gray-200 rounded-lg p-4 bg-white">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <FormField label="Orario">
