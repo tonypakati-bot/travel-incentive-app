@@ -3,6 +3,13 @@ import Form from '../models/Form.js';
 
 const router = express.Router();
 
+import mongoose from 'mongoose';
+
+router.param('id', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(String(id))) return res.status(400).json({ error: 'Invalid id' });
+  next();
+});
+
 // List forms (supports ?page & ?limit)
 router.get('/', async (req, res) => {
   try {

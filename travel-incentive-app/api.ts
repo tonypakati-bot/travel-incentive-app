@@ -1,8 +1,13 @@
 import axios from 'axios';
 import { Photo, Profile, TravelInfo, TripData } from './types';
 
+const backendEnv = (import.meta as any)?.env?.VITE_BACKEND_URL as string | undefined;
+const resolvedBase = backendEnv && backendEnv.length > 0
+  ? `${backendEnv.replace(/\/+$/, '')}/api`
+  : '/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: resolvedBase,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'

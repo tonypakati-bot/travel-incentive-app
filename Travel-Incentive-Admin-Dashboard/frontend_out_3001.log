@@ -1,11 +1,12 @@
 
 > incentive-travel-admin-dashboard@0.0.0 dev
-> vite --port 3001
+> vite
 
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
 
-  VITE v6.4.1  ready in 163 ms
+  VITE v6.4.1  ready in 170 ms
 
-  ➜  Local:   http://localhost:3001/
-  ➜  Network: http://172.16.50.8:3001/
-  ➜  Network: http://10.41.0.250:3001/
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: http://172.16.50.8:3002/
   ➜  press h + enter to show help

@@ -16,7 +16,7 @@ const TripSchema = new mongoose.Schema({
     imageUrl: { type: String },
     logoUrl: { type: String }
   },
-  documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
+  documents: [{ documentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Document' }, category: { type: String } }],
   emergencyContacts: [{
     group: { type: String },
     contactId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contact' },

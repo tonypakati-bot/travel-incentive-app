@@ -3,21 +3,15 @@ export type DocOption = { value: string; label: string };
 export async function fetchDocumentOptions(baseUrl = ''): Promise<DocOption[]> {
   const usefulUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/useful-informations` : `/api/useful-informations`;
   const isDev = typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.DEV;
-  let docsUrl: string | null = null;
-  if (isDev) {
-    docsUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
-  }
+  // always attempt /api/documents as a fallback regardless of DEV flag — some deployments serve static HTML without DEV set
+  const docsUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
   try {
     // prefer useful-informations endpoint (contains usefulInfo entries); fall back to documents
     console.debug('[E2E] fetchDocumentOptions trying useful-informations', usefulUrl);
     let res = await fetch(usefulUrl).catch(() => null);
     if (!res || !res.ok) {
-      if (docsUrl) {
-        console.debug('[E2E] useful-informations failed, trying documents', docsUrl);
-        res = await fetch(docsUrl).catch(() => null);
-      } else {
-        res = null;
-      }
+      console.debug('[E2E] useful-informations failed, trying documents', docsUrl);
+      res = await fetch(docsUrl).catch(() => null);
     }
     console.debug('[E2E] fetchDocumentOptions status', res && res.status);
     if (!res || !res.ok) return [];
@@ -66,12 +60,9 @@ export async function createDocument(payload: { title: string; content?: string;
   // choose endpoint based on payload shape; prefer useful-informations for usefulInfo payloads
   const usefulUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/useful-informations` : `/api/useful-informations`;
   const isDev = typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.DEV;
-  let docsUrl: string | null = null;
-  if (isDev) {
-    docsUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
-  }
-  // If payload contains usefulInfo -> use useful-informations. Otherwise in production route to useful-informations
-  const postUrl = (payload && payload.usefulInfo) || !docsUrl ? usefulUrl : docsUrl;
+  const docsUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
+  // If payload contains usefulInfo -> use useful-informations. Otherwise prefer useful-informations but fall back to /api/documents
+  const postUrl = (payload && payload.usefulInfo) ? usefulUrl : usefulUrl;
   try {
     console.debug('[E2E] createDocument url', postUrl, 'payload', payload);
     const res = await fetch(postUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

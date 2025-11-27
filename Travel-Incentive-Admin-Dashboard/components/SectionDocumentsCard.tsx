@@ -110,6 +110,7 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
             onChange={(v) => onChange(d.key, v)}
             disabled={disabled}
             testId={`doc-selector-${d.key}`}
+            showActions={false}
           />
         ))}
       </div>

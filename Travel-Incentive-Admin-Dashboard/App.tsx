@@ -33,6 +33,32 @@ const initialForms: Form[] = [
 ];
 
 const AppContent: React.FC = () => {
+  // DEV helper: rewrite absolute backend URLs to relative paths so Vite proxy handles them
+  // This prevents CORS issues when code still contains `http://localhost:5001/...`.
+  try {
+    if (typeof window !== 'undefined' && (import.meta as any).env && (import.meta as any).env.DEV) {
+      const w: any = window;
+      if (!w.__FETCH_REWRITTEN) {
+        const _fetch = w.fetch.bind(w);
+        w.fetch = (input: any, init?: any) => {
+          try {
+            const orig = typeof input === 'string' ? input : (input && input.url) || '';
+            if (typeof orig === 'string' && orig.startsWith('http://localhost:5001')) {
+              const newUrl = orig.replace('http://localhost:5001', '');
+              if (typeof input === 'string') input = newUrl;
+              else if (input && input.url) input = new Request(newUrl, input);
+            }
+          } catch (e) {
+            // silence
+          }
+          return _fetch(input, init);
+        };
+        w.__FETCH_REWRITTEN = true;
+      }
+    }
+  } catch (e) {
+    // ignore in production or unsupported environments
+  }
   const [activeView, setActiveView] = useState('dashboard');
   const [tripFormMode, setTripFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
   const [isCommFormVisible, setIsCommFormVisible] = useState(false);
@@ -108,13 +134,19 @@ const AppContent: React.FC = () => {
             const uiRes = await fetch('http://localhost:5001/api/useful-informations/summary');
             if (uiRes.ok) {
               const data = await uiRes.json();
-              const items = data.items || data; // backward compat
+              // Backward compatibility: API may return either an array, an object with `items`, or a single item
+              let items: any[] = [];
+              if (Array.isArray(data)) items = data;
+              else if (data && Array.isArray(data.items)) items = data.items;
+              else if (data && data.items) items = [data.items];
+              else if (data) items = [data];
+
               setUsefulInformations(items.map((u: any) => ({
-                id: u.id ?? u._id ?? u._id,
+                id: u._id ?? u.id ?? String(Math.random()).slice(2),
                 destinationName: u.title || '',
                 country: '',
-                dateAdded: new Date(u.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', ''),
-                fullData: {}
+                dateAdded: u.createdAt ? new Date(u.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '') : '',
+                fullData: u
               })));
             }
           } catch (e) {
@@ -140,6 +172,31 @@ const AppContent: React.FC = () => {
     } catch (e) {}
   }, []);
 
+  React.useEffect(() => {
+    const openHandler = () => setFormFormMode('create');
+    const changedHandler = (e: any) => {
+      try {
+        const saved = e?.detail?.created;
+        if (saved) handleCreateOrUpdateFormSaved(saved);
+      } catch (err) {
+        console.error('forms:changed handler error', err);
+      }
+    };
+    try {
+      window.addEventListener('forms:openCreate', openHandler);
+      window.addEventListener('forms:changed', changedHandler as EventListener);
+    } catch (e) {
+      /* ignore */
+    }
+    return () => {
+      try {
+        window.removeEventListener('forms:openCreate', openHandler);
+        window.removeEventListener('forms:changed', changedHandler as EventListener);
+      } catch (e) {
+        /* ignore */
+      }
+    };
+  }, []);
 
   // Trip form handlers
   const handleCreateTrip = () => setTripFormMode('create');
@@ -443,16 +500,6 @@ const AppContent: React.FC = () => {
     if (isCommFormVisible) {
       return <CreateCommunication onCancel={handleCloseCommForm} onSave={handleSaveCommForm} initialType={commInitialType} />;
     }
-
-    if (formFormMode !== 'hidden') {
-      const isEditing = formFormMode === 'edit';
-      return <CreateForm onCancel={handleCloseForm} onSave={(saved?: any) => handleCreateOrUpdateFormSaved(saved)} isEditing={isEditing} initialData={editingFormData} onDelete={(id) => {
-        // delegate to existing delete handler and close editor
-        handleDeleteForm(id);
-        setFormFormMode('hidden');
-        setEditingFormData(null);
-      }} />;
-    }
     
     switch (activeView) {
       case 'dashboard':
@@ -505,6 +552,19 @@ const AppContent: React.FC = () => {
           inviteeCount={invitesModalData?.inviteeCount || 0}
           initialBody={invitesModalData?.emailBody}
         />
+        {formFormMode !== 'hidden' && (
+          <CreateForm
+            onCancel={handleCloseForm}
+            onSave={(saved?: any) => handleCreateOrUpdateFormSaved(saved)}
+            isEditing={formFormMode === 'edit'}
+            initialData={editingFormData}
+            onDelete={(id) => {
+              handleDeleteForm(id);
+              setFormFormMode('hidden');
+              setEditingFormData(null);
+            }}
+          />
+        )}
       </div>
     </ToastProvider>
   );

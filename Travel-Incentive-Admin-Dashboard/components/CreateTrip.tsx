@@ -499,7 +499,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         console.debug('[E2E] __E2E_saveSection3 called', { tripDraft, docValues, settingsValues });
         if (!tripDraft || !(tripDraft as any).tripId) return { ok: false, reason: 'no-trip' };
         try {
-          const docsArray = Object.values((docValues||{})).filter(Boolean);
+          const docsArray = Object.entries((docValues||{})).map(([key, val]) => ({ id: val, category: (key === 'usefulInformations' ? 'Useful Informations' : key === 'privacyPolicy' ? 'Privacy Policy' : key === 'terms' ? 'Terms & Conditions' : key === 'registrationForm' ? 'Form di Registrazione' : key) })).filter(d => d.id);
           const payload: any = { documents: docsArray };
           if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
           console.debug('[E2E] __E2E_saveSection3 payload', payload);
@@ -621,7 +621,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                   if (!tripDraft || !(tripDraft as any).tripId) return;
                   setSavingSection3(true);
                   try {
-                    const docsArray = Object.values(docValues || {}).filter(Boolean);
+                    const docsArray = Object.entries(docValues || {}).map(([key, val]) => ({ id: val, category: (key === 'usefulInformations' ? 'Useful Informations' : key === 'privacyPolicy' ? 'Privacy Policy' : key === 'terms' ? 'Terms & Conditions' : key === 'registrationForm' ? 'Form di Registrazione' : key) })).filter(d => d.id);
                     const payload: any = { documents: docsArray };
                     // also include settings if present to avoid clobbering
                     if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
@@ -690,8 +690,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         <Textarea rows={2} placeholder="Note generali per i voli di andata" value={flightsMeta.andataNotes || ''} onChange={(e) => setFlightsMeta(prev => ({ ...(prev||{}), andataNotes: e.target.value }))} />
                       </FormField>
                       <div className="space-y-4">
-                        {flights.filter(f => f.direction === 'andata').map((f, idx) => (
-                          <div key={idx} className="relative p-4 border border-gray-200 rounded-lg bg-gray-50/50">
+                        {flights.map((f, i) => ({ f, i })).filter(p => p.f.direction === 'andata').map(({ f, i: idx }) => (
+                          <div key={(f && (f.id || (f as any)._id)) || idx} className="relative p-4 border border-gray-200 rounded-lg bg-gray-50/50">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                               <FormField label="Gruppo Partenza">
                                 <div className="relative">
@@ -719,13 +719,13 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                                 <Input value={f.to || ''} onChange={(e) => updateFlight(idx, { to: e.target.value })} placeholder="e.g. Abu Dhabi" />
                               </FormField>
                               <FormField label="Data Partenza">
-                                <Input value={f.date || ''} onChange={(e) => updateFlight(idx, { date: e.target.value })} placeholder="gg/mm/aaaa" />
+                                <Input type="date" value={f.date || ''} onChange={(e) => updateFlight(idx, { date: e.target.value })} placeholder="gg/mm/aaaa" />
                               </FormField>
                               <FormField label="Ora Partenza">
-                                <Input value={f.timeDeparture || ''} onChange={(e) => updateFlight(idx, { timeDeparture: e.target.value })} placeholder="--:--" />
+                                <Input type="time" value={f.timeDeparture || ''} onChange={(e) => updateFlight(idx, { timeDeparture: e.target.value })} placeholder="--:--" />
                               </FormField>
                               <FormField label="Ora Arrivo">
-                                <Input value={f.timeArrival || ''} onChange={(e) => updateFlight(idx, { timeArrival: e.target.value })} placeholder="--:--" />
+                                <Input type="time" value={f.timeArrival || ''} onChange={(e) => updateFlight(idx, { timeArrival: e.target.value })} placeholder="--:--" />
                               </FormField>
                             </div>
                             <div className="absolute top-3 right-3">
@@ -750,8 +750,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         <Textarea rows={2} placeholder="Note generali per i voli di ritorno" value={flightsMeta.ritornoNotes || ''} onChange={(e) => setFlightsMeta(prev => ({ ...(prev||{}), ritornoNotes: e.target.value }))} />
                       </FormField>
                       <div className="space-y-4">
-                        {flights.filter(f => f.direction === 'ritorno').map((f, idx) => (
-                          <div key={idx} className="relative p-4 border border-gray-200 rounded-lg bg-gray-50/50">
+                        {flights.map((f, i) => ({ f, i })).filter(p => p.f.direction === 'ritorno').map(({ f, i: idx }) => (
+                          <div key={(f && (f.id || (f as any)._id)) || idx} className="relative p-4 border border-gray-200 rounded-lg bg-gray-50/50">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                               <FormField label="Compagnia Aerea">
                                 <Input value={f.airline || ''} onChange={(e) => updateFlight(idx, { airline: e.target.value })} placeholder="e.g. Etihad Airways" />
@@ -768,13 +768,13 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                                 <Input value={f.to || ''} onChange={(e) => updateFlight(idx, { to: e.target.value })} placeholder="e.g. Malpensa" />
                               </FormField>
                               <FormField label="Data Partenza">
-                                <Input value={f.date || ''} onChange={(e) => updateFlight(idx, { date: e.target.value })} placeholder="gg/mm/aaaa" />
+                                <Input type="date" value={f.date || ''} onChange={(e) => updateFlight(idx, { date: e.target.value })} placeholder="gg/mm/aaaa" />
                               </FormField>
                               <FormField label="Ora Partenza">
-                                <Input value={f.timeDeparture || ''} onChange={(e) => updateFlight(idx, { timeDeparture: e.target.value })} placeholder="--:--" />
+                                <Input type="time" value={f.timeDeparture || ''} onChange={(e) => updateFlight(idx, { timeDeparture: e.target.value })} placeholder="--:--" />
                               </FormField>
                               <FormField label="Ora Arrivo">
-                                <Input value={f.timeArrival || ''} onChange={(e) => updateFlight(idx, { timeArrival: e.target.value })} placeholder="--:--" />
+                                <Input type="time" value={f.timeArrival || ''} onChange={(e) => updateFlight(idx, { timeArrival: e.target.value })} placeholder="--:--" />
                               </FormField>
                             </div>
                             <div className="absolute top-3 right-3">

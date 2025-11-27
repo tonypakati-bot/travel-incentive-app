@@ -2,6 +2,13 @@ import express from 'express';
 import Participant from '../models/Participant.js';
 const router = express.Router();
 
+import mongoose from 'mongoose';
+
+router.param('id', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(String(id))) return res.status(400).json({ error: 'Invalid id' });
+  next();
+});
+
 router.get('/', async (req, res) => {
   const participants = await Participant.find();
   res.json(participants);

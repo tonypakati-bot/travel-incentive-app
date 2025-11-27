@@ -6,6 +6,16 @@ import Document from '../models/Document.js';
 
 const router = express.Router();
 
+// Validate ObjectId params early to avoid Mongoose CastError causing 500s.
+router.param('tripId', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(String(id))) return res.status(400).json({ error: 'Invalid tripId' });
+  next();
+});
+router.param('id', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(String(id))) return res.status(400).json({ error: 'Invalid id' });
+  next();
+});
+
 router.post('/', async (req, res) => {
   try {
     const { clientName, name, subtitle, description, startDate, endDate, status='draft', settings } = req.body;
@@ -83,22 +93,30 @@ router.patch('/:id', async (req, res) => {
       payload.emergencyContacts = cleaned;
     }
 
-    // normalize documents array: allow slugs or ObjectId strings from client
+    // normalize documents array: accept strings or objects { id, category }
     if (Array.isArray(payload.documents)) {
       const normalized = [];
       for (const d of payload.documents) {
         if (!d) continue;
         try {
-          // if already a valid ObjectId string, keep it
-          if (mongoose.Types.ObjectId.isValid(String(d))) {
-            normalized.push(d);
-            continue;
+          let idCandidate = null;
+          let categoryCandidate = '';
+          if (typeof d === 'string') {
+            idCandidate = d;
+          } else if (typeof d === 'object') {
+            idCandidate = d.id ?? d._id ?? d.value ?? null;
+            categoryCandidate = d.category ?? '';
           }
-          // otherwise try to resolve as slug
-          const doc = await Document.findOne({ slug: String(d) }).lean();
-          if (doc) normalized.push(doc._id);
+          if (!idCandidate) continue;
+          let resolvedId = null;
+          if (mongoose.Types.ObjectId.isValid(String(idCandidate))) {
+            resolvedId = String(idCandidate);
+          } else {
+            const doc = await Document.findOne({ slug: String(idCandidate) }).lean();
+            if (doc) resolvedId = String(doc._id);
+          }
+          if (resolvedId) normalized.push({ documentId: resolvedId, category: categoryCandidate });
         } catch (e) {
-          // ignore resolution errors and skip this entry
           continue;
         }
       }
@@ -222,6 +240,12 @@ router.post('/:tripId/flights', async (req, res) => {
   try {
     const { tripId } = req.params;
     const body = req.body || {};
+    try {
+      const fs = await import('fs');
+      const line = JSON.stringify({ ts: new Date().toISOString(), tripId, body }) + '\n';
+      fs.promises.appendFile('/tmp/flight_requests.log', line).catch(()=>{});
+      console.debug('[E2E] Received flight POST', { tripId, body });
+    } catch (e) { console.error('E2E logging failed', e); }
     if (!tripId) return res.status(400).json({ error: 'Missing tripId' });
     const direction = body.direction && String(body.direction);
     if (!direction || (direction !== 'andata' && direction !== 'ritorno')) return res.status(400).json({ error: 'Invalid or missing direction' });

@@ -18,6 +18,7 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
     setSaving(true);
     try {
       const payload: any = { clientName, name, subtitle, description, startDate, endDate, status: 'draft' };
+      // DEV E2E: payload is prepared for save
       if (settings) payload.settings = settings;
       const res = await fetch('/api/trips', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) {
@@ -92,14 +93,16 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
           <span className="text-sm font-medium">Descrizione</span>
           <textarea data-testid="trip-description" value={description} onChange={e=>setDescription(e.target.value)} className="mt-1 p-2 border rounded" placeholder="Descrizione del viaggio" rows={3} />
         </label>
-        <label className="flex flex-col">
-          <span className="text-sm font-medium">Data di Inizio *</span>
-          <input data-testid="trip-start-date" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="mt-1 p-2 border rounded" />
-        </label>
-        <label className="flex flex-col">
-          <span className="text-sm font-medium">Data di Fine *</span>
-          <input data-testid="trip-end-date" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="mt-1 p-2 border rounded" />
-        </label>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-6 mt-1">
+          <label className="flex flex-col sm:flex-1 sm:max-w-[220px]">
+            <span className="text-sm font-medium">Data di Inizio *</span>
+            <input data-testid="trip-start-date" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+          </label>
+          <label className="flex flex-col sm:flex-1 sm:max-w-[220px]">
+            <span className="text-sm font-medium">Data di Fine *</span>
+            <input data-testid="trip-end-date" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="mt-1 p-2 border rounded w-full" />
+          </label>
+        </div>
       </div>
 
       <div className="mt-4 flex items-center gap-3">

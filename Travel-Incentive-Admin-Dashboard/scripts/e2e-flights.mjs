@@ -31,7 +31,7 @@ import fs from 'fs';
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }, selector, String(value));
-    await page.waitForTimeout(120);
+    await new Promise(r => setTimeout(r, 120));
   };
 
   // open create trip
@@ -49,20 +49,32 @@ import fs from 'fs';
   await page.waitForSelector('[data-testid="trip-name"]', { timeout: 20000 });
 
   // Fill section 1
-  await setValue('[data-testid="trip-client"]', 'E2E Flights SRL');
-  await setValue('[data-testid="trip-name"]', 'E2E Flights ' + Date.now());
-  await setValue('[data-testid="trip-subtitle"]', 'Subtitle');
-  await setValue('[data-testid="trip-description"]', 'E2E description');
-  // dates
-  await page.evaluate(() => {
-    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    const s = document.querySelector('[data-testid="trip-start-date"]');
-    const e = document.querySelector('[data-testid="trip-end-date"]');
-    if (s && nativeSetter) nativeSetter.call(s, '2025-12-01');
-    if (e && nativeSetter) nativeSetter.call(e, '2025-12-05');
-    if (s) s.dispatchEvent(new Event('input', { bubbles: true }));
-    if (e) e.dispatchEvent(new Event('input', { bubbles: true }));
-  });
+  // Prefer using the dev E2E helper to set React state directly when available
+  const section1SetResult = await page.evaluate((ts) => {
+    try {
+      const w = window;
+      if (w && typeof w.__E2E_setSection1Fields === 'function') {
+        return w.__E2E_setSection1Fields({ clientName: 'E2E Flights SRL', name: 'E2E Flights ' + ts, subtitle: 'Subtitle', description: 'E2E description', startDate: '2025-12-01', endDate: '2025-12-05' });
+      }
+      return { ok: false };
+    } catch (e) { return { ok: false, reason: e && e.message }; }
+  }, Date.now());
+  if (!section1SetResult || section1SetResult.ok === false) {
+    await setValue('[data-testid="trip-client"]', 'E2E Flights SRL');
+    await setValue('[data-testid="trip-name"]', 'E2E Flights ' + Date.now());
+    await setValue('[data-testid="trip-subtitle"]', 'Subtitle');
+    await setValue('[data-testid="trip-description"]', 'E2E description');
+    // dates
+    await page.evaluate(() => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      const s = document.querySelector('[data-testid="trip-start-date"]');
+      const e = document.querySelector('[data-testid="trip-end-date"]');
+      if (s && nativeSetter) nativeSetter.call(s, '2025-12-01');
+      if (e && nativeSetter) nativeSetter.call(e, '2025-12-05');
+      if (s) s.dispatchEvent(new Event('input', { bubbles: true }));
+      if (e) e.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
 
   // wait for save-section-1 to be enabled and click
   await page.waitForFunction(() => { const b = document.querySelector('[data-testid="save-section-1"]'); return b && !b.disabled; }, { timeout: 10000 });
@@ -95,7 +107,7 @@ import fs from 'fs';
       if (btn) btn.click();
     }
   });
-  await page.waitForTimeout(400);
+  await new Promise(r => setTimeout(r, 400));
 
   // click the Andata tab
   await page.evaluate(() => {
@@ -103,43 +115,44 @@ import fs from 'fs';
     const b = tabs.find(t => (t.textContent||'').trim().includes('Voli di Andata'));
     if (b) b.click();
   });
-  await page.waitForTimeout(300);
+  await new Promise(r => setTimeout(r, 300));
 
   // Click add flight and fill fields
+  // Open the Andata add form and fill its inline inputs, then click the inner "Aggiungi Volo" button
   await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll('button'));
-    const add = btns.find(b => (b.textContent||'').includes('Aggiungi Volo di Andata'));
+    const add = btns.find(b => (b.textContent||'').trim().includes('Aggiungi Volo di Andata'));
     if (add) add.click();
   });
-  // wait for new flight row to appear (look for Compagnia Aerea label input)
-  await page.waitForSelector('input[placeholder^="e.g. Etihad"]', { timeout: 5000 }).catch(()=>{});
+  await new Promise(r => setTimeout(r, 300));
 
-  // Fill the first flight row fields (assume last .relative p-4 is the new one)
+  // Fill inputs that live next to the inner 'Aggiungi Volo' button, then click it
   await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('.relative.p-4'));
-    const r = rows[rows.length-1];
-    if (!r) return;
-    const inputs = r.querySelectorAll('input, select, textarea');
-    // naive mapping by placeholder/labels
-    for (const inp of inputs) {
-      const ph = (inp.getAttribute('placeholder')||'').toLowerCase();
-      if (ph.includes('compagnia')) { inp.value = 'Etihad'; }
-      if (ph.includes('numero volo') || ph.includes('numero')) { inp.value = 'EY999'; }
-      if (ph.includes('malpensa') || ph.includes('aeroporto')) { /* not reliable */ }
-      if (ph.includes('gg/mm/aaaa') || inp.type === 'date') { inp.value = '2025-12-02'; }
-      if (ph.includes('--:--')) { if (!inp.value) inp.value = '09:00'; }
-      inp.dispatchEvent(new Event('input', { bubbles: true }));
-      inp.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    // set group select if present
-    const sel = r.querySelector('select'); if (sel) { sel.value = sel.querySelector('option:not([disabled])')?.value || sel.value; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    try {
+      const addBtn = Array.from(document.querySelectorAll('button')).find(b => (b.textContent||'').trim() === 'Aggiungi Volo');
+      if (!addBtn) return;
+      const container = addBtn.closest('.relative') || addBtn.parentElement || document.body;
+      const inputs = Array.from(container.querySelectorAll('input, select, textarea'));
+      for (const inp of inputs) {
+        const ph = (inp.getAttribute('placeholder')||'').toLowerCase();
+        if (ph.includes('compagnia') || ph.includes('etihad')) { inp.value = 'Etihad Airways'; }
+        if (ph.includes('numero volo') || ph.includes('numero') || ph.includes('ey')) { inp.value = 'EY999'; }
+        if (ph.includes('malpensa') || ph.includes('aeroporto')) { if (!inp.value) inp.value = 'Malpensa'; }
+        if (inp.type === 'date') inp.value = '2025-12-02';
+        if (inp.type === 'time') { if (!inp.value) inp.value = '09:00'; }
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      addBtn.click();
+    } catch (e) {}
   });
+  await new Promise(r => setTimeout(r, 500));
 
   // click Save Flights button
   await page.evaluate(() => { const b = Array.from(document.querySelectorAll('button')).find(x => (x.textContent||'').includes('Salva Voli')); if (b) b.click(); });
 
   // wait a bit for network
-  await page.waitForTimeout(800);
+  await new Promise(r => setTimeout(r, 800));
 
   // verify persistence via backend GET
   let tripGet = null;
@@ -150,7 +163,7 @@ import fs from 'fs';
       tripGet = json;
       if (tripGet && Array.isArray(tripGet.flights)) break;
     } catch (e) {}
-    await page.waitForTimeout(300);
+    await new Promise(r => setTimeout(r, 300));
   }
 
   fs.appendFileSync(logFile, `TRIP_GET ${JSON.stringify(tripGet)}\n`);

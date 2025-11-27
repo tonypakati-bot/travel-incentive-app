@@ -152,7 +152,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({
                     
                     <div className="flex space-x-2 ml-4">
                       <a
-                        href={`http://localhost:5001${document.url}`}
+                        href={`/api${document.url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
@@ -162,7 +162,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({
                       </a>
                       
                       <a
-                        href={`http://localhost:5001${document.url}`}
+                        href={`/api${document.url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"

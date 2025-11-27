@@ -2,7 +2,7 @@ import axios from 'axios';
 
 async function testLogin() {
   try {
-    const base = 'http://localhost:5001/api';
+    const base = process.env.API_BASE || '/api';
     const loginRes = await axios.post(`${base}/auth/login`, {
       email: 'mario.rossi@bevnet.it',
       password: 'Test123!'

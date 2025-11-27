@@ -86,7 +86,7 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
         setIsModalOpen(true); // open immediately to show spinner or placeholder if modal supports it
 
         try {
-            const res = await fetch(`http://localhost:5001/api/useful-informations/${info.id}`);
+            const res = await fetch(`/api/useful-informations/${info.id}`);
             if (!res.ok) throw new Error(`Failed to fetch useful info ${info.id}`);
             const full = await res.json();
             // server returns object with usefulInfo field
@@ -114,7 +114,7 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
     const handleConfirmDelete = async () => {
         if (toDeleteId === null) return;
         try {
-            const res = await fetch(`http://localhost:5001/api/useful-informations/${toDeleteId}`, { method: 'DELETE' });
+            const res = await fetch(`/api/useful-informations/${toDeleteId}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Delete failed');
             setInformations(prev => prev.filter(info => info.id !== toDeleteId));
         } catch (err) {
@@ -135,7 +135,7 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
         // If editing, send PATCH, otherwise POST
         if (editingInfoId !== null) {
             try {
-                const res = await fetch(`http://localhost:5001/api/useful-informations/${editingInfoId}`, {
+                const res = await fetch(`/api/useful-informations/${editingInfoId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usefulInfo: data, title: data.destinationName, content: '' }),
@@ -164,7 +164,7 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
                 const payload = { title: titleFallback, usefulInfo: data, content: '' };
                 console.debug('Creating useful info with payload:', payload);
 
-                const res = await fetch('http://localhost:5001/api/useful-informations', {
+                const res = await fetch('/api/useful-informations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),

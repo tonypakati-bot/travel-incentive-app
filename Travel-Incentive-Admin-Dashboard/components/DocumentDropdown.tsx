@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DocumentCreator from './DocumentCreator';
+import CreateForm from './CreateForm';
 import { PrivacyModal } from './PrivacyPolicy';
 import TermsModal from './TermsModal';
 import UsefulInformationModal from './UsefulInformationModal';
@@ -14,11 +15,13 @@ type Props = {
   onChange: (value: string) => void;
   disabled?: boolean;
   testId?: string;
+  showActions?: boolean; // whether to show "Crea nuovo" and "Rimuovi" actions
 };
 
-export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', options, onChange, disabled = false, testId }) => {
+export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', options, onChange, disabled = false, testId, showActions = true }) => {
   const [creating, setCreating] = useState(false);
   const [creatingPrivacy, setCreatingPrivacy] = useState(false);
+  const [creatingForm, setCreatingForm] = useState(false);
   useEffect(() => {
     if (!testId) return;
     if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
@@ -53,13 +56,19 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
         <option data-testid={`${testId}-option-empty`} value="">-- Seleziona --</option>
         {options.map(o => <option key={o.value} data-testid={`${testId}-option-${o.value}`} value={o.value}>{o.label}</option>)}
         </select>
-        <div className="flex flex-col ml-2">
-          <button data-testid={`${testId}-create`} type="button" onClick={() => {
-              if (id === 'doc-privacyPolicy') setCreatingPrivacy(true);
-              else setCreating(true);
-            }} disabled={disabled} className="text-sm text-green-600 hover:underline">Crea nuovo</button>
-          <button data-testid={`${testId}-remove`} type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
-        </div>
+        {showActions ? (
+          <div className="flex flex-col ml-2">
+            <button data-testid={`${testId}-create`} type="button" onClick={() => {
+                if (id === 'doc-privacyPolicy') setCreatingPrivacy(true);
+                else if (id === 'doc-registrationForm') {
+                      // ask the top-level App to open the CreateForm modal
+                      try { window.dispatchEvent(new CustomEvent('forms:openCreate')); } catch (e) {}
+                  }
+                else setCreating(true);
+              }} disabled={disabled} className="text-sm text-green-600 hover:underline">Crea nuovo</button>
+            <button data-testid={`${testId}-remove`} type="button" onClick={() => onChange('')} disabled={disabled || !value} className="text-sm text-red-600 hover:underline">Rimuovi</button>
+          </div>
+        ) : null}
       </div>
       {id === 'doc-privacyPolicy' ? (
         <PrivacyModal
@@ -146,6 +155,7 @@ export const DocumentDropdown: React.FC<Props> = ({ id, label, value = '', optio
           onChange(opt.value);
         }} onClose={() => setCreating(false)} />
       )}
+      {creatingForm ? null : null}
     </div>
   );
 };

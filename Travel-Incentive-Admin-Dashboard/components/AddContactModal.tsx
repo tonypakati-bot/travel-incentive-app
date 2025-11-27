@@ -64,6 +64,9 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSa
         }
     }, [contactToEdit, isOpen]);
 
+    // Call hooks unconditionally to preserve hook order across renders
+    const toast = useToast();
+
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -71,7 +74,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSa
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const toast = (() => { try { return useToast(); } catch { return null as any; } })();
+    
 
     const handleSaveClick = () => {
         // basic validation

@@ -1,2 +1,739 @@
 REQ GET http://localhost:3000/ 
 REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764244725499 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764244725499 
+REQ GET http://localhost:3000/src/index.css?t=1764244725499 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764244725499 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/components/Section1Card.tsx 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+REQ GET http://localhost:3000/vite.svg 
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764244725499 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764244725499 
+REQ GET http://localhost:3000/src/index.css?t=1764244725499 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764244725499 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/Section1Card.tsx 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [E2E] fetchDocumentOptions status 200
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [E2E] fetchDocumentOptions status 200
+REQ GET http://localhost:3000/vite.svg 
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:5001/api/forms 
+REQ GET http://localhost:5001/api/forms 
+REQ GET http://localhost:5001/api/privacy-policies 
+REQ GET http://localhost:5001/api/privacy-policies 
+REQ GET http://localhost:5001/api/useful-informations/summary 
+REQ GET http://localhost:5001/api/useful-informations/summary 
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764244725499 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764244725499 
+REQ GET http://localhost:3000/src/index.css?t=1764244725499 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764244725499 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/components/Section1Card.tsx 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [E2E] fetchDocumentOptions status 200
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [E2E] fetchDocumentOptions status 200
+REQ GET http://localhost:3000/vite.svg 
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:5001/api/forms 
+REQ GET http://localhost:5001/api/forms 
+REQ GET http://localhost:5001/api/privacy-policies 
+REQ GET http://localhost:5001/api/privacy-policies 
+REQ GET http://localhost:5001/api/useful-informations/summary 
+REQ GET http://localhost:5001/api/useful-informations/summary 
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764246718361 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764246718361 
+REQ GET http://localhost:3000/src/index.css?t=1764246718361 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764246718361 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/components/Section1Card.tsx?t=1764246718361 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+REQ GET http://localhost:5001/api/invites 
+REQ GET http://localhost:5001/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+PAGE Access to fetch at 'http://localhost:5001/api/invites' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading admin data JSHandle@error
+REQ GET http://localhost:5001/api/forms 
+PAGE Access to fetch at 'http://localhost:5001/api/participants' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Access to fetch at 'http://localhost:5001/api/invites' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading admin data JSHandle@error
+REQ GET http://localhost:5001/api/forms 
+PAGE Access to fetch at 'http://localhost:5001/api/participants' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchPrivacyPolicyOptions status 404
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchPrivacyPolicyOptions status 404
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE Access to fetch at 'http://localhost:5001/api/forms' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading forms JSHandle@error
+REQ GET http://localhost:5001/api/privacy-policies 
+PAGE Access to fetch at 'http://localhost:5001/api/forms' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading forms JSHandle@error
+REQ GET http://localhost:5001/api/privacy-policies 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/vite.svg 
+PAGE Access to fetch at 'http://localhost:5001/api/privacy-policies' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading privacy policies JSHandle@error
+REQ GET http://localhost:5001/api/useful-informations/summary 
+PAGE Access to fetch at 'http://localhost:5001/api/privacy-policies' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading privacy policies JSHandle@error
+REQ GET http://localhost:5001/api/useful-informations/summary 
+PAGE Access to fetch at 'http://localhost:5001/api/useful-informations/summary' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading useful informations JSHandle@error
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+PAGE Access to fetch at 'http://localhost:5001/api/useful-informations/summary' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+PAGE Failed to load resource: net::ERR_FAILED
+PAGE Error loading useful informations JSHandle@error
+PAGE [E2E] Section1 saveDraft payload JSHandle@object
+REQ POST http://localhost:3000/api/trips {"clientName":"E2E Flights SRL","name":"E2E Flights 1764246905673","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{}}
+# E2E condensed log
+
+# Generated: 2025-11-27 (run trimmed)
+
+E2E SUCCESS: flights persisted 1
+
+TRIP_ID: trip-1764249358639
+
+TRIP_GET: {"clientName":"E2E Flights SRL","name":"E2E Flights 1764249358630","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{},"tripId":"trip-1764249358639","flights":[{"direction":"andata","group":"","id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f","_id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f"}],"flightsMeta":{}}
+
+Notes:
+- This file is a trimmed artifact kept in the repo to represent a known-good local E2E run.
+- Full verbose request traces are available in the original logs under `scripts/*.log` if needed.
+
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/components/Section1Card.tsx?t=1764249009262 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+REQ GET http://localhost:3000/vite.svg 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/api/forms 
+REQ GET http://localhost:3000/api/forms 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+PAGE Error loading useful informations JSHandle@error
+PAGE Error loading useful informations JSHandle@error
+REQ POST http://localhost:3000/api/trips {"clientName":"E2E Flights SRL","name":"E2E Flights 1764249358630","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{}}
+PAGE [Toast] showToast JSHandle@object
+TRIP_ID trip-1764249358639
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTEuOTkgMkM2LjQ3IDIgMiA2LjQ4IDIgMTJzNC40NyAxMCA5Ljk5IDEwQzE3LjUyIDIyIDIyIDE3LjUyIDIyIDEyUzE3LjUyIDIgMTEuOTkgMnpNMTIgMjBjLTQuNDIgMC04LTMuNTgtOC04czMuNTgtOCA4LTggOCAzLjU4IDggOC0zLjU4IDgtOCA4eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTIuNSA3SDExdjZsNS4yNSAzLjE1Ljc1LTEuMjMtNC41LTIuNjd6Ii8+PC9zdmc+ 
+REQ POST http://localhost:3000/api/trips/trip-1764249358639/flights {"direction":"andata","group":""}
+REQ PATCH http://localhost:3000/api/trips/trip-1764249358639 {"flights":[{"direction":"andata","group":"","id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f","_id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f"}],"flightsMeta":{}}
+PAGE [Toast] showToast JSHandle@object
+TRIP_GET {"clientName":"E2E Flights SRL","name":"E2E Flights 1764249358630","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{},"tripId":"trip-1764249358639","flights":[{"direction":"andata","group":"","id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f","_id":"2ae2dae1-e060-4c8d-a171-a6e0e934573f"}],"flightsMeta":{}}
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764249009262 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764249009262 
+REQ GET http://localhost:3000/src/index.css?t=1764249009262 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764249009262 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx?t=1764248624047 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/Section1Card.tsx?t=1764249009262 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE [vite] connecting...
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+PAGE [vite] connected.
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] useful-informations failed, trying documents /api/documents
+REQ GET http://localhost:3000/api/documents 
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/vite.svg 
+REQ GET http://localhost:3000/api/forms 
+REQ GET http://localhost:3000/api/forms 
+PAGE Failed to load resource: the server responded with a status of 404 (Not Found)
+PAGE [E2E] fetchDocumentOptions status 404
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+PAGE Error loading useful informations JSHandle@error
+PAGE Error loading useful informations JSHandle@error
+REQ POST http://localhost:3000/api/trips {"clientName":"E2E Flights SRL","name":"E2E Flights 1764250124750","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{}}
+PAGE [Toast] showToast JSHandle@object
+TRIP_ID trip-1764250124760
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTEuOTkgMkM2LjQ3IDIgMiA2LjQ4IDIgMTJzNC40NyAxMCA5Ljk5IDEwQzE3LjUyIDIyIDIyIDE3LjUyIDIyIDEyUzE3LjUyIDIgMTEuOTkgMnpNMTIgMjBjLTQuNDIgMC04LTMuNTgtOC04czMuNTgtOCA4LTggOCAzLjU4IDggOC0zLjU4IDgtOCA4eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTIuNSA3SDExdjZsNS4yNSAzLjE1Ljc1LTEuMjMtNC41LTIuNjd6Ii8+PC9zdmc+ 
+REQ POST http://localhost:3000/api/trips/trip-1764250124760/flights {"direction":"andata","group":""}
+REQ PATCH http://localhost:3000/api/trips/trip-1764250124760 {"flights":[{"direction":"andata","group":"","id":"746003e5-7d9b-4858-be35-85900a856b1d","_id":"746003e5-7d9b-4858-be35-85900a856b1d"}],"flightsMeta":{}}
+PAGE [Toast] showToast JSHandle@object
+TRIP_GET {"clientName":"E2E Flights SRL","name":"E2E Flights 1764250124750","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{},"tripId":"trip-1764250124760","flights":[{"direction":"andata","group":"","id":"746003e5-7d9b-4858-be35-85900a856b1d","_id":"746003e5-7d9b-4858-be35-85900a856b1d"}],"flightsMeta":{}}
+REQ GET http://localhost:3001/ 
+REQ GET http://localhost:3001/ 
+REQ GET http://localhost:3001/ 
+REQ GET http://localhost:3000/ 
+REQ GET http://localhost:3000/@vite/client 
+REQ GET https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap 
+REQ GET http://localhost:3000/dist/output.css 
+REQ GET http://localhost:3000/index.tsx?t=1764261375776 
+REQ GET http://localhost:3000/@react-refresh 
+REQ GET http://localhost:3000/node_modules/vite/dist/client/env.mjs 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=5b9288ee 
+REQ GET http://localhost:3000/App.tsx?t=1764261375776 
+REQ GET http://localhost:3000/src/index.css?t=1764261375776 
+REQ GET http://localhost:3000/contexts/ToastContext.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-TOPHTIRU.js?v=5b9288ee 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-BUSYA2B4.js?v=5b9288ee 
+PAGE [vite] connecting...
+PAGE [vite] connected.
+REQ GET http://localhost:3000/components/ToastContext.tsx 
+REQ GET http://localhost:3000/components/Sidebar.tsx 
+REQ GET http://localhost:3000/components/Dashboard.tsx 
+REQ GET http://localhost:3000/components/Trip.tsx 
+REQ GET http://localhost:3000/components/CreateTrip.tsx?t=1764261375776 
+REQ GET http://localhost:3000/components/Communications.tsx 
+REQ GET http://localhost:3000/components/CreateCommunication.tsx 
+REQ GET http://localhost:3000/components/Forms.tsx 
+REQ GET http://localhost:3000/components/CreateForm.tsx 
+REQ GET http://localhost:3000/components/ManageParticipants.tsx 
+REQ GET http://localhost:3000/components/ManageContacts.tsx 
+REQ GET http://localhost:3000/components/Reports.tsx 
+REQ GET http://localhost:3000/components/PrivacyPolicy.tsx 
+REQ GET http://localhost:3000/components/TermsConditions.tsx 
+REQ GET http://localhost:3000/components/SendReminderModal.tsx 
+REQ GET http://localhost:3000/components/SendInvitesModal.tsx 
+REQ GET http://localhost:3000/components/Documents.tsx 
+REQ GET http://localhost:3000/components/UsefulInformations.tsx 
+REQ GET http://localhost:3000/components/Invites.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/chunk-RREYUWCL.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/Toast.tsx 
+REQ GET http://localhost:3000/components/icons.tsx 
+REQ GET http://localhost:3000/components/DashboardCard.tsx 
+REQ GET http://localhost:3000/components/CircularProgressBar.tsx 
+REQ GET http://localhost:3000/components/Section1Card.tsx 
+REQ GET http://localhost:3000/components/SectionDocumentsCard.tsx 
+REQ GET http://localhost:3000/components/SectionSettingsCard.tsx 
+REQ GET http://localhost:3000/components/SectionEmergencyContacts.tsx 
+REQ GET http://localhost:3000/components/ConfirmModal.tsx 
+REQ GET http://localhost:3000/components/IconSelect.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/xlsx.js?v=5b9288ee 
+REQ GET http://localhost:3000/components/ParticipantModal.tsx 
+REQ GET http://localhost:3000/services/forms.ts 
+REQ GET http://localhost:3000/components/CustomizeFieldsModal.tsx 
+REQ GET http://localhost:3000/components/AddContactModal.tsx 
+REQ GET http://localhost:3000/node_modules/.vite/deps/dompurify.js?v=5b9288ee 
+REQ GET http://localhost:3000/services/documents.ts 
+REQ GET http://localhost:3000/components/DocumentCreator.tsx 
+REQ GET http://localhost:3000/components/UsefulInformationModal.tsx 
+REQ GET http://localhost:3000/components/DocumentDropdown.tsx 
+REQ GET http://localhost:3000/components/TagInput.tsx 
+REQ GET http://localhost:3000/components/ToggleSwitch.tsx 
+REQ GET http://localhost:3000/components/TermsModal.tsx 
+PAGE %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+REQ GET http://localhost:3000/api/invites 
+REQ GET http://localhost:3000/api/participants 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+PAGE [E2E] DocumentCreator mounted, open= false
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchDocumentOptions trying useful-informations /api/useful-informations
+REQ GET http://localhost:3000/api/useful-informations 
+PAGE [E2E] fetchPrivacyPolicyOptions url /api/privacy-policies
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/terms-documents 
+REQ GET http://localhost:3000/api/contacts 
+REQ GET https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMVYxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3N2Zz4= 
+REQ GET http://localhost:3000/vite.svg 
+REQ POST http://localhost:3000/api/trips {"clientName":"E2E Flights SRL","name":"E2E Flights 1764261492009","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01","endDate":"2025-12-05","status":"draft","settings":{}}
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+REQ GET http://localhost:3000/api/forms 
+PAGE [E2E] fetchPrivacyPolicyOptions status 200
+PAGE [Toast] showToast JSHandle@object
+TRIP_ID 69287e74e15cb9c8dbcf53bb
+PAGE [E2E] fetchDocumentOptions status 200
+PAGE [E2E] fetchDocumentOptions status 200
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+PAGE [E2E] initial fetchDocumentOptions JSHandle@array
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/privacy-policies 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+REQ GET http://localhost:3000/api/useful-informations/summary 
+REQ GET data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTEuOTkgMkM2LjQ3IDIgMiA2LjQ4IDIgMTJzNC40NyAxMCA5Ljk5IDEwQzE3LjUyIDIyIDIyIDE3LjUyIDIyIDEyUzE3LjUyIDIgMTEuOTkgMnpNMTIgMjBjLTQuNDIgMC04LTMuNTgtOC04czMuNTgtOCA4LTggOCAzLjU4IDggOC0zLjU4IDgtOCA4eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMTIuNSA3SDExdjZsNS4yNSAzLjE1Ljc1LTEuMjMtNC41LTIuNjd6Ii8+PC9zdmc+ 
+PAGE [E2E] addOrPersistFlight clicked JSHandle@object
+PAGE [E2E] addOrPersistFlight POST payload JSHandle@object
+REQ POST http://localhost:3000/api/trips/69287e74e15cb9c8dbcf53bb/flights {"direction":"andata","group":""}
+PAGE [E2E] addOrPersistFlight POST status 201
+PAGE [E2E] addOrPersistFlight created JSHandle@object
+REQ PATCH http://localhost:3000/api/trips/69287e74e15cb9c8dbcf53bb {"flights":[{"direction":"andata","_id":"69287e75e15cb9c8dbcf53cc","id":"69287e75e15cb9c8dbcf53cc"}],"flightsMeta":{}}
+PAGE [Toast] showToast JSHandle@object
+TRIP_GET {"settings":{"groups":[],"addAccompany":false,"businessFlights":false},"_id":"69287e74e15cb9c8dbcf53bb","clientName":"E2E Flights SRL","name":"E2E Flights 1764261492009","subtitle":"Subtitle","description":"E2E description","startDate":"2025-12-01T00:00:00.000Z","endDate":"2025-12-05T00:00:00.000Z","status":"draft","documents":[],"emergencyContacts":[],"flights":[{"direction":"andata","_id":"69287e75e15cb9c8dbcf53cf"}],"agenda":[],"createdAt":"2025-11-27T16:38:12.115Z","updatedAt":"2025-11-27T16:38:13.712Z","__v":0}

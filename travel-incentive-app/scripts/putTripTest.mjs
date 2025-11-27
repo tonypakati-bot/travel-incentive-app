@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017';
 const DB_NAME = process.env.DB_NAME || 'travel-incentive';
-const API_BASE = process.env.API_BASE || 'http://localhost:5001/api';
+const API_BASE = process.env.API_BASE || '/api';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 async function run() {
