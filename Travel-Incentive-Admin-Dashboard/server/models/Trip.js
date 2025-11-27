@@ -10,6 +10,7 @@ const TripSchema = new mongoose.Schema({
   status: { type: String, enum: ['draft','published'], default: 'draft' },
   settings: {
     groups: [{ type: String }],
+    timezone: { type: String },
     addAccompany: { type: Boolean, default: false },
     businessFlights: { type: Boolean, default: false },
     imageUrl: { type: String },

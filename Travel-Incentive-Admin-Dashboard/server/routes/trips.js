@@ -1,6 +1,8 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Trip from '../models/Trip.js';
 import Contact from '../models/Contact.js';
+import Document from '../models/Document.js';
 
 const router = express.Router();
 
@@ -38,6 +40,10 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const payload = { ...(req.body || {}) };
+    try {
+      const fs = await import('fs');
+      fs.promises.writeFile('/tmp/last_patch_payload.json', JSON.stringify({ id: req.params.id, payload }, null, 2)).catch(()=>{});
+    } catch(e) { /* ignore instrumentation errors */ }
 
     if (Array.isArray(payload.emergencyContacts)) {
       // fetch current trip to validate groups
@@ -75,6 +81,28 @@ router.patch('/:id', async (req, res) => {
       }
 
       payload.emergencyContacts = cleaned;
+    }
+
+    // normalize documents array: allow slugs or ObjectId strings from client
+    if (Array.isArray(payload.documents)) {
+      const normalized = [];
+      for (const d of payload.documents) {
+        if (!d) continue;
+        try {
+          // if already a valid ObjectId string, keep it
+          if (mongoose.Types.ObjectId.isValid(String(d))) {
+            normalized.push(d);
+            continue;
+          }
+          // otherwise try to resolve as slug
+          const doc = await Document.findOne({ slug: String(d) }).lean();
+          if (doc) normalized.push(doc._id);
+        } catch (e) {
+          // ignore resolution errors and skip this entry
+          continue;
+        }
+      }
+      payload.documents = normalized;
     }
 
       // handle flights array if provided: validate minimal shape and normalize
@@ -136,7 +164,14 @@ router.patch('/:id', async (req, res) => {
         payload.agenda = cleanedAgenda;
       }
 
-    const trip = await Trip.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+    let trip;
+    try {
+      trip = await Trip.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+    } catch (errUpdate) {
+      console.error('Error updating trip', { id: req.params.id, payload });
+      console.error(errUpdate && errUpdate.stack ? errUpdate.stack : errUpdate);
+      return res.status(500).json({ error: 'Server error' });
+    }
     if (!trip) return res.status(404).json({ error: 'Not found' });
     return res.json(trip);
   } catch (err) {
