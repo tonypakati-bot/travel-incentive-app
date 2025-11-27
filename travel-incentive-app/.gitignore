@@ -1,3 +1,45 @@
+## Node
+node_modules/
+
+## Build outputs
+dist/
+**/dist/
+
+## Logs and pids
+*.log
+*.pid
+
+## macOS
+.DS_Store
+
+## Temp files
+tmp/
+**/tmp/
+
+## Media / recordings
+*.mov
+*.mp4
+
+## E2E / debug artifacts
+*.out
+*.dump*
+.e2e.out
+.mock-backend.log
+.mock-backend.pid
+
+## Server runtime
+server.pid
+server_run.log
+
+## Editor/IDE
+.vscode/
+
+## Misc
+*.gif
+*.png
+Travel-Incentive-Admin-Dashboard/tmp/
+Travel-Incentive-Admin-Dashboard/*.pid
+Travel-Incentive-Admin-Dashboard/*.log
 # Logs
 logs
 *.log
