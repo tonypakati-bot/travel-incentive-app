@@ -897,9 +897,20 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <label className="text-sm text-gray-600">Giorno</label>
-                <select value={activeDay} onChange={(e)=> setActiveDay(Number(e.target.value))} className="px-2 py-1 border rounded">
-                  {agenda.length ? agenda.map((d)=> <option key={d.day} value={d.day}>Giorno {d.day}</option>) : <option value={1}>Giorno 1</option>}
-                </select>
+                <div className="flex items-center space-x-2">
+                  {agenda && agenda.length ? agenda.map((d) => (
+                    <button
+                      key={d.day}
+                      type="button"
+                      onClick={() => setActiveDay(d.day ?? 1)}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${activeDay === (d.day ?? 1) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    >
+                      Giorno {d.day}
+                    </button>
+                  )) : (
+                    <div className="px-3 py-1 rounded-full bg-gray-100 text-sm text-gray-700">Giorno 1</div>
+                  )}
+                </div>
               </div>
               <div>
                 <button onClick={addAgendaDay} className="text-sm font-semibold text-gray-600 hover:text-gray-900 flex items-center transition-colors"><PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Giorno</button>
