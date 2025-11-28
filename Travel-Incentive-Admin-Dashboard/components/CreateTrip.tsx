@@ -455,6 +455,21 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     }
   }, []);
 
+  // UX: when Agenda section is opened and there are no days, auto-create first day
+  useEffect(() => {
+    try {
+      const isAgendaOpen = openSections.includes(SECTION.AGENDA);
+      if (!isAgendaOpen) return;
+      // if user has a saved trip and no agenda days, create the first day automatically
+      const hasTrip = !!(tripDraft && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id));
+      if (!hasTrip) return;
+      if (Array.isArray(agenda) && agenda.length === 0) {
+        // create optimistic day locally and persist
+        addAgendaDay();
+      }
+    } catch (e) {}
+  }, [openSections, tripDraft]);
+
   // load config for event categories
   useEffect(() => {
     (async () => {
