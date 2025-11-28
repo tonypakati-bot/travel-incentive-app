@@ -752,14 +752,25 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                       <div className="space-y-4">
                         {flights.map((f, i) => ({ f, i })).filter(p => p.f.direction === 'ritorno').map(({ f, i: idx }) => (
                           <div key={(f && (f.id || (f as any)._id)) || idx} className="relative p-4 border border-gray-200 rounded-lg bg-gray-50/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                              <FormField label="Compagnia Aerea">
-                                <Input value={f.airline || ''} onChange={(e) => updateFlight(idx, { airline: e.target.value })} placeholder="e.g. Etihad Airways" />
-                              </FormField>
-                              <FormField label="Numero Volo">
-                                <Input value={f.flightNumber || ''} onChange={(e) => updateFlight(idx, { flightNumber: e.target.value })} placeholder="e.g. EY 83" />
-                              </FormField>
-                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                    <FormField label="Gruppo">
+                                      <div className="relative">
+                                        <select value={f.group || ''} onChange={(e) => updateFlight(idx, { group: e.target.value })} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none pr-8">
+                                          <option value="" disabled>-- Seleziona Gruppo --</option>
+                                          {(settingsValues && settingsValues.groups ? settingsValues.groups : []).map((group: string) => (
+                                            <option key={group} value={group}>{group}</option>
+                                          ))}
+                                        </select>
+                                        <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"/>
+                                      </div>
+                                    </FormField>
+                                    <FormField label="Compagnia Aerea">
+                                      <Input value={f.airline || ''} onChange={(e) => updateFlight(idx, { airline: e.target.value })} placeholder="e.g. Etihad Airways" />
+                                    </FormField>
+                                    <FormField label="Numero Volo">
+                                      <Input value={f.flightNumber || ''} onChange={(e) => updateFlight(idx, { flightNumber: e.target.value })} placeholder="e.g. EY 83" />
+                                    </FormField>
+                                  </div>
                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 items-end">
                               <FormField label="Aeroporto Partenza">
                                 <Input value={f.from || ''} onChange={(e) => updateFlight(idx, { from: e.target.value })} placeholder="e.g. Abu Dhabi" />
