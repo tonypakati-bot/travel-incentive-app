@@ -157,6 +157,11 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [savingSection3, setSavingSection3] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedTripName, setSavedTripName] = useState<string | undefined>(undefined);
+  // Confirm modal state for delete actions
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitleText, setConfirmTitleText] = useState('');
+  const [confirmMessageText, setConfirmMessageText] = useState('');
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
   const toast = useToast();
 
   // keep local flights in sync with tripDraft when loaded
@@ -917,9 +922,10 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                 <button
                   onClick={() => {
                     if (activeDayIndex < 0) return;
-                    // simple confirmation to avoid accidental deletes
-                    if (!confirm(`Sei sicuro di voler eliminare il Giorno ${activeDay}? Questa azione non può essere annullata.`)) return;
-                    removeAgendaDay(activeDayIndex);
+                    setConfirmTitleText('Conferma eliminazione');
+                    setConfirmMessageText(`Sei sicuro di voler eliminare il Giorno ${activeDay}? Questa azione non può essere annullata.`);
+                    setConfirmAction(() => () => removeAgendaDay(activeDayIndex));
+                    setConfirmOpen(true);
                   }}
                   disabled={activeDayIndex < 0}
                   className="text-sm font-semibold text-red-600 hover:text-red-800 flex items-center bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -1045,7 +1051,15 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                       </FormField>
                     </div>
                     <div className="mt-4 flex justify-end">
-                      <button onClick={() => removeAgendaItem(activeDayIndex, itemIdx)} className="text-sm text-red-600 hover:text-red-800 px-3 py-1 rounded-md border border-red-100 hover:bg-red-50">Rimuovi Evento</button>
+                      <button
+                        onClick={() => {
+                          setConfirmTitleText('Conferma eliminazione');
+                          setConfirmMessageText(`Sei sicuro di voler eliminare l'evento "${(item && item.title) || 'senza titolo'}"? Questa azione è irreversibile.`);
+                          setConfirmAction(() => () => removeAgendaItem(activeDayIndex, itemIdx));
+                          setConfirmOpen(true);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-800 px-3 py-1 rounded-md border border-red-100 hover:bg-red-50"
+                      >Rimuovi Evento</button>
                     </div>
                   </div>
                 ))}
@@ -1081,6 +1095,21 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         <button type="button" onClick={() => {}} className="bg-white border border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Salva Bozza</button>
         <button onClick={onSave} className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">{isEditing ? 'Aggiorna' : 'Salva e Pubblica'}</button>
       </footer>
+      <ConfirmModal
+        open={confirmOpen}
+        variant="danger"
+        title={confirmTitleText || 'Conferma eliminazione'}
+        message={confirmMessageText || 'Sei sicuro di voler procedere con l\'eliminazione?'}
+        confirmLabel="Elimina"
+        cancelLabel="Annulla"
+        onConfirm={() => {
+          try { if (confirmAction) confirmAction(); } catch(e) {}
+          setConfirmOpen(false);
+          setConfirmAction(null);
+        }}
+        onCancel={() => { setConfirmOpen(false); setConfirmAction(null); }}
+      />
+
       <ConfirmModal
         open={showSavedModal}
         variant="success"
