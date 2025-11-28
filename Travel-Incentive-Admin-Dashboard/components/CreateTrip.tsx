@@ -912,8 +912,20 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                   )}
                 </div>
               </div>
-              <div>
+              <div className="flex items-center space-x-2">
                 <button onClick={addAgendaDay} className="text-sm font-semibold text-gray-600 hover:text-gray-900 flex items-center transition-colors"><PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Giorno</button>
+                <button
+                  onClick={() => {
+                    if (activeDayIndex < 0) return;
+                    // simple confirmation to avoid accidental deletes
+                    if (!confirm(`Sei sicuro di voler eliminare il Giorno ${activeDay}? Questa azione non può essere annullata.`)) return;
+                    removeAgendaDay(activeDayIndex);
+                  }}
+                  disabled={activeDayIndex < 0}
+                  className="text-sm font-semibold text-red-600 hover:text-red-800 flex items-center bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <TrashIcon className="w-4 h-4 mr-1" /> Rimuovi Giorno
+                </button>
               </div>
             </div>
 
