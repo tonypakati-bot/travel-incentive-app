@@ -90,6 +90,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     items: AgendaItem[];
   };
   const [agenda, setAgenda] = useState<AgendaDay[]>([]);
+  const [eventCategories, setEventCategories] = useState<string[]>(['Activity','Hotel','Meeting','Restaurant','Travel']);
   const [activeDayIndex, setActiveDayIndex] = useState<number>(0);
 
   // per-event image handlers
@@ -431,6 +432,18 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     } catch (e) {
       // ignore in non-test environments
     }
+  }, []);
+
+  // load config for event categories
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/config');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json && Array.isArray(json.categoryEvents) && json.categoryEvents.length) setEventCategories(json.categoryEvents);
+      } catch (e) { /* ignore */ }
+    })();
   }, []);
 
   // Expose dev hook to programmatically set selected document and trigger final save
@@ -885,11 +898,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         <div className="relative">
                           <select value={item.category || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { category: e.target.value })} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none pr-8">
                             <option value="" disabled>-- Seleziona Categoria --</option>
-                            <option value="Activity">Activity</option>
-                            <option value="Hotel">Hotel</option>
-                            <option value="Meeting">Meeting</option>
-                            <option value="Restaurant">Restaurant</option>
-                            <option value="Travel">Travel</option>
+                            {(eventCategories || []).map((c:string)=> <option key={c} value={c}>{c}</option>)}
                           </select>
                           <ChevronDownIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"/>
                         </div>
