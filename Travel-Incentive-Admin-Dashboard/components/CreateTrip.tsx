@@ -902,7 +902,6 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                 </select>
               </div>
               <div>
-                <button onClick={saveAgenda} className="bg-white border border-gray-300 text-gray-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 mr-2">Salva Agenda</button>
                 <button onClick={addAgendaDay} className="text-sm font-semibold text-gray-600 hover:text-gray-900 flex items-center transition-colors"><PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Giorno</button>
               </div>
             </div>
@@ -1030,10 +1029,11 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
               </div>
 
-              <div className="mt-4">
-                <button onClick={() => addAgendaItem(activeIndexOrZero)} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
-                  <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Evento
-                </button>
+              <div className="mt-4 flex items-center justify-between">
+                <div>
+                  {/* Keep only the Add Event CTA inside the empty-state box; here we show the Save Agenda CTA */}
+                  <button onClick={saveAgenda} className="bg-white border border-gray-300 text-gray-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50">Salva Agenda</button>
+                </div>
               </div>
             </div>
           </div>
