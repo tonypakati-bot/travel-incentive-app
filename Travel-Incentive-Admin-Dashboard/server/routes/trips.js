@@ -172,6 +172,11 @@ router.patch('/:id', async (req, res) => {
                 time: it.time || undefined,
                 title: it.title || undefined,
                 description: it.description || undefined,
+                longDescription: it.longDescription || undefined,
+                images: Array.isArray(it.images) ? it.images.map(String) : undefined,
+                imageCaption: it.imageCaption || undefined,
+                icon: it.icon || undefined,
+                adminNotes: it.adminNotes || undefined,
                 targetAirports: Array.isArray(it.targetAirports) ? it.targetAirports.map(String) : undefined,
                 details: Array.isArray(it.details) ? it.details : undefined
               });
@@ -408,7 +413,7 @@ router.put('/:tripId/agenda/:dayIndex/items/:itemIndex', async (req, res) => {
     if (!Array.isArray(trip.agenda) || di < 0 || di >= trip.agenda.length) return res.status(404).json({ error: 'Day not found' });
     const day = trip.agenda[di];
     if (!Array.isArray(day.items) || ii < 0 || ii >= day.items.length) return res.status(404).json({ error: 'Item not found' });
-    const allowed = ['time','category','title','description','longDescription','images','imageCaption','details'];
+    const allowed = ['time','category','title','description','longDescription','images','imageCaption','details','icon','adminNotes'];
     for (const k of allowed) if (k in body) day.items[ii][k] = body[k];
     await trip.save();
     return res.json(day.items[ii]);

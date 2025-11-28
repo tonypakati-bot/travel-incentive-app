@@ -82,6 +82,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     icon?: string;
     longDescription?: string;
     imageCaption?: string;
+    adminNotes?: string;
   };
   type AgendaDay = {
     day?: number;
@@ -92,26 +93,27 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   const [agenda, setAgenda] = useState<AgendaDay[]>([]);
   const [eventCategories, setEventCategories] = useState<string[]>(['Activity','Hotel','Meeting','Restaurant','Travel']);
   const [iconOptions, setIconOptions] = useState<string[]>([]);
-  const [activeDayIndex, setActiveDayIndex] = useState<number>(0);
+  const [activeDay, setActiveDay] = useState<number>(1);
+
+  // Derived canonical index and objects for the currently selected day
+  const activeDayIndex = agenda.findIndex(d => d.day === activeDay);
+  const activeDayObj = activeDayIndex >= 0 ? agenda[activeDayIndex] : undefined;
+  const activeItems = activeDayObj ? (activeDayObj.items || []) : [];
+  const activeIndexOrZero = activeDayIndex >= 0 ? activeDayIndex : 0;
 
   // per-event image handlers
   const addImageToEvent = (dayIndex:number, itemIndex:number, url: string) => {
-    setAgenda(prev => prev.map((d,di)=> {
-      if (di !== dayIndex) return d;
-      const items = (d.items||[]).map((it,ii)=> ii===itemIndex ? ({ ...(it||{}), images: [...((it.images||[])) , url] }) : it);
-      return { ...d, items };
-    }));
+    // persist via updateAgendaItem so server receives the change as well
+    const prevItem = (agenda[dayIndex] && agenda[dayIndex].items) ? agenda[dayIndex].items[itemIndex] : null;
+    const newImages = prevItem ? ([...((prevItem.images||[])), url]) : [url];
+    updateAgendaItem(dayIndex, itemIndex, { images: newImages });
   };
 
   const removeImageFromEvent = (dayIndex:number, itemIndex:number, imageIndex:number) => {
-    setAgenda(prev => prev.map((d,di)=> {
-      if (di !== dayIndex) return d;
-      const items = (d.items||[]).map((it,ii)=> {
-        if (ii!==itemIndex) return it;
-        return { ...it, images: (it.images||[]).filter((_,i)=>i!==imageIndex) };
-      });
-      return { ...d, items };
-    }));
+    const prevItem = (agenda[dayIndex] && agenda[dayIndex].items) ? agenda[dayIndex].items[itemIndex] : null;
+    if (!prevItem) return;
+    const newImages = (prevItem.images||[]).filter((_,i)=> i!==imageIndex);
+    updateAgendaItem(dayIndex, itemIndex, { images: newImages });
   };
 
   // per-event details handlers
@@ -167,6 +169,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         // ensure items arrays exist and normalize ids
         const normalized = (t.agenda as any[]).map((d:any, idx:number) => ({ day: d.day ?? (idx+1), title: d.title, date: d.date, items: Array.isArray(d.items) ? d.items.map((it:any)=> ({ ...(it||{}), id: it._id || it.id })) : [] }));
         setAgenda(normalized as AgendaDay[]);
+        // default active day to first agenda day (canonical day number)
+        if (normalized.length) setActiveDay(normalized[0].day ?? 1);
       }
     } catch (e) {}
   }, [tripDraft]);
@@ -342,9 +346,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     setAgenda(prev => prev.map((d,i)=> i===dayIndex ? ({ ...(d||{}), items: (d.items||[]).filter((_,j)=>j!==itemIndex) }) : d));
     (async () => {
       if (!tripDraft || !(tripDraft as any).tripId || !itemToRemove) return;
-      const itemId = (itemToRemove as any).id;
       try {
-        const res = await fetch(`/api/trips/${(tripDraft as any).tripId}/agenda/${dayIndex}/items/${itemId}`, { method: 'DELETE' });
+        const res = await fetch(`/api/trips/${(tripDraft as any).tripId}/agenda/${dayIndex}/items/${itemIndex}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed delete item');
       } catch (err) {
         // rollback: re-insert item
@@ -370,32 +373,49 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
       const items = (d.items||[]).map((it,j)=> j===itemIndex ? ({ ...it, ...patch }) : it);
       return { ...d, items };
     }));
-    // optimistic update on server
-    (async () => {
-      if (!tripDraft || !(tripDraft as any).tripId || !prevItem) return;
-      const itemId = (prevItem as any).id;
-      try {
-        const body: any = {};
-        const allowed = ['time','title','description','category','icon','longDescription','imageCaption','images','details','targetAirports'];
-        for (const k of allowed) if ((patch as any)[k] !== undefined) body[k] = (patch as any)[k];
-        const res = await fetch(`/api/trips/${(tripDraft as any).tripId}/agenda/${dayIndex}/items/${itemId}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-        if (!res.ok) throw new Error('Failed update item');
-        const updated = await res.json();
-        setAgenda(prev => prev.map((d,i)=> {
-          if (i!==dayIndex) return d;
-          const items = (d.items||[]).map((it,j)=> j===itemIndex ? ({ ...(updated||{}), id: updated._id || updated.id }) as AgendaItem : it);
-          return { ...d, items };
-        }));
-      } catch (err) {
-        // rollback to previous item
-        setAgenda(prev => prev.map((d,i)=> {
-          if (i!==dayIndex) return d;
-          const items = (d.items||[]).map((it,j)=> j===itemIndex ? prevItem : it);
-          return { ...d, items };
-        }));
-        try { toast.showToast('Errore aggiornando evento', 'error'); } catch(e){}
-      }
+
+    // Debounced save: avoid issuing a PUT for every keystroke and do not rollback local edits on server error.
+    (function() {
+      // create a stable key per trip/day/item
+      const tripId = tripDraft && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id);
+      if (!tripId || prevItem == null) return;
+      const key = `${tripId}::${dayIndex}::${itemIndex}`;
+      // store timers on the window to persist across re-renders (keeps code small)
+      const timers: any = (window as any).__agendaSaveTimers = (window as any).__agendaSaveTimers || {};
+      if (timers[key]) clearTimeout(timers[key]);
+      timers[key] = setTimeout(async () => {
+        try {
+          const body: any = {};
+          const allowed = ['time','title','description','category','icon','longDescription','imageCaption','images','details','targetAirports','adminNotes'];
+          for (const k of allowed) if ((patch as any)[k] !== undefined) body[k] = (patch as any)[k];
+          const res = await fetch(`/api/trips/${tripId}/agenda/${dayIndex}/items/${itemIndex}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+          if (!res.ok) {
+            const txt = await res.text().catch(()=>null);
+            console.warn('Failed saving agenda item', res.status, txt);
+            try { toast.showToast('Errore aggiornando evento (salvataggio fallito)', 'error'); } catch(e){}
+            return;
+          }
+          const updated = await res.json().catch(()=>null);
+          if (updated) {
+            setAgenda(prev => prev.map((d,i)=> {
+              if (i!==dayIndex) return d;
+              const items = (d.items||[]).map((it,j)=> j===itemIndex ? ({ ...(updated||{}), id: updated._id || updated.id }) as AgendaItem : it);
+              return { ...d, items };
+            }));
+          }
+        } catch (err) {
+          console.error('Error saving agenda item', err);
+          try { toast.showToast('Errore aggiornando evento (salvataggio fallito)', 'error'); } catch(e){}
+        }
+      }, 450);
     })();
+  };
+
+  // Helper: resolve the canonical day index for the current `activeDay` value
+  const updateAgendaItemActive = (itemIndex:number, patch: Partial<AgendaItem>) => {
+    const resolvedDayIndex = agenda.findIndex(d => d.day === activeDay);
+    const targetIndex = resolvedDayIndex >= 0 ? resolvedDayIndex : 0;
+    return updateAgendaItem(targetIndex, itemIndex, patch);
   };
 
   const saveAgenda = async () => {
@@ -858,12 +878,12 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         </Section>
 
         <Section title="Sezione 6: Agenda e Eventi" isOpen={openSections.includes(SECTION.AGENDA)} onClick={()=>handleToggleSection(SECTION.AGENDA)} disabled={!tripDraft.tripId} disabledMessage={"Agenda disattivata fino al salvataggio della Sezione 1."}>
-          <div className={`p-4 border border-gray-200 rounded-lg space-y-4 ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
+          <div className={`p-4 border border-gray-200 rounded-lg space-y-4`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <label className="text-sm text-gray-600">Giorno</label>
-                <select value={activeDayIndex} onChange={(e)=> setActiveDayIndex(Number(e.target.value))} className="px-2 py-1 border rounded">
-                  {agenda.length ? agenda.map((d,idx)=> <option key={idx} value={idx}>Giorno {d.day ?? idx+1}</option>) : <option value={0}>Giorno 1</option>}
+                <select value={activeDay} onChange={(e)=> setActiveDay(Number(e.target.value))} className="px-2 py-1 border rounded">
+                  {agenda.length ? agenda.map((d)=> <option key={d.day} value={d.day}>Giorno {d.day}</option>) : <option value={1}>Giorno 1</option>}
                 </select>
               </div>
               <div>
@@ -873,32 +893,35 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <FormField label="Giorno" className="md:col-span-1"><Input value={agenda.length ? String(agenda[activeDayIndex]?.day ?? (activeDayIndex+1)) : '1'} readOnly className="!bg-gray-100" /></FormField>
-              <FormField label="Data" className="md:col-span-2"><Input placeholder="mm/dd/yyyy" value={agenda.length ? (agenda[activeDayIndex]?.date || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { date: e.target.value })} /></FormField>
-              <FormField label="Titolo del Giorno" className="md:col-span-3"><Input placeholder="Arrivo e Check-in" value={agenda.length ? (agenda[activeDayIndex]?.title || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { title: e.target.value })} /></FormField>
+              <FormField label="Giorno" className="md:col-span-1"><Input value={String(activeDayObj ? activeDayObj.day : activeDay)} readOnly className="!bg-gray-100" /></FormField>
+              <FormField label="Data" className="md:col-span-2"><Input type="date" placeholder="gg/mm/yyyy" value={activeDayObj ? (activeDayObj.date || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { date: e.target.value })} /></FormField>
+              <FormField label="Titolo del Giorno" className="md:col-span-3"><Input placeholder="Arrivo e Check-in" value={activeDayObj ? (activeDayObj.title || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { title: e.target.value })} /></FormField>
             </div>
 
             <div className="pt-4 border-t border-gray-200">
               <h4 className="text-md font-semibold text-gray-800 mb-4">Eventi</h4>
               <div className="space-y-3">
-                {(!agenda[activeDayIndex] || (agenda[activeDayIndex].items || []).length === 0) ? (
+                {activeItems.length === 0 ? (
                   <div className="border border-gray-200 rounded-lg p-4 bg-white">
                     <div className="text-sm text-gray-500">Nessun evento per questo giorno.</div>
+                    <div className="mt-3">
+                      <button onClick={() => addAgendaItem(activeIndexOrZero)} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors mt-2">Aggiungi Evento</button>
+                    </div>
                   </div>
                 ) : null}
 
-                {(agenda[activeDayIndex]?.items || []).map((item, idx) => (
-                  <div key={String(item.id || idx)} className="border border-gray-200 rounded-lg p-4 bg-white">
+                {activeItems.map((item, itemIdx) => (
+                  <div key={String(item.id || itemIdx)} className="border border-gray-200 rounded-lg p-4 bg-white">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <FormField label="Orario">
-                        <Input value={item.time || '--:--'} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { time: e.target.value })} />
+                        <Input type="time" value={item.time || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { time: e.target.value })} />
                       </FormField>
                       <FormField label="Titolo Evento">
-                        <Input value={item.title || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { title: e.target.value })} />
+                        <Input value={item.title || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { title: e.target.value })} />
                       </FormField>
                       <FormField label="Categoria">
                         <div className="relative">
-                          <select value={item.category || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { category: e.target.value })} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none pr-8">
+                          <select value={item.category || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { category: e.target.value })} className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none pr-8">
                             <option value="" disabled>-- Seleziona Categoria --</option>
                             {(eventCategories || []).map((c:string)=> <option key={c} value={c}>{c}</option>)}
                           </select>
@@ -906,16 +929,16 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         </div>
                       </FormField>
                       <FormField label="Icona">
-                        <IconSelect value={(item as any).icon || ''} onChange={(v)=> updateAgendaItem(activeDayIndex, idx, { icon: v })} options={iconOptions} />
+                        <IconSelect value={(item as any).icon || ''} onChange={(v)=> updateAgendaItem(activeDayIndex, itemIdx, { icon: v })} options={iconOptions} />
                       </FormField>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
                       <FormField label="Descrizione">
-                        <Textarea rows={2} placeholder="Breve descrizione dell'evento (visibile nell'elenco principale)." value={item.description || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { description: e.target.value })} />
+                        <Textarea rows={2} placeholder="Breve descrizione dell'evento (visibile nell'elenco principale)." value={item.description || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { description: e.target.value })} />
                       </FormField>
                       <FormField label="Descrizione Lunga">
-                        <Textarea rows={4} placeholder="Descrizione dettagliata: include informazioni utili, dress code, menù, etc." value={(item as any).longDescription || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { longDescription: e.target.value })} />
+                        <Textarea rows={4} placeholder="Descrizione dettagliata: include informazioni utili, dress code, menù, etc." value={(item as any).longDescription || ''} onChange={(e)=> updateAgendaItemActive(itemIdx, { longDescription: e.target.value })} />
                       </FormField>
                     </div>
 
@@ -924,12 +947,12 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         <div>
                           <label className="block text-sm text-gray-700 mb-1">Incolla l'URL dell'immagine</label>
                           <div className="relative flex items-center">
-                            <input type="text" className="pr-12 w-full p-2 border rounded" placeholder="https://..." id={`image-input-${activeDayIndex}-${idx}`} />
+                            <input type="text" className="pr-12 w-full p-2 border rounded" placeholder="https://..." id={`image-input-${activeDay}-${itemIdx}`} />
                             <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm font-medium text-gray-500 pointer-events-none">URL</span>
                           </div>
-                          <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors mt-3" onClick={() => {
-                            const el = document.getElementById(`image-input-${activeDayIndex}-${idx}`) as HTMLInputElement | null;
-                            if (el && el.value) { addImageToEvent(activeDayIndex, idx, el.value); el.value = ''; }
+                            <button type="button" className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors mt-3" onClick={() => {
+                            const el = document.getElementById(`image-input-${activeDay}-${itemIdx}`) as HTMLInputElement | null;
+                            if (el && el.value) { addImageToEvent(activeIndexOrZero, itemIdx, el.value); el.value = ''; }
                           }}>
                             <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Immagine
                           </button>
@@ -937,8 +960,14 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                           <div className="mt-3 space-y-2">
                             {(((item as any).images)||[]).map((url:string, ui:number) => (
                               <div key={ui} className="flex items-center justify-between border p-2 rounded">
-                                <a href={url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 truncate">{url}</a>
-                                <button onClick={() => removeImageFromEvent(activeDayIndex, idx, ui)} className="p-1 text-red-600">Rimuovi</button>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-24 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                    <img src={url} alt={(item as any).imageCaption || `Immagine ${ui+1}`} className="w-full h-full object-cover" onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button onClick={() => removeImageFromEvent(activeDayIndex, itemIdx, ui)} className="p-1 text-red-600 border border-red-100 rounded hover:bg-red-50">Rimuovi</button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -946,7 +975,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                       </FormField>
 
                       <FormField label="Caption Immagini" className="mt-4">
-                        <Input placeholder="e.g. Grande Moschea Sheikh Zayed & Louvre Abu Dhabi" value={(item as any).imageCaption || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, idx, { imageCaption: e.target.value })} />
+                        <Input placeholder="e.g. Grande Moschea Sheikh Zayed & Louvre Abu Dhabi" value={(item as any).imageCaption || ''} onChange={(e)=> updateAgendaItemActive(itemIdx, { imageCaption: e.target.value })} />
                       </FormField>
                     </div>
 
@@ -956,27 +985,30 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         {(((item as any).details)||[]).map((detail:any) => (
                           <div key={detail.id} className="flex items-center space-x-3">
                             <div>
-                              <select value={detail.type} onChange={(e)=> updateEventDetail(activeDayIndex, idx, detail.id, { type: e.target.value })} className="px-2 py-1 border border-gray-300 rounded">
+                              <select value={detail.type} onChange={(e)=> updateEventDetail(activeDayIndex, itemIdx, detail.id, { type: e.target.value })} className="px-2 py-1 border border-gray-300 rounded">
                                 <option>Address</option>
                                 <option>Dress Code</option>
                                 <option>Contact</option>
                                 <option>Other</option>
                               </select>
                             </div>
-                            <Input className="flex-grow" value={detail.value} onChange={(e)=> updateEventDetail(activeDayIndex, idx, detail.id, { value: e.target.value })} placeholder="Aggiungi un dettaglio..." />
-                            <button onClick={()=> removeEventDetail(activeDayIndex, idx, detail.id)} className="p-1.5 text-gray-500 hover:text-gray-700 rounded-md transition-colors hover:bg-gray-100"><TrashIcon className="w-5 h-5"/></button>
+                            <Input className="flex-grow" value={detail.value} onChange={(e)=> updateEventDetail(activeDayIndex, itemIdx, detail.id, { value: e.target.value })} placeholder="Aggiungi un dettaglio..." />
+                            <button onClick={()=> removeEventDetail(activeDayIndex, itemIdx, detail.id)} className="p-1.5 text-gray-500 hover:text-gray-700 rounded-md transition-colors hover:bg-gray-100"><TrashIcon className="w-5 h-5"/></button>
                           </div>
                         ))}
                       </div>
-                      <button type="button" onClick={()=> addEventDetail(activeDayIndex, idx)} className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+                      <button type="button" onClick={()=> addEventDetail(activeDayIndex, 0)} className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center transition-colors">
                         <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Dettaglio
                       </button>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-gray-200">
                       <FormField label="Note Speciali (visibili solo agli admin)">
-                        <Textarea defaultValue="Contattare il ristorante per confermare le opzioni vegetariane." />
+                        <Textarea value={(item as any).adminNotes || ''} onChange={(e)=> updateAgendaItemActive(itemIdx, { adminNotes: e.target.value })} placeholder="Note speciali (solo admin)" />
                       </FormField>
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <button onClick={() => removeAgendaItem(activeDayIndex, itemIdx)} className="text-sm text-red-600 hover:text-red-800 px-3 py-1 rounded-md border border-red-100 hover:bg-red-50">Rimuovi Evento</button>
                     </div>
                   </div>
                 ))}
@@ -984,7 +1016,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
               </div>
 
               <div className="mt-4">
-                <button onClick={() => addAgendaItem(activeDayIndex)} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
+                <button onClick={() => addAgendaItem(activeIndexOrZero)} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
                   <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Evento
                 </button>
               </div>

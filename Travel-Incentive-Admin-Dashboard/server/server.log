@@ -1,5 +1,2 @@
 Connected to MongoDB
 Server listening on 5001
-[participants] create payload received: {"email":"test.nolast2@example.com","firstName":"Test","trip":"Sales Kick-off Dubai"}
-[participants] create payload received: {"email":"test.withlast@example.com","firstName":"Test","lastName":"User","trip":"Sales Kick-off Dubai"}
-[participants] create payload received: {"name":"Francesco","firstName":"Francesco","lastName":"","email":"framarsi@gmail.com","trip":"Sales Kick-off Dubai","group":"","status":"To Invite"}

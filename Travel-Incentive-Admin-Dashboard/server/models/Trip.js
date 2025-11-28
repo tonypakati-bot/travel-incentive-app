@@ -56,6 +56,11 @@ const TripSchema = new mongoose.Schema({
       title: { type: String },
       description: { type: String },
       targetAirports: [{ type: String }],
+      longDescription: { type: String },
+      images: [{ type: String }],
+      imageCaption: { type: String },
+      icon: { type: String },
+      adminNotes: { type: String },
       // details can be arbitrary structured data, accept mixed to avoid cast errors
       details: [{ type: mongoose.Schema.Types.Mixed }]
     }]

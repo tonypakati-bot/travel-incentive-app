@@ -214,7 +214,8 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = f
 
                     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-auto p-4">
                         <div className="relative w-full max-w-5xl">
-                            <div className="bg-white rounded-2xl shadow-lg overflow-auto">
+                                <div className="fixed inset-0 bg-black opacity-40" onClick={() => onCancel()} />
+                                <div className="bg-white rounded-2xl shadow-lg overflow-auto z-10">
                                 <div className="p-8">
                                     <header className="mb-8">
                                         <h1 className="text-3xl font-bold text-gray-800">Create New Form</h1>
@@ -281,7 +282,6 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = f
                                     </div>
                                 </div>
                             </div>
-                            <div className="fixed inset-0 bg-black opacity-40" onClick={() => onCancel()} />
                         </div>
                     </div>
                 </ModalPortal>
