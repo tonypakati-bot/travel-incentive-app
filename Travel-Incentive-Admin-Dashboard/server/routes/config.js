@@ -19,10 +19,14 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const body = req.body || {};
-    const data = { categoryEvents: Array.isArray(body.categoryEvents) ? body.categoryEvents.map(String) : [] };
+    const data = {
+      categoryEvents: Array.isArray(body.categoryEvents) ? body.categoryEvents.map(String) : [],
+      icons: Array.isArray(body.icons) ? body.icons.map(String) : []
+    };
     let cfg = await Config.findOne();
     if (cfg) {
       cfg.categoryEvents = data.categoryEvents;
+      cfg.icons = data.icons;
       await cfg.save();
     } else {
       cfg = await Config.create(data);

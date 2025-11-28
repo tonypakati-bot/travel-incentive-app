@@ -91,6 +91,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   };
   const [agenda, setAgenda] = useState<AgendaDay[]>([]);
   const [eventCategories, setEventCategories] = useState<string[]>(['Activity','Hotel','Meeting','Restaurant','Travel']);
+  const [iconOptions, setIconOptions] = useState<string[]>([]);
   const [activeDayIndex, setActiveDayIndex] = useState<number>(0);
 
   // per-event image handlers
@@ -442,6 +443,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         if (!res.ok) return;
         const json = await res.json();
         if (json && Array.isArray(json.categoryEvents) && json.categoryEvents.length) setEventCategories(json.categoryEvents);
+        if (json && Array.isArray(json.icons) && json.icons.length) setIconOptions(json.icons);
       } catch (e) { /* ignore */ }
     })();
   }, []);
@@ -904,7 +906,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         </div>
                       </FormField>
                       <FormField label="Icona">
-                        <IconSelect value={(item as any).icon || ''} onChange={(v)=> updateAgendaItem(activeDayIndex, idx, { icon: v })} />
+                        <IconSelect value={(item as any).icon || ''} onChange={(v)=> updateAgendaItem(activeDayIndex, idx, { icon: v })} options={iconOptions} />
                       </FormField>
                     </div>
 
