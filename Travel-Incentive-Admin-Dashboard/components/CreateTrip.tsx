@@ -301,9 +301,17 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
   const removeAgendaDay = (index:number) => {
     const dayToRemove = agenda[index];
-    // optimistic remove
-    setAgenda(prev => prev.filter((_,i)=>i!==index));
-    // adjust activeDay to a valid existing day after removal
+    if (!dayToRemove) return;
+    // keep a copy for rollback if server call fails
+    const originalAgenda = agenda.slice();
+    const removedDayNumber = dayToRemove.day ?? (index + 1);
+    // optimistic remove and renumber subsequent days (decrement day for days after removedDayNumber)
+    setAgenda(prev => prev
+      .filter((_,i) => i !== index)
+      .map(d => ({ ...(d||{}), day: (d.day !== undefined && d.day > removedDayNumber) ? (d.day - 1) : d.day, items: Array.isArray(d && (d as any).items) ? (d as any).items : [] }))
+    );
+
+    // choose a sensible active day after removal
     setTimeout(() => {
       setAgenda((currentAgenda) => {
         try {
@@ -311,11 +319,11 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             setActiveDay(1);
             return currentAgenda;
           }
-          // try to select previous day (closest smaller day number), else first day
+          // prefer previous day number (removedDayNumber - 1), else next existing, else first
+          const prefer = Math.max(1, removedDayNumber - 1);
           const days = currentAgenda.map(d => d.day ?? 0).sort((a,b)=>a-b);
-          // prefer previous day number <= removed day's number - 1
-          const candidate = days.reverse().find(n => n < (dayToRemove?.day ?? Infinity));
-          const newActive = (candidate !== undefined && candidate !== null) ? candidate : days[0];
+          const hasPrefer = days.includes(prefer);
+          const newActive = hasPrefer ? prefer : days[0];
           setActiveDay(newActive);
         } catch (e) {}
         return currentAgenda;
@@ -327,12 +335,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         const res = await fetch(`/api/trips/${(tripDraft as any).tripId}/agenda/${index}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed delete day');
       } catch (err) {
-        // rollback by re-inserting day at same position
-        setAgenda(prev => {
-          const copy = prev.slice();
-          copy.splice(index, 0, dayToRemove);
-          return copy;
-        });
+        // rollback using original snapshot
+        setAgenda(originalAgenda);
         try { toast.showToast('Errore eliminando giorno', 'error'); } catch(e){}
       }
     })();
