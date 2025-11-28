@@ -303,6 +303,24 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     const dayToRemove = agenda[index];
     // optimistic remove
     setAgenda(prev => prev.filter((_,i)=>i!==index));
+    // adjust activeDay to a valid existing day after removal
+    setTimeout(() => {
+      setAgenda((currentAgenda) => {
+        try {
+          if (!Array.isArray(currentAgenda) || currentAgenda.length === 0) {
+            setActiveDay(1);
+            return currentAgenda;
+          }
+          // try to select previous day (closest smaller day number), else first day
+          const days = currentAgenda.map(d => d.day ?? 0).sort((a,b)=>a-b);
+          // prefer previous day number <= removed day's number - 1
+          const candidate = days.reverse().find(n => n < (dayToRemove?.day ?? Infinity));
+          const newActive = (candidate !== undefined && candidate !== null) ? candidate : days[0];
+          setActiveDay(newActive);
+        } catch (e) {}
+        return currentAgenda;
+      });
+    }, 20);
     (async () => {
       if (!tripDraft || !(tripDraft as any).tripId) return;
       try {
