@@ -102,6 +102,15 @@ const AppContent: React.FC = () => {
               try { (window as any).__E2E_injectedTrip = normalized; } catch (e) {}
               // If CreateTrip exposed a setter, call it so component receives the trip immediately
               try { if ((window as any).__E2E_setTripDraft) (window as any).__E2E_setTripDraft(normalized); } catch (e) {}
+              // Dispatch a CustomEvent so components listening for injected trips can react deterministically
+              try { window.dispatchEvent(new CustomEvent('e2e:tripInjected', { detail: normalized })); } catch (e) {}
+              // Fire again after a short delay in case CreateTrip hasn't mounted yet
+              try {
+                setTimeout(() => {
+                  try { if ((window as any).__E2E_setTripDraft) (window as any).__E2E_setTripDraft(normalized); } catch (e) {}
+                  try { window.dispatchEvent(new CustomEvent('e2e:tripInjected', { detail: normalized })); } catch (e) {}
+                }, 120);
+              } catch (e) {}
               setTripFormMode('edit');
             } catch (e) {
               console.warn('Failed loading trip from URL', e);

@@ -105,14 +105,11 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <button data-testid="save-section-1" onClick={saveDraft} disabled={!valid || saving} className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">
-          {saving ? 'Salvataggio...' : 'Salva bozza'}
+      <div className="mt-4 flex justify-end items-center space-x-3">
+        {!valid && <div className="text-sm text-red-600 mr-auto" data-testid="section1-error">Controlla i campi obbligatori</div>}
+        <button data-testid="save-section-1" onClick={saveDraft} disabled={!valid || saving} className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded disabled:opacity-50">
+          {saving ? 'Salvataggio...' : 'Salva Informazioni Viaggio'}
         </button>
-        <button data-testid="reset-section-1" onClick={() => { setName(initial.name||''); setStartDate(initial.startDate||''); setEndDate(initial.endDate||''); }} className="px-3 py-2 rounded border">
-          Annulla
-        </button>
-        {!valid && <div className="text-sm text-red-600" data-testid="section1-error">Controlla i campi obbligatori</div>}
       </div>
     </div>
   );

@@ -7,13 +7,10 @@ export async function fetchDocumentOptions(baseUrl = ''): Promise<DocOption[]> {
   const docsUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/documents` : `/api/documents`;
   try {
     // prefer useful-informations endpoint (contains usefulInfo entries); fall back to documents
-    console.debug('[E2E] fetchDocumentOptions trying useful-informations', usefulUrl);
     let res = await fetch(usefulUrl).catch(() => null);
     if (!res || !res.ok) {
-      console.debug('[E2E] useful-informations failed, trying documents', docsUrl);
       res = await fetch(docsUrl).catch(() => null);
     }
-    console.debug('[E2E] fetchDocumentOptions status', res && res.status);
     if (!res || !res.ok) return [];
     const json = await res.json();
     // Expecting shape: array or { items: array }
@@ -27,9 +24,8 @@ export async function fetchDocumentOptions(baseUrl = ''): Promise<DocOption[]> {
 export async function fetchPrivacyPolicyOptions(baseUrl = ''): Promise<DocOption[]> {
   const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/privacy-policies` : `/api/privacy-policies`;
   try {
-    console.debug('[E2E] fetchPrivacyPolicyOptions url', url);
     const res = await fetch(url);
-    console.debug('[E2E] fetchPrivacyPolicyOptions status', res && res.status);
+    
     if (!res.ok) return [];
     const json = await res.json();
     const arr = Array.isArray(json) ? json : (json && Array.isArray((json as any).items) ? (json as any).items : []);
@@ -42,9 +38,7 @@ export async function fetchPrivacyPolicyOptions(baseUrl = ''): Promise<DocOption
 export async function createPrivacyPolicy(payload: { title: string; content?: string; trip?: string | null }, baseUrl = ''): Promise<DocOption | null> {
   const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/privacy-policies` : `/api/privacy-policies`;
   try {
-    console.debug('[E2E] createPrivacyPolicy url', url, 'payload', payload);
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    console.debug('[E2E] createPrivacyPolicy response status', res && res.status);
     if (!res.ok) return null;
     const json = await res.json();
     const out = { value: json.id ?? json._id ?? json.value ?? '', label: json.title ?? json.label ?? '' };
@@ -64,9 +58,7 @@ export async function createDocument(payload: { title: string; content?: string;
   // If payload contains usefulInfo -> use useful-informations. Otherwise prefer useful-informations but fall back to /api/documents
   const postUrl = (payload && payload.usefulInfo) ? usefulUrl : usefulUrl;
   try {
-    console.debug('[E2E] createDocument url', postUrl, 'payload', payload);
     const res = await fetch(postUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    console.debug('[E2E] createDocument response status', res && res.status);
     if (!res || !res.ok) return null;
     const json = await res.json();
     return { value: json.id ?? json._id ?? json.value ?? '', label: json.title ?? json.label ?? json.name ?? '' };
@@ -76,9 +68,7 @@ export async function createDocument(payload: { title: string; content?: string;
 export async function createUsefulInfo(payload: { title: string; content?: string; usefulInfo?: any; visible?: boolean; author?: string }, baseUrl = ''): Promise<DocOption | null> {
   const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/api/useful-informations` : `/api/useful-informations`;
   try {
-    console.debug('[E2E] createUsefulInfo url', url, 'payload', payload);
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    console.debug('[E2E] createUsefulInfo response status', res && res.status);
     if (!res.ok) return null;
     const json = await res.json();
     return { value: json.id ?? json._id ?? json.value ?? '', label: json.title ?? json.label ?? '' };

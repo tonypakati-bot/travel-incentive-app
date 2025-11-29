@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 type ContactOption = { id: string; name: string; category?: string };
 
@@ -10,7 +10,10 @@ type Props = {
 };
 
 const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = false, initial = [], onChange }) => {
-  const [rows, setRows] = useState(initial);
+  // ensure initial contactIds are strings to match contact option `id` values
+  const [rows, setRows] = useState(() => (initial || []).map(it => ({ ...(it||{}), contactId: it && it.contactId ? String(it.contactId) : it && it.contactId ? it.contactId : '' })));
+  const skipNotifyRef = useRef(false);
+  const mountedRef = useRef(false);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
 
   useEffect(() => {
@@ -22,7 +25,9 @@ const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = fal
         if (!res.ok) throw new Error('no-contacts');
         const json = await res.json();
         if (!mounted) return;
-        setContacts((json || []).map((c: any) => ({ id: c.id || c._id || c.contactId || String(c.id), name: c.name || c.fullName || c.displayName || c.firstName, category: c.category || c.role || c.type })).sort((a,b)=> (a.name||'').toLowerCase() > (b.name||'').toLowerCase() ? 1 : -1));
+        const mapped = (json || []).map((c: any) => ({ id: String(c.id || c._id || c.contactId || ''), name: c.name || c.fullName || c.displayName || c.firstName, category: c.category || c.role || c.type }));
+        try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts fetched contacts', { raw: json, mapped }); } catch (e) {}
+        setContacts(mapped.sort((a,b)=> (a.name||'').toLowerCase() > (b.name||'').toLowerCase() ? 1 : -1));
       } catch (e) {
         // ignore; leave contacts empty
         setContacts([]);
@@ -31,11 +36,54 @@ const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = fal
     return () => { mounted = false; };
   }, []);
 
-  useEffect(() => { if (onChange) onChange(rows); }, [rows]);
+    useEffect(() => {
+      // Skip notifying parent when rows were updated as a result of syncing `initial`.
+      if (skipNotifyRef.current) {
+        skipNotifyRef.current = false;
+        return;
+      }
+      // avoid calling onChange during initial mount if `initial` was used to seed rows
+      if (!mountedRef.current) {
+        mountedRef.current = true;
+        return;
+      }
+      if (onChange) onChange(rows);
+    }, [rows]);
+
+    useEffect(() => {
+      // Coerce incoming initial contactIds to strings to match fetched contact ids
+      try {
+        const normalized = (initial || []).map(it => ({ ...(it || {}), contactId: it && it.contactId ? String(it.contactId) : '' }));
+        try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts sync initial -> normalized', { initial, normalized, currentRows: rows }); } catch (e) {}
+        // shallow equality check to avoid unnecessary state updates that can trigger a loop
+        const eq = (a: any[], b: any[]) => {
+          if (a === b) return true;
+          if (!Array.isArray(a) || !Array.isArray(b)) return false;
+          if (a.length !== b.length) return false;
+          for (let i = 0; i < a.length; i++) {
+            const ai = a[i] || {};
+            const bi = b[i] || {};
+            if ((ai.contactId || '') !== (bi.contactId || '') || (ai.group || '') !== (bi.group || '')) return false;
+          }
+          return true;
+        };
+        if (!eq(normalized, rows)) {
+          skipNotifyRef.current = true;
+          setRows(normalized);
+        }
+      } catch (e) {
+        if (!Array.isArray(initial) || initial.length === 0) setRows([]);
+        else setRows(initial || []);
+      }
+    }, [initial]);
 
   const addRow = () => setRows(prev => ([...prev, { group: '', contactId: '' }]));
   const removeRow = (i: number) => setRows(prev => prev.filter((_, idx) => idx !== i));
   const updateRow = (i: number, data: Partial<{ group?: string; contactId?: string }>) => setRows(prev => prev.map((r, idx) => idx === i ? { ...r, ...data } : r));
+
+  useEffect(() => {
+    try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts rows changed (DEV)', { rows }); } catch (e) {}
+  }, [rows]);
 
   return (
     <div className={`p-6 bg-white rounded-lg border ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>

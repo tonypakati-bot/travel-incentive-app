@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TagInput from './TagInput';
 import ToggleSwitch from './ToggleSwitch';
 
@@ -18,6 +18,18 @@ type Props = {
 const SectionSettingsCard: React.FC<Props> = ({ values = {}, onChange, onSave, disabled = true }) => {
   const [imagePreview, setImagePreview] = useState(values.imageUrl || '');
   const [logoPreview, setLogoPreview] = useState(values.logoUrl || '');
+
+  // keep previews in sync with incoming prop changes (e.g. when tripDraft is injected)
+  useEffect(() => {
+    try {
+      setImagePreview(values.imageUrl || '');
+    } catch (e) {}
+  }, [values.imageUrl]);
+  useEffect(() => {
+    try {
+      setLogoPreview(values.logoUrl || '');
+    } catch (e) {}
+  }, [values.logoUrl]);
 
   const handleImageUrl = (v: string) => { onChange('imageUrl', v); setImagePreview(v); };
   const handleLogoUrl = (v: string) => { onChange('logoUrl', v); setLogoPreview(v); };
@@ -59,9 +71,9 @@ const SectionSettingsCard: React.FC<Props> = ({ values = {}, onChange, onSave, d
             {logoPreview ? <img data-testid="trip-logo-preview" src={logoPreview} alt="preview" className="mt-2 w-24 h-24 object-contain rounded" /> : null}
           </label>
         </div>
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex justify-end items-center gap-3">
           {onSave ? (
-            <button data-testid="save-section-2" onClick={onSave} disabled={disabled} className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50">Salva bozza</button>
+            <button data-testid="save-section-2" onClick={onSave} disabled={disabled} className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded disabled:opacity-50">Salva Impostazioni</button>
           ) : null}
         </div>
       </div>

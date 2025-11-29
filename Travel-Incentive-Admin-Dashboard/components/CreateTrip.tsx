@@ -53,6 +53,20 @@ const Section: React.FC<{ title: string; children: React.ReactNode; actions?: Re
 
 const SECTION = { INFO: 1, SETTINGS: 2, DOCUMENTS: 3, FLIGHTS: 4, EMERGENCY_CONTACTS: 5, AGENDA: 6, PARTICIPANTS: 7 } as const;
 
+// Helper: format various date values into YYYY-MM-DD for `type=date` inputs
+const formatDateForInput = (v: any): string => {
+  try {
+    if (!v) return '';
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  } catch (e) { return ''; }
+};
+
 const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = false }) => {
   const [openSections, setOpenSections] = useState<number[]>([SECTION.INFO]);
   const [activeFlightTab, setActiveFlightTab] = useState<'andata' | 'ritorno'>('andata');
@@ -166,10 +180,62 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
   // keep local flights in sync with tripDraft when loaded
   useEffect(() => {
+    const eq = (a: any[], b: any[]) => {
+      if (a === b) return true;
+      if (!Array.isArray(a) || !Array.isArray(b)) return false;
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        const ai = a[i] || {};
+        const bi = b[i] || {};
+        if ((ai.contactId || '') !== (bi.contactId || '') || (ai.group || '') !== (bi.group || '')) return false;
+      }
+      return true;
+    };
+
     try {
       const t: any = tripDraft || {};
       if (Array.isArray(t.flights)) setFlights((t.flights as any[]).map(f => ({ ...(f||{}), id: f._id || f.id })) as Flight[]);
       if (t.flightsMeta) setFlightsMeta(t.flightsMeta || {});
+      if (t.settings) {
+        const sv = { ...(t.settings || {}) };
+        // normalize groups to array of strings for the UI
+        if (Array.isArray(sv.groups)) sv.groups = sv.groups.map((g:any) => (typeof g === 'string' ? g : (g && g.name) || '')).filter(Boolean);
+        setSettingsValues(sv || {});
+      }
+      if (Array.isArray(t.documents)) {
+        const dv: Record<string,string> = {};
+        for (const doc of t.documents) {
+          // server may return selected document id under `documentId` (or _id/id/value)
+          const id = (doc && (doc.documentId || doc._id || doc.id || doc.value)) || null;
+          let cat = (doc && (doc.category || doc.title || doc.label || '')) || '';
+          if (!id) continue;
+          const low = String(cat).toLowerCase();
+          // tolerant matching
+          if (low.includes('useful')) dv.usefulInformations = id;
+          else if (low.includes('privacy')) dv.privacyPolicy = id;
+          else if (low.includes('term')) dv.terms = id;
+          else if (low.includes('registr') || low.includes('form')) dv.registrationForm = id;
+          else dv[cat] = id;
+          // debug logs removed
+        }
+        setDocValues(dv);
+      }
+      if (Array.isArray(t.emergencyContacts)) {
+        try {
+          // debug logs removed
+          const normalized = (t.emergencyContacts || []).map((c:any) => ({ ...(c||{}), contactId: c && c.contactId ? String(c.contactId) : '' }));
+          // debug logs removed
+          const shouldSet = !eq(normalized, emergencyContacts);
+          // debug logs removed
+          if (shouldSet) setEmergencyContacts(normalized);
+        } catch (e) {
+          // debug logs removed
+          if (!eq(t.emergencyContacts || [], emergencyContacts)) setEmergencyContacts(t.emergencyContacts || []);
+        }
+      } else {
+        // debug logs removed
+      }
+
       if (Array.isArray(t.agenda)) {
         // ensure items arrays exist and normalize ids
         const normalized = (t.agenda as any[]).map((d:any, idx:number) => ({ day: d.day ?? (idx+1), title: d.title, date: d.date, items: Array.isArray(d.items) ? d.items.map((it:any)=> ({ ...(it||{}), id: it._id || it.id })) : [] }));
@@ -480,51 +546,81 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   };
 
   useEffect(() => {
+      try {
+        const w: any = window as any;
+        // single idempotent setter: ignores duplicate injections for same tripId within 2s
+        w.__E2E_setTripDraft = (trip: any) => {
+          try {
+            const last = w.__E2E_lastInjectedTrip || { id: null, at: 0 };
+            const incomingId = trip && (trip.tripId || trip._id || trip.id) || null;
+            const now = Date.now();
+            if (incomingId && last.id === incomingId && (now - (last.at || 0) < 2000)) {
+              return { ok: false, reason: 'duplicate' };
+            }
+            w.__E2E_lastInjectedTrip = { id: incomingId, at: now };
+          } catch (e) {}
+          setTripDraft(trip);
+          if (trip && trip.name) setSavedTripName(trip.name);
+          return { ok: true };
+        };
+        // if the test or App injected a trip before React mounted, pick it up and mark lastInjected
+        if ((w).__E2E_injectedTrip) {
+          try {
+            const t = (w).__E2E_injectedTrip;
+            const incomingId = t && (t.tripId || t._id || t.id) || null;
+            w.__E2E_lastInjectedTrip = { id: incomingId, at: Date.now() };
+            setTripDraft(t);
+            if (t && t.name) setSavedTripName(t.name);
+          } catch (e) {}
+        }
+      } catch (e) {
+        // ignore in non-test environments
+      }
+  }, []);
+
+  // Listen for possible late injection from App.tsx: if App writes __E2E_injectedTrip after mount,
+  // Listen for App-level deterministic injection of a trip via CustomEvent
+  useEffect(() => {
+    const handler = (e: any) => {
+      try {
+        const t = e && e.detail ? e.detail : (window as any).__E2E_injectedTrip;
+        // explicit debug log to help E2E/dev verification
+        try {
+          const w: any = window as any;
+          w.__E2E_injectedCount = (w.__E2E_injectedCount || 0) + 1;
+        } catch (ee) {}
+        if (!t) return;
+        try {
+          const w: any = window as any;
+          const last = w.__E2E_lastInjectedTrip || { id: null, at: 0 };
+          const incomingId = t.tripId || t._id || t.id || null;
+          const now = Date.now();
+          // ignore duplicate injection for same trip within 2s
+          if (incomingId && last.id === incomingId && (now - (last.at || 0) < 2000)) {
+            return;
+          }
+          w.__E2E_lastInjectedTrip = { id: incomingId, at: now };
+        } catch (ee) {}
+        setTripDraft(t);
+        if (t && t.name) setSavedTripName(t.name);
+      } catch (err) {
+        // ignore
+      }
+    };
     try {
-      (window as any).__E2E_setTripDraft = (trip: any) => {
-        setTripDraft(trip);
-        if (trip && trip.name) setSavedTripName(trip.name);
-      };
-      // if the test or App injected a trip before React mounted, pick it up
+      window.addEventListener('e2e:tripInjected', handler as EventListener);
+    } catch (e) {}
+    // Also pick up any previously-written global for backward compatibility
+    try {
       if ((window as any).__E2E_injectedTrip) {
         const t = (window as any).__E2E_injectedTrip;
         setTripDraft(t);
         if (t && t.name) setSavedTripName(t.name);
       }
-      // also allow App to set the trip later by exposing the setter on window
-      try {
-        (window as any).__E2E_setTripDraft = (trip: any) => {
-          setTripDraft(trip);
-          if (trip && trip.name) setSavedTripName(trip.name);
-        };
-      } catch (e) {}
-    } catch (e) {
-      // ignore in non-test environments
-    }
-  }, []);
-
-  // Listen for possible late injection from App.tsx: if App writes __E2E_injectedTrip after mount,
-  // pick it up. This uses a small interval to detect the window property in case the fetch
-  // occurs after CreateTrip mounted.
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      try {
-        for (let i = 0; i < 10 && !cancelled; i++) {
-          if ((window as any).__E2E_injectedTrip) {
-            const t = (window as any).__E2E_injectedTrip;
-            setTripDraft(t);
-            if (t && t.name) setSavedTripName(t.name);
-            return;
-          }
-          // wait 100ms and try again
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise(res => setTimeout(res, 100));
-        }
-      } catch (e) {}
+    } catch (e) {}
+    return () => {
+      try { window.removeEventListener('e2e:tripInjected', handler as EventListener); } catch (e) {}
     };
-    check();
-    return () => { cancelled = true; };
   }, []);
 
   // UX: when Agenda section is opened and there are no days, auto-create first day
@@ -618,21 +714,21 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     try {
       const w = (window as any) || {};
       w.__E2E_saveSection3 = async () => {
-        console.debug('[E2E] __E2E_saveSection3 called', { tripDraft, docValues, settingsValues });
+        // __E2E_saveSection3 called (dev logs removed)
         if (!tripDraft || !(tripDraft as any).tripId) return { ok: false, reason: 'no-trip' };
         try {
           const docsArray = Object.entries((docValues||{})).map(([key, val]) => ({ id: val, category: (key === 'usefulInformations' ? 'Useful Informations' : key === 'privacyPolicy' ? 'Privacy Policy' : key === 'terms' ? 'Terms & Conditions' : key === 'registrationForm' ? 'Form di Registrazione' : key) })).filter(d => d.id);
           const payload: any = { documents: docsArray };
           if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
-          console.debug('[E2E] __E2E_saveSection3 payload', payload);
+          // payload logged in dev only (removed)
           const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           if (!res.ok) {
             const txt = await res.text();
-            console.debug('[E2E] __E2E_saveSection3 response-not-ok', { status: res.status, text: txt });
+            // response-not-ok logged in dev only (removed)
             throw new Error(txt || `HTTP ${res.status}`);
           }
           const json = await res.json();
-          console.debug('[E2E] __E2E_saveSection3 response-json', json);
+          // response-json logged in dev only (removed)
           const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
           setTripDraft((prev:any) => ({ ...(prev||{}), ...normalized }));
           try { toast.showToast('Documenti salvati', 'success'); } catch(e){}
@@ -680,7 +776,8 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
       <div className="space-y-4">
         <Section title="Sezione 1: Informazioni Base del Viaggio" isOpen={openSections.includes(SECTION.INFO)} onClick={() => handleToggleSection(SECTION.INFO)}>
           <Section1Card
-            initial={{ clientName: (tripDraft as any).clientName, name: tripDraft.name, subtitle: (tripDraft as any).subtitle, description: (tripDraft as any).description, startDate: tripDraft.startDate, endDate: tripDraft.endDate }}
+            key={((tripDraft as any) && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id)) || 'new'}
+            initial={{ clientName: (tripDraft as any).clientName, name: tripDraft.name, subtitle: (tripDraft as any).subtitle, description: (tripDraft as any).description, startDate: formatDateForInput((tripDraft as any).startDate), endDate: formatDateForInput((tripDraft as any).endDate) }}
             settings={settingsValues}
             onSaved={(trip) => {
               setTripDraft(trip);
@@ -706,6 +803,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         <Section title="Sezione 2: Impostazioni" isOpen={openSections.includes(SECTION.SETTINGS)} onClick={() => handleToggleSection(SECTION.SETTINGS)} disabled={!tripDraft.tripId} disabledMessage={"Questa sezione è disattivata fino al salvataggio della Sezione 1."}>
           <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <SectionSettingsCard
+              key={((tripDraft as any) && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id)) || 'new-settings'}
               values={settingsValues}
               onChange={(k,v)=>setSettingsValues((prev:any)=>({...prev,[k]:v}))}
               disabled={!tripDraft.tripId}
@@ -733,13 +831,14 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
         <Section title="Sezione 3: Documenti" isOpen={openSections.includes(SECTION.DOCUMENTS)} onClick={() => handleToggleSection(SECTION.DOCUMENTS)} disabled={!tripDraft.tripId} disabledMessage={"I Documenti sono bloccati fino al salvataggio della Sezione 1."}>
           <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
-            <SectionDocumentsCard values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
+            <SectionDocumentsCard
+              key={((tripDraft as any) && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id)) || 'new-docs'}
+              values={docValues} onChange={(k,v)=>setDocValues(prev=>({...prev,[k]:v}))} disabled={!tripDraft.tripId} />
             <div className="mt-3 flex justify-end">
               <button
                 type="button"
                 data-testid="save-section-3"
                 onClick={async () => {
-                  console.debug('[E2E] Save Documents button clicked', { tripDraft, docValues, settingsValues });
                   if (!tripDraft || !(tripDraft as any).tripId) return;
                   setSavingSection3(true);
                   try {
@@ -747,15 +846,15 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                     const payload: any = { documents: docsArray };
                     // also include settings if present to avoid clobbering
                     if (Object.keys(settingsValues || {}).length) payload.settings = settingsValues;
-                    console.debug('[E2E] Save Documents payload', payload);
+                    // payload logged in dev only (removed)
                     const res = await fetch(`/api/trips/${tripDraft.tripId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!res.ok) {
                       const txt = await res.text();
-                      console.debug('[E2E] Save Documents response-not-ok', { status: res.status, text: txt });
+                      // response-not-ok logged in dev only (removed)
                       throw new Error(txt || `HTTP ${res.status}`);
                     }
                     const json = await res.json();
-                    console.debug('[E2E] Save Documents response-json', json);
+                    // response-json logged in dev only (removed)
                     const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || tripDraft.tripId)) };
                     setTripDraft((prev:any) => ({ ...(prev||{}), ...normalized }));
                     try { toast.showToast('Documenti salvati', 'success'); } catch(e){}
@@ -940,12 +1039,20 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
         <Section title="Sezione 5: Contatti di Emergenza e Sicurezza" isOpen={openSections.includes(SECTION.EMERGENCY_CONTACTS)} onClick={()=>handleToggleSection(SECTION.EMERGENCY_CONTACTS)} disabled={!tripDraft.tripId} disabledMessage={"Contatti di emergenza disattivati fino al salvataggio della Sezione 1."}>
           <div className={`relative ${!tripDraft.tripId ? 'pointer-events-none opacity-80' : ''}`}>
             <div className="p-4">
-              <SectionEmergencyContacts
-                groups={(settingsValues && settingsValues.groups) || []}
-                initial={emergencyContacts}
-                disabled={!tripDraft.tripId}
-                onChange={(items)=>setEmergencyContacts(items)}
-              />
+              {/* Dev logs removed */}
+              {(() => {
+                const passedInitial = ((tripDraft as any) && Array.isArray((tripDraft as any).emergencyContacts) && (tripDraft as any).emergencyContacts.length) ? (tripDraft as any).emergencyContacts : emergencyContacts;
+                // Dev logs removed
+                return (
+                  <SectionEmergencyContacts
+                    key={((tripDraft as any) && ((tripDraft as any).tripId || (tripDraft as any)._id || (tripDraft as any).id)) || 'new-emergency'}
+                    groups={(settingsValues && settingsValues.groups) || []}
+                    initial={passedInitial}
+                    disabled={!tripDraft.tripId}
+                    onChange={(items)=>setEmergencyContacts(items)}
+                  />
+                );
+              })()}
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
