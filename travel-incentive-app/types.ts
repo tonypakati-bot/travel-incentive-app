@@ -1,4 +1,4 @@
-export type Page = 'home' | 'travel' | 'agenda' | 'explore' | 'contact' | 'documents' | 'registration' | 'travel-insurance' | 'profile' | 'settings' | 'gallery';
+export type Page = 'home' | 'travel' | 'agenda' | 'explore' | 'contact' | 'documents' | 'registration' | 'travel-insurance' | 'profile' | 'settings' | 'gallery' | 'admin' | 'admin-trip-details';
 
 export interface NavLink {
   id: string;
@@ -49,7 +49,11 @@ export interface Flight {
 
 export interface EmergencyContact {
   id: string;
-  name: string;
+  departureGroup?: string;
+  // New schema: prefer `firstName`/`lastName`, keep `name` for backward compatibility
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   phone: string;
   email?: string;
   type: string;
@@ -113,6 +117,10 @@ export interface EventDetails {
   brandImageUrl?: string;
   backgroundImageUrl?: string;
   registrationDeadline?: string;
+  departureGroup?: string[];
+  allowCompanion?: boolean;
+  allowBusiness?: boolean; // Voli Business flag
+  roomType?: string[];
 }
 
 export interface TripData {

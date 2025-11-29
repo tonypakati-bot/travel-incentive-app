@@ -19,6 +19,8 @@ const PAGE_TITLES: Record<Page, string> = {
     profile: 'Il Mio Profilo',
     settings: 'Impostazioni',
     gallery: 'Galleria Fotografica',
+  admin: 'Pannello Admin',
+  'admin-trip-details': 'Dettagli Viaggio',
 };
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, onNavClick, activePage }) => {

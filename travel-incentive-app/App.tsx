@@ -5,7 +5,7 @@ import { PhotoUploadData } from './types/upload';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuthContext } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
-import { getTripData, getTravelInfo, getDownloadableDocuments, submitRegistration, uploadPhoto, togglePhotoLike, deletePhoto, getUserDocuments } from './services/tripService';
+import { getTripData, getTravelInfo, getDownloadableDocuments, submitRegistration, uploadPhoto, togglePhotoLike, deletePhoto, getUserDocuments, getConfig } from './services/tripService';
 import { getUserRegistration } from './services/tripService';
 import { getUserProfile } from './api';
 import Footer from './components/Footer';
@@ -22,11 +22,13 @@ import TravelInsurancePage from './pages/TravelInsurancePage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import GalleryPage from './pages/GalleryPage';
+import AdminTripsPage from './pages/admin/AdminTripsPage';
+import AdminTripDetailsPage from './pages/admin/AdminTripDetailsPage';
 
 function MainApp() {
   const { isAuthenticated, loading, user } = useAuthContext();
   // Imposta la home come pagina iniziale
-  const [activePage, setActivePage] = useState<Page>('home');
+  const [activePage, setActivePage] = useState<Page>('admin');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [tripData, setTripData] = useState<TripData | null>(null);
   const [travelInfo, setTravelInfo] = useState<TravelInfo | null>(null);
@@ -49,6 +51,8 @@ function MainApp() {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isEditingRegistration, setIsEditingRegistration] = useState(false);
   const [userDocuments, setUserDocuments] = useState<UserDocument[]>([]);
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [formConfig, setFormConfig] = useState<RegistrationFormConfig>(registrationFormConfig);
 
   useEffect(() => {
     // Salva gli annunci dismissed nel localStorage ogni volta che cambiano
@@ -110,6 +114,24 @@ function MainApp() {
           console.error('Error loading user documents:', error);
         }
 
+        // Fetch config and update form options
+        try {
+          const configResponse = await getConfig();
+          // Update form config with dynamic options
+          const updatedFormConfig = JSON.parse(JSON.stringify(registrationFormConfig)); // deep clone
+          const logisticsSection = updatedFormConfig.find(s => s.id === 'logistics');
+          if (logisticsSection) {
+            const roomTypeField = logisticsSection.fields.find(f => f.id === 'roomType');
+            if (roomTypeField && configResponse?.tipologiaCamera) {
+              roomTypeField.options = configResponse.tipologiaCamera;
+            }
+          }
+          setFormConfig(updatedFormConfig);
+        } catch (error) {
+          console.error('Error fetching config:', error);
+          // Keep default options
+        }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -123,6 +145,16 @@ function MainApp() {
     setActivePage(page);
     setIsEditingRegistration(false); // Reset editing flag when navigating
     window.scrollTo(0, 0);
+  };
+
+  const handleViewTrip = (tripId: string) => {
+    setSelectedTripId(tripId);
+    setActivePage('admin-trip-details');
+  };
+
+  const handleBackToTrips = () => {
+    setSelectedTripId(null);
+    setActivePage('admin');
   };
 
   const handleNavigateToExplore = (itemId: number) => {
@@ -362,17 +394,22 @@ function MainApp() {
                 />;
       case 'registration':
         return <RegistrationPage 
-                  formConfig={registrationFormConfig} 
+                  formConfig={formConfig} 
                   onFormSubmit={handleFormSubmit} 
                   deadline={tripData.eventDetails?.registrationDeadline}
                   existingData={registrationData}
                   isSubmitted={isFormSubmitted}
                   isEditing={isEditingRegistration}
+                  tripData={tripData}
                   onEdit={() => {
                     console.log('DEBUG: Modifica Dati cliccato');
                     setIsEditingRegistration(true);
                   }}
                 />;
+      case 'admin':
+        return <AdminTripsPage onViewTrip={handleViewTrip} />;
+      case 'admin-trip-details':
+        return <AdminTripDetailsPage tripId={selectedTripId || undefined} onBack={handleBackToTrips} formConfig={formConfig} />;
       default:
         return <HomePage eventDetails={tripData.eventDetails || {}} announcements={[]} onDismiss={() => {}} onNavClick={handleNavClick} />;
     }

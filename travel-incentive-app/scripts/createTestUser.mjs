@@ -36,7 +36,7 @@ async function createTestUser() {
     // Crea il nuovo utente
     const user = new User({
       ...testUser,
-      passwordHash,
+      password: passwordHash,  // Usa 'password' invece di 'passwordHash'
       preferences: new Map()
     });
 

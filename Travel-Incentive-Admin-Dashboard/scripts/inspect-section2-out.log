@@ -1,0 +1,7 @@
+ERROR: TimeoutError: Waiting failed: 10000ms exceeded
+    at new WaitTask (file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/node_modules/puppeteer-core/lib/esm/puppeteer/common/WaitTask.js:46:34)
+    at IsolatedWorld.waitForFunction (file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/node_modules/puppeteer-core/lib/esm/puppeteer/api/Realm.js:22:26)
+    at CdpFrame.waitForFunction (file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/node_modules/puppeteer-core/lib/esm/puppeteer/api/Frame.js:580:43)
+    at CdpFrame.<anonymous> (file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/node_modules/puppeteer-core/lib/esm/puppeteer/util/decorators.js:101:27)
+    at CdpPage.waitForFunction (file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/node_modules/puppeteer-core/lib/esm/puppeteer/api/Page.js:1433:37)
+    at file:///Users/marsi/Library/CloudStorage/OneDrive-LuxotticaGroupS.p.A/Documents/TONYZONE/TravelApp/Travel-Incentive-Admin-Dashboard/scripts/inspect-section2.mjs:53:16

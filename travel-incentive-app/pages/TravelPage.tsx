@@ -148,21 +148,36 @@ const TravelPage: React.FC<TravelPageProps> = ({ travelInfo, userRegistration })
       <section className="mb-8">
         <h2 className="text-2xl font-bold text-[#1A2C47] mb-4">Contatti Utili</h2>
         <div className="space-y-3">
-          {travelInfo.emergencyContacts.map(contact => (
+          {travelInfo.emergencyContacts
+            .filter(contact => {
+              // Mostra il contatto se:
+              // 1. Non ha targetAirports (contatto generale)
+              // 2. O ha l'aeroporto di partenza dell'utente nei targetAirports
+              const userAirport = userRegistration?.form_data?.departureAirport;
+              return !contact.targetAirports ||
+                     contact.targetAirports.length === 0 ||
+                     (userAirport && contact.targetAirports.includes(userAirport));
+            })
+            .map(contact => {
+            const displayName = (contact.firstName || contact.lastName)
+              ? `${contact.firstName || ''} ${contact.lastName || ''}`.trim()
+              : contact.name || '';
+            return (
             <div key={contact.id} className="bg-white rounded-xl shadow p-4 border border-gray-200">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-bold text-base text-gray-900">{contact.name}</p>
+                  <p className="font-bold text-base text-gray-900">{displayName}</p>
                   <p className="text-sm text-gray-500">{contact.type}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <a href={`tel:${contact.phone.replace(/\s/g, '')}`} aria-label={`Call ${contact.name}`} className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 hover:bg-sky-200 transition-colors duration-200">
+                  <a href={`tel:${contact.phone.replace(/\s/g, '')}`} aria-label={`Call ${displayName}`} className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0 hover:bg-sky-200 transition-colors duration-200">
                     <span className="material-symbols-outlined text-sky-600">call</span>
                   </a>
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       </section>
     </div>

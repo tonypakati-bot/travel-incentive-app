@@ -10,8 +10,9 @@ interface RegistrationPageProps {
   deadline?: string;
   existingData: {[key: string]: any} | null;
   isSubmitted: boolean;
-  onEdit: () => void;
   isEditing?: boolean;
+  onEdit: () => void;
+  tripData: any; // TripData
 }
 
 // --- Validation Error Modal Component ---
@@ -95,7 +96,7 @@ type InputFieldProps = {
 const InputField: React.FC<InputFieldProps> = ({ label, id, name, type = 'text', required = false, note, value, onChange, error, disabled = false }) => (
   <div className="animate-fade-in-up">
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
-    <input type={type} id={id} name={name} value={value} onChange={onChange} disabled={disabled}
+    <input type={type} id={id} name={name} value={value || ''} onChange={onChange} disabled={disabled}
       className={`mt-1 block w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm text-gray-900 ${disabled ? 'bg-gray-100 disabled:text-gray-500 cursor-not-allowed' : ''}`}
       style={type === 'date' ? { colorScheme: 'light' } : undefined} />
     {note && <p className="mt-1 text-xs text-gray-500">{note}</p>}
@@ -112,7 +113,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, id, name, required = f
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
     <div className="relative mt-1">
-      <select id={id} name={name} value={value} onChange={onChange}
+      <select id={id} name={name} value={value || ''} onChange={onChange}
         className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm appearance-none text-gray-900">
         <option value="">Seleziona un'opzione</option>
         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -290,26 +291,46 @@ const SummaryView: React.FC<{ data: {[key: string]: any}; onEdit: () => void; fo
 
 
 // --- Main Component ---
-const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormSubmit, deadline, existingData, isSubmitted, onEdit, isEditing = false }) => {
+const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormSubmit, deadline, existingData, isSubmitted, isEditing, onEdit, tripData }) => {
   const auth = useAuthContext() as AuthHook;
   const { user } = auth;
 
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [formData, setFormData] = useState<{ [key: string]: any }>(() => {
-    // Inizializza tutti i campi con valori vuoti
-    const initialState: { [key: string]: any } = {};
-    formConfig.forEach(section => {
-      section.fields.forEach(field => {
-        initialState[field.name] = field.type === 'checkbox' ? false : '';
-        if ('controlsFields' in field) {
-          (field as ConditionalFormField).controlsFields.forEach(subField => {
-            initialState[subField.name] = subField.type === 'checkbox' ? false : '';
-          });
-        }
-      });
-    });
-    return initialState;
-  });
+  const [formData, setFormData] = useState<{ [key: string]: any }>({});
+
+  const filteredFormConfig = React.useMemo(() => {
+    return formConfig.map(section => {
+      if (section.id === 'logistics') {
+        const fields = section.fields.filter(field => {
+          if (field.id === 'businessClass' && tripData?.eventDetails?.allowBusiness !== true) return false;
+          if (field.id === 'departureAirport' && (!tripData?.eventDetails?.departureGroup || tripData.eventDetails.departureGroup.length === 0)) return false;
+          if (field.id === 'roomType' && (!tripData?.eventDetails?.roomType || tripData.eventDetails.roomType.length === 0)) return false;
+          return true;
+        }).map(field => {
+          if (field.id === 'departureAirport' && tripData?.eventDetails?.departureGroup) {
+            return { ...field, options: tripData.eventDetails.departureGroup };
+          }
+          if (field.id === 'roomType') {
+            return { ...field, label: "Tipologia Camera", options: tripData.eventDetails.roomType };
+          }
+          return field;
+        });
+        if (fields.length === 0) return null;
+        return { ...section, fields };
+      }
+      if (section.id === 'companion' && tripData?.eventDetails?.allowCompanion !== true) {
+        return null;
+      }
+      return section;
+    }).filter(Boolean) as RegistrationFormConfig;
+  }, [formConfig, tripData]);
+
+  useEffect(() => {
+    const initial = initializeState(filteredFormConfig, existingData, user);
+    setFormData(initial);
+  }, [filteredFormConfig, existingData, user]);
+
+  const initialState = initializeState(filteredFormConfig, existingData, user);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [docModalContent, setDocModalContent] = useState<{title: string, content: string} | null>(null);
   const [currentOpenDoc, setCurrentOpenDoc] = useState<string | null>(null);
@@ -349,10 +370,6 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
       fetchDocs();
     }
   }, [legalDocs]);
-
-  useEffect(() => {
-    setFormData(initializeState(formConfig, existingData, user));
-  }, [existingData, formConfig, user]);
 
   useEffect(() => {
     // If we are in edit mode (existingData is present),
@@ -565,7 +582,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
     onFormSubmit(formData);
   };
 
-  const renderField = (field: FormField) => {
+  const renderField = (field: FormField, section?: FormSectionConfig) => {
     switch (field.type) {
       case 'text':
       case 'email':
@@ -577,7 +594,36 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
       }
       case 'select': {
         const labelNode = <>{field.label}{field.required && <span className="text-red-500">*</span>}</>;
-        return <SelectField key={field.id} id={field.id} name={field.name} label={labelNode} required={field.required} options={field.options || []} note={field.note} value={formData[field.name]} onChange={handleChange} />;
+        if (section?.id === 'logistics') {
+          if (!field.options || field.options.length === 0) return null;
+          const options = field.options;
+          return (
+            <div key={field.id} className="animate-fade-in-up">
+              <label className="block text-sm font-medium text-gray-700">{labelNode}</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {options.map((option: string) => {
+                  const selected = formData[field.name] === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`px-3 py-1 rounded-full text-sm border ${selected ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-100 text-gray-800 border-gray-300'} transition`}
+                      onClick={() => {
+                        const fakeEvent = { target: { name: field.name, value: option } } as React.ChangeEvent<HTMLSelectElement>;
+                        handleChange(fakeEvent);
+                      }}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+              {field.note && <p className="mt-1 text-sm text-gray-500">{field.note}</p>}
+            </div>
+          );
+        } else {
+          return <SelectField key={field.id} id={field.id} name={field.name} label={labelNode} required={field.required} options={field.options || []} note={field.note} value={formData[field.name]} onChange={handleChange} />;
+        }
       }
       case 'checkbox': {
         const mainLabelNode = field.label ? (
@@ -676,7 +722,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
             </div>
           )}
           <form onSubmit={handleSubmit} noValidate>
-            {formConfig.map(section => (
+            {filteredFormConfig.map(section => (
               <div key={section.id} className="bg-white rounded-xl shadow p-6 mb-6 border border-gray-200">
                 <h2 className="text-2xl font-bold text-[#1A2C47] mb-4 border-b pb-3">{section.title}</h2>
                 <div className={section.id === 'consents' ? '' : 'space-y-4'}>
@@ -698,14 +744,14 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
                       const isFirst = visibleFields.findIndex(f => f.id === field.id) === 0;
                       return (
                           <div key={field.id} className={isFirst ? '' : 'pt-4 mt-4 border-t'}>
-                              {renderField(field)}
+                              {renderField(field, section)}
                           </div>
                       );
                     }
                     
                     return (
                       <div key={field.id}>
-                        {renderField(field)}
+                        {renderField(field, section)}
                         {conditionalField.controlsFields && formData[field.name] && (
                           <div className="space-y-4 pt-4 mt-4 border-t animate-fade-in-up">
                             {conditionalField.controlsFields.map(subField => {
@@ -717,7 +763,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ formConfig, onFormS
 
                                 // Make companion sub-fields required if the main checkbox is checked
                                 const effectiveSubField = {...subField, required: subField.required && formData[field.name]};
-                                return renderField(effectiveSubField);
+                                return renderField(effectiveSubField, section);
                             })}
                           </div>
                         )}

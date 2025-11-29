@@ -1,0 +1,13 @@
+
+> travel-incentive-app@0.0.0 dev
+> vite
+
+
+  VITE v6.4.1  ready in 221 ms
+
+  ➜  Local:   http://localhost:3003/
+15:28:04 [vite] (client) hmr update /pages/ContactPage.tsx, /src/index.css
+15:28:20 [vite] (client) hmr update /pages/TravelPage.tsx, /src/index.css
+15:29:02 [vite] (client) hmr update /pages/ContactPage.tsx, /src/index.css
+15:29:02 [vite] (client) hmr update /pages/TravelPage.tsx, /src/index.css
+15:29:02 [vite] (client) hmr update /pages/TravelPage.tsx, /src/index.css

@@ -1,3 +1,6 @@
+import api from '../api';
+import { TripData, TravelInfo, Photo } from '../types';
+
 export const getUserRegistration = async () => {
   try {
     const res = await api.get('/trip/registration/me');
@@ -10,8 +13,6 @@ export const getUserRegistration = async () => {
     throw error;
   }
 };
-import api from '../api';
-import { TripData, TravelInfo, Photo } from '../types';
 
 export const getTripData = async (): Promise<TripData> => {
   const res = await api.get('/trip');
@@ -74,5 +75,11 @@ export const deletePhoto = async (photoId: number) => {
 // Document Management
 export const getUserDocuments = async (): Promise<any[]> => {
   const res = await api.get('/documents/me');
+  return res.data;
+};
+
+// Config
+export const getConfig = async (): Promise<any> => {
+  const res = await api.get('/config');
   return res.data;
 };

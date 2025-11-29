@@ -35,9 +35,14 @@ export const registerUser = async (req, res) => {
       user: { id: user.id }
     };
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET not set during registration');
+      return res.status(500).json({ msg: 'Server misconfiguration: JWT_SECRET missing' });
+    }
+
     jwt.sign(
       payload,
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: 3600 },
       (err, token) => {
         if (err) {
@@ -99,9 +104,14 @@ export const loginUser = async (req, res) => {
       user: { id: user.id }
     };
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET not set during login');
+      return res.status(500).json({ msg: 'Server misconfiguration: JWT_SECRET missing' });
+    }
+
     jwt.sign(
       payload,
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: 3600 },
       (err, token) => {
         if (err) {

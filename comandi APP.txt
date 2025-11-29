@@ -1,0 +1,67 @@
+Frontend App in esecuzione (o pronta per essere avviata con npm run dev).
+
+Email: test@example.com
+Password: password123
+
+
+Prima avviamo il backend:
+
+cd server && node server.js
+
+Ora avviamo il frontend:
+
+npm run dev
+
+./start.sh
+
+
+video di Showcase
+
+
+Validazione del passaporto:
+
+Test della validazione della data di scadenza rispetto alla data di emissione
+Test del metodo isPassportValid()
+Test con date di scadenza passate
+Validazione dell'età:
+
+Test con utenti minorenni (dovrebbe fallire)
+Test con utenti di età limite (18 anni esatti)
+Test con date di nascita future
+Validazione del ruolo:
+
+Test con ruoli validi ('admin', 'user', 'super_admin')
+Test con ruoli non validi
+Metodi custom:
+
+Test del metodo getFullName()
+Test del metodo statico findByGroup()
+Gestione delle preferenze:
+
+
+Nella Collection travelinfos nel emergencyContacts aggiungi in Object il campo departureGroup
+
+Test dell'aggiunta di preferenze
+Test della modifica di preferenze esistenti
+Test con tipi di dati diversi nella Map
+
+
+
+690f9a3d0f849e8f4d5fa020
+690f9a3d0f849e8f4d5fa020
+
+
+
+
+devo fare una descrizione di questo progetto, puoi partendo dal codice che abbiamo sviluppato fare una sceda tecnica sul sunzionamento
+
+
+cosa possiamo dare in mano a chi gestisce il viaggio incentive per creare facilmente un viaggio, inserire tutti gli eventi, i voli e i partecipanti al viaggio?
+
+
+
+ allowCompanion": false, e "allowBusiness":
+
+
+
+

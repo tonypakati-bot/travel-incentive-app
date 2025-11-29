@@ -55,7 +55,7 @@ export const registrationFormConfig: RegistrationFormConfig = [
           label: 'Tipologia Camera',
           type: 'select',
           required: true,
-          options: ['Matrimoniale', 'Doppia Letti separati', 'Doppia uso singola']
+          options: []
         },
         {
           id: 'departureAirport',

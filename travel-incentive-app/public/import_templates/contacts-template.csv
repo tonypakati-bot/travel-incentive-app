@@ -1,0 +1,10 @@
+FirstName,LastName,Name,Email,Phone,Type,TargetAirports,Availability,Languages,Services,DepartureGroup
+Paola,Verdi,,paola.verdi@example.com, +39 333 1234567,Local,MXP|FCO,24/7,Italian;English,Assistance|Translation,MXP
+Luca,Azzurri,,luca.azzurri@example.com,+39 345 7654321,Guide,,09:00-18:00,Italian,Guiding,
+"Pippo Baudo",2,,pippo.baudo@example.com,+39 3330001111,Contact,,Always,Italian,General,
+
+# Notes:
+# - Use `FirstName` and `LastName` when possible. `Name` is kept for backward compatibility and will be used when first/last are missing.
+# - `TargetAirports` can be a pipe-separated list (e.g. MXP|FCO) or left empty for general contacts.
+# - `Languages` and `Services` can be semicolon-separated lists.
+# - Dates/times should match your app conventions.

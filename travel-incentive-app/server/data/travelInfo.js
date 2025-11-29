@@ -13,6 +13,7 @@ const travelInfo = {
   emergencyContacts: [
     {
       id: 'ec1',
+      departureGroup: '',
       name: 'Assistenza Viaggio 24/7',
       phone: '+39 02 123456',
       type: 'Supporto H24',

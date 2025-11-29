@@ -1,0 +1,153 @@
+[
+  {
+    "_id": "69243eb23f2ab69645c89f5b",
+    "title": "Test Form API",
+    "description": "API-created form",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          }
+        ]
+      }
+    ],
+    "status": "draft",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T11:17:06.899Z",
+    "updatedAt": "2025-11-24T11:17:06.899Z",
+    "__v": 0
+  },
+  {
+    "_id": "692440263f2ab69645c89f5d",
+    "title": "UI Fields Test",
+    "description": "Save fields test",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "nome",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "esigenze-alimentari",
+            "name": "Esigenze Alimentari",
+            "enabled": true,
+            "required": false,
+            "order": 1
+          }
+        ]
+      }
+    ],
+    "status": "published",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T11:23:18.982Z",
+    "updatedAt": "2025-11-24T11:23:18.982Z",
+    "__v": 0
+  },
+  {
+    "_id": "69245e913f2ab69645c89f73",
+    "title": "Test Persistenza Campi",
+    "description": "Test auto fields",
+    "sections": [
+      {
+        "id": "dati-partecipante",
+        "title": "Dati Partecipante",
+        "order": 0,
+        "fields": [
+          {
+            "id": "ragione-sociale",
+            "name": "Ragione Sociale",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          },
+          {
+            "id": "cognome",
+            "name": "Cognome",
+            "enabled": true,
+            "required": true,
+            "order": 1
+          }
+        ]
+      },
+      {
+        "id": "logistica",
+        "title": "Logistica",
+        "order": 1,
+        "fields": [
+          {
+            "id": "tipologia-camera",
+            "name": "Tipologia Camera",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          }
+        ]
+      },
+      {
+        "id": "consensi",
+        "title": "Consensi",
+        "order": 2,
+        "fields": [
+          {
+            "id": "informativa-sulla-privacy",
+            "name": "Informativa sulla Privacy",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          }
+        ]
+      },
+      {
+        "id": "accompagnatore",
+        "title": "Accompagnatore",
+        "order": 3,
+        "fields": [
+          {
+            "id": "nome-accompagnatore",
+            "name": "Nome",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          }
+        ]
+      },
+      {
+        "id": "fatturazione",
+        "title": "Fatturazione",
+        "order": 4,
+        "fields": [
+          {
+            "id": "intestatario-fattura",
+            "name": "Intestatario Fattura",
+            "enabled": true,
+            "required": true,
+            "order": 0
+          }
+        ]
+      }
+    ],
+    "status": "draft",
+    "visible": false,
+    "author": "",
+    "createdAt": "2025-11-24T13:33:05.473Z",
+    "updatedAt": "2025-11-24T13:33:05.473Z",
+    "__v": 0
+  }
+]

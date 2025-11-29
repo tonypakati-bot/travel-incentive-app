@@ -1,0 +1,96 @@
+IncentiveTravel
+
+Admin Panel
+
+Dashboard
+Manage Trip
+Manage Contacts
+Manage Participants
+Invites
+Forms
+Communications
+Useful Informations
+Privacy Policy
+Terms & Conditions
+Documents
+Reports
+Aggiungi partecipante
+Correggi i seguenti errori:
+Email già presente per questo viaggio
+Name *
+Email *
+Email già presente per questo viaggio
+Group
+Status
+Registrato
+Invitato
+Da invitare
+Annulla
+Salva partecipante
+Sales Kick-off Dubai
+
+Elenco partecipanti
+
+Tutti gli stati
+Registrato
+Invitato
+Da invitare
+Aggiungi partecipante
+Importa
+Esporta
+	
+Participant
+	
+Group
+	
+Status
+	ACTIONS
+	
+G
+Giulio Tutto
+g.tutto@tim.it
+		Registered	
+
+	
+N
+Nuovo
+nuovo@fre.it
+		Invited	
+
+	
+P
+Paola Verdi
+p.verdi@example.com
+	VIP	Invited	
+
+	
+P
+Pio
+Pio.fro@f.com
+	Vip	Invited	
+
+	
+P
+Pippo Baudo
+pippo@gmail.com
+		To Invite	
+
+	
+P
+Pippo Baudo
+pippo@gmail.com
+		To Invite	
+
+	
+T
+Test User 1763642364882
+test+1763642364882@example.com
+		To Invite	
+
+	
+T
+Test User 1763642910403
+test+1763642910403@example.com
+		To Invite	
+Email già presente per questo viaggio
+Partecipante salvato

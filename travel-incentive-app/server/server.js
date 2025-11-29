@@ -13,6 +13,12 @@ const __dirname = dirname(__filename);
 // Connect to database
 await connectDB();
 
+// Enforce JWT secret presence at startup
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is not set in environment. Aborting startup.');
+  process.exit(1);
+}
+
 const app = express();
 
 // Middleware
@@ -24,6 +30,27 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Temporary forensic logging for PUT /api/trip to help debug missing fields
+import fs from 'fs';
+
+app.use((req, res, next) => {
+  try {
+    if (req.method === 'PUT' && req.path === '/api/trip') {
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        ip: req.ip || req.headers['x-forwarded-for'] || (req.connection && req.connection.remoteAddress),
+        path: req.originalUrl,
+        body: req.body
+      };
+      const out = JSON.stringify(logEntry) + '\n';
+      fs.appendFileSync(resolve(__dirname, 'logs', 'put_trip.log'), out, { encoding: 'utf8' });
+    }
+  } catch (err) {
+    console.error('Failed to write put_trip log', err);
+  }
+  next();
+});
 
 // Servire file statici dalla cartella uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

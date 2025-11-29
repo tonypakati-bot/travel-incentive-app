@@ -1,30 +1,28 @@
 import jwt from 'jsonwebtoken';
 
 const auth = function(req, res, next) {
-  // Log all headers for debugging
-  console.log('Request headers:', {
-    headers: req.headers,
-    url: req.url,
-    method: req.method
-  });
-
   // Get token from header
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   // Check if no token
   if (!token) {
-    console.log('No token found in request headers');
     return res.status(401).json({ msg: 'No token, authorization denied' });
   }
 
   // Verify token
   try {
+    console.log('JWT_SECRET:', process.env.JWT_SECRET);
+    console.log('Token received:', token);
+    if (!process.env.JWT_SECRET) {
+      console.log('JWT verify error: JWT_SECRET is not set');
+      return res.status(500).json({ msg: 'Server misconfiguration: JWT_SECRET missing' });
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token verified successfully:', { userId: decoded.user.id });
+    console.log('Decoded:', decoded);
     req.user = decoded.user;
     next();
   } catch (err) {
-    console.error('Token verification failed:', err.message);
+    console.log('JWT verify error:', err.message);
     res.status(401).json({ msg: 'Token is not valid' });
   }
 };
