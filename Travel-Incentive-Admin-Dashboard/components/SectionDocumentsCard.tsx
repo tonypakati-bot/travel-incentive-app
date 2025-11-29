@@ -33,22 +33,21 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
     fetchFormOptions().then(res => {
       if (!mounted) return;
       if (res && res.length) setFormOptions(res.map((it: any) => ({ value: it.value, label: it.label })));
-    }).catch(e => { console.debug('[E2E] initial fetchFormOptions error', e); });
+    }).catch(() => {});
     // fetch generic document options (fallback)
     fetchDocumentOptions().then(res => {
-      console.debug('[E2E] initial fetchDocumentOptions', res);
       if (!mounted) return;
       if (res && res.length) {
         setOptions(res);
         setUsefulOptions(res); // prefer useful-informations shape for the Useful Informations select
       }
-    }).catch((e) => { console.debug('[E2E] initial fetchDocumentOptions error', e); }).finally(() => { if (mounted) setLoading(false); });
+    }).catch(() => {}).finally(() => { if (mounted) setLoading(false); });
 
     // fetch privacy-specific options
     fetchPrivacyPolicyOptions().then(res => {
       if (!mounted) return;
       if (res && res.length) setPrivacyOptions(res);
-    }).catch(e => { console.debug('[E2E] initial fetchPrivacyPolicyOptions error', e); });
+    }).catch(() => {});
 
     // fetch terms-specific options
     fetchTermsDocuments().then(res => {
@@ -57,16 +56,15 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
         // map server objects to DocOption shape if necessary
         setTermsOptions(res.map((it: any) => ({ value: it._id ?? it.id ?? it.value ?? '', label: it.title ?? it.label ?? it.name ?? it.filename ?? '' })));
       }
-    }).catch(e => { console.debug('[E2E] initial fetchTermsDocuments error', e); });
+    }).catch(() => {});
 
     // also listen for global documents changed events to refresh options
     const handler = async (ev?: Event) => {
-      try { console.debug('[E2E] documents:changed handler triggered - event detail', (ev as any)?.detail); } catch (e) {}
-      console.debug('[E2E] documents:changed handler triggered - refreshing options');
+      try { /* handler triggered - event detail available in (ev as any)?.detail */ } catch (e) {}
       setLoading(true);
       try {
         const [dRes, pRes, tRes] = await Promise.all([fetchDocumentOptions(), fetchPrivacyPolicyOptions(), fetchTermsDocuments()]);
-        console.debug('[E2E] documents:changed fetch results', { dRes, pRes, tRes });
+        // refresh results: { dRes, pRes, tRes }
         if (mounted && dRes && dRes.length) {
           setOptions(dRes);
           setUsefulOptions(dRes);
@@ -79,8 +77,8 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
         try {
           const fRes = await fetchFormOptions();
           if (mounted && fRes && fRes.length) setFormOptions(fRes.map((it: any) => ({ value: it.value, label: it.label })));
-        } catch (e) { console.debug('[E2E] documents:changed fetchFormOptions error', e); }
-      } catch (e) { console.debug('[E2E] documents:changed fetch error', e); }
+        } catch (e) { /* ignore fetch errors during refresh */ }
+      } catch (e) { /* ignore fetch errors during refresh */ }
       setLoading(false);
     };
     window.addEventListener('documents:changed', handler as EventListener);
@@ -89,7 +87,7 @@ const SectionDocumentsCard: React.FC<Props> = ({ values = {}, onChange, disabled
       try {
         const fRes = await fetchFormOptions();
         if (mounted && fRes && fRes.length) setFormOptions(fRes.map((it: any) => ({ value: it.value, label: it.label })));
-      } catch (e) { console.debug('[E2E] forms:changed handler error', e); }
+      } catch (e) { /* ignore forms fetch errors */ }
     };
     window.addEventListener('forms:changed', formsHandler as EventListener);
     return () => { mounted = false; window.removeEventListener('documents:changed', handler as EventListener); window.removeEventListener('forms:changed', formsHandler as EventListener); };
