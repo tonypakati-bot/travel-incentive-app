@@ -26,7 +26,7 @@ const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = fal
         const json = await res.json();
         if (!mounted) return;
         const mapped = (json || []).map((c: any) => ({ id: String(c.id || c._id || c.contactId || ''), name: c.name || c.fullName || c.displayName || c.firstName, category: c.category || c.role || c.type }));
-        try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts fetched contacts', { raw: json, mapped }); } catch (e) {}
+        try { /* fetched contacts: { raw: json, mapped } */ } catch (e) {}
         setContacts(mapped.sort((a,b)=> (a.name||'').toLowerCase() > (b.name||'').toLowerCase() ? 1 : -1));
       } catch (e) {
         // ignore; leave contacts empty
@@ -54,7 +54,7 @@ const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = fal
       // Coerce incoming initial contactIds to strings to match fetched contact ids
       try {
         const normalized = (initial || []).map(it => ({ ...(it || {}), contactId: it && it.contactId ? String(it.contactId) : '' }));
-        try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts sync initial -> normalized', { initial, normalized, currentRows: rows }); } catch (e) {}
+        try { /* sync initial -> normalized */ } catch (e) {}
         // shallow equality check to avoid unnecessary state updates that can trigger a loop
         const eq = (a: any[], b: any[]) => {
           if (a === b) return true;
@@ -82,7 +82,7 @@ const SectionEmergencyContacts: React.FC<Props> = ({ groups = [], disabled = fal
   const updateRow = (i: number, data: Partial<{ group?: string; contactId?: string }>) => setRows(prev => prev.map((r, idx) => idx === i ? { ...r, ...data } : r));
 
   useEffect(() => {
-    try { if ((import.meta as any).env && (import.meta as any).env.DEV) console.debug('[E2E] SectionEmergencyContacts rows changed (DEV)', { rows }); } catch (e) {}
+    try { /* rows changed */ } catch (e) {}
   }, [rows]);
 
   return (

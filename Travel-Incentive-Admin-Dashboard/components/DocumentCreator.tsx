@@ -29,7 +29,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
       (window as any).__E2E_forceCreateDocument = async (payload: any) => {
         try {
           const { title: pt = '', content: pc = '', usefulInfo = {} } = payload || {};
-          console.debug('[E2E] __E2E_forceCreateDocument called', { payload });
+          // __E2E_forceCreateDocument called
           if (!pt || !pt.trim()) return { ok: false, reason: 'title_required' };
           let res = null;
           if (usefulInfo && Object.keys(usefulInfo).length > 0) {
@@ -37,7 +37,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
           } else {
             res = await createDocument({ title: pt.trim(), content: pc, usefulInfo });
           }
-          console.debug('[E2E] __E2E_forceCreateDocument createDocument result', res);
+          // __E2E_forceCreateDocument createDocument result
           try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
           if (!res) return { ok: false, reason: 'create_failed' };
           try { toast.push('Documento creato con successo', 'success'); } catch(e){}
@@ -68,7 +68,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
           if (payload.language !== undefined) setLanguage(payload.language);
           if (payload.climate !== undefined) setClimate(payload.climate);
           if (payload.vaccinationsHealth !== undefined) setVaccinationsHealth(payload.vaccinationsHealth);
-          console.debug('[E2E] __E2E_setDocCreatorFields applied', payload);
+          // __E2E_setDocCreatorFields applied
           try { (window as any).__E2E_lastSetPayload = payload; } catch (e) {}
           return { ok: true };
         } catch (e) { return { ok: false, reason: e && e.message }; }
@@ -101,7 +101,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
 
   // debug: log mount/unmount and attach a capturing click listener to the create button
   React.useEffect(() => {
-    console.debug('[E2E] DocumentCreator mounted, open=', open);
+    // DocumentCreator mounted
     if (!open) return;
     let attached = false;
     const attach = () => {
@@ -112,7 +112,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
           btn.addEventListener('click', (e) => {
             try {
               const b = btn as HTMLButtonElement | null;
-              console.debug('[E2E] capturing click on doc-creator-create', { disabled: b ? b.disabled : undefined });
+              // capturing click on doc-creator-create
             } catch (err) {}
           }, true);
         }
@@ -121,7 +121,7 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     // try immediately and after a short delay to ensure button exists
     attach();
     const t = setTimeout(attach, 200);
-    return () => { clearTimeout(t); console.debug('[E2E] DocumentCreator unmounted'); };
+    return () => { clearTimeout(t); /* DocumentCreator unmounted */ };
   }, [open]);
 
   if (!open) return null;
@@ -137,18 +137,18 @@ const DocumentCreator: React.FC<Props> = ({ open, onCreated, onClose }) => {
     setSaving(true);
     setError(null);
     const payload = { title: String(localTitle).trim(), content: localContent, usefulInfo: ui };
-    console.debug('[E2E] DocumentCreator.doCreate payload', payload);
+    // DocumentCreator.doCreate payload
     let res = null;
     if (payload && payload.usefulInfo && Object.keys(payload.usefulInfo).length > 0) {
       res = await createUsefulInfo(payload);
     } else {
       res = await createDocument(payload);
     }
-    console.debug('[E2E] DocumentCreator.doCreate result', res);
+    // DocumentCreator.doCreate result
           try { (window as any).__E2E_lastCreateResult = res || null; } catch (e) {}
     setSaving(false);
     if (!res) {
-      console.debug('[E2E] DocumentCreator.doCreate failed to create');
+      // DocumentCreator.doCreate failed to create
       return setError('Errore durante la creazione');
     }
     // show toast then close

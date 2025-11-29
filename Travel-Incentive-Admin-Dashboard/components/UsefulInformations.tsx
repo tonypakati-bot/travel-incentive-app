@@ -162,7 +162,7 @@ const UsefulInformations: React.FC<UsefulInformationsProps> = ({ informations, s
             try {
                 const titleFallback = (data.destinationName && data.destinationName.trim()) || (data.country && data.country.trim()) || (data.documents && String(data.documents).split('\n')[0].slice(0, 60)) || 'Untitled Useful Information';
                 const payload = { title: titleFallback, usefulInfo: data, content: '' };
-                console.debug('Creating useful info with payload:', payload);
+                // Creating useful info with payload
 
                 const res = await fetch('/api/useful-informations', {
                     method: 'POST',
