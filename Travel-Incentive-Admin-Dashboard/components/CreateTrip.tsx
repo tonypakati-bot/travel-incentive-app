@@ -281,6 +281,14 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     const newDay = { day: next, title: `Giorno ${next}`, date: '', items: [] } as AgendaDay;
     // optimistic update
     setAgenda(prev => [...prev, newDay]);
+    // make the new day active and focus its title input after render
+    setActiveDay(next);
+    setTimeout(() => {
+      try {
+        const el = document.querySelector(`[data-testid="day-title-${next}"]`) as HTMLInputElement | null;
+        if (el) el.focus();
+      } catch (e) {}
+    }, 80);
     (async () => {
       if (!tripDraft || !(tripDraft as any).tripId) return;
       try {
@@ -346,6 +354,13 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
     const newItem: AgendaItem = { id: tempId, time:'', title:'', description:'', category: '' };
     setAgenda(prev => prev.map((d,i)=> i===dayIndex ? ({ ...(d||{}), items: [...(d.items||[]), newItem] }) : d));
+    // focus the newly added event's title input (optimistic id available)
+    setTimeout(() => {
+      try {
+        const el = document.querySelector(`[data-testid="event-title-${tempId}"]`) as HTMLInputElement | null;
+        if (el) el.focus();
+      } catch (e) {}
+    }, 80);
     // optimistic create item on server
     (async () => {
       if (!tripDraft || !(tripDraft as any).tripId) return;
@@ -465,21 +480,51 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
   };
 
   useEffect(() => {
-    if (!((import.meta as any).env && (import.meta as any).env.DEV)) return;
     try {
       (window as any).__E2E_setTripDraft = (trip: any) => {
         setTripDraft(trip);
         if (trip && trip.name) setSavedTripName(trip.name);
       };
-      // if the test injected a trip before React mounted, pick it up
+      // if the test or App injected a trip before React mounted, pick it up
       if ((window as any).__E2E_injectedTrip) {
         const t = (window as any).__E2E_injectedTrip;
         setTripDraft(t);
         if (t && t.name) setSavedTripName(t.name);
       }
+      // also allow App to set the trip later by exposing the setter on window
+      try {
+        (window as any).__E2E_setTripDraft = (trip: any) => {
+          setTripDraft(trip);
+          if (trip && trip.name) setSavedTripName(trip.name);
+        };
+      } catch (e) {}
     } catch (e) {
       // ignore in non-test environments
     }
+  }, []);
+
+  // Listen for possible late injection from App.tsx: if App writes __E2E_injectedTrip after mount,
+  // pick it up. This uses a small interval to detect the window property in case the fetch
+  // occurs after CreateTrip mounted.
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        for (let i = 0; i < 10 && !cancelled; i++) {
+          if ((window as any).__E2E_injectedTrip) {
+            const t = (window as any).__E2E_injectedTrip;
+            setTripDraft(t);
+            if (t && t.name) setSavedTripName(t.name);
+            return;
+          }
+          // wait 100ms and try again
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(res => setTimeout(res, 100));
+        }
+      } catch (e) {}
+    };
+    check();
+    return () => { cancelled = true; };
   }, []);
 
   // UX: when Agenda section is opened and there are no days, auto-create first day
@@ -811,11 +856,15 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                           </div>
                         ))}
                       </div>
-                      <div className="mt-4 flex items-center space-x-3">
-                         <button onClick={() => addFlight('andata')} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
-                          <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Volo di Andata
-                        </button>
-                        <button onClick={saveFlights} className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">Salva Voli</button>
+                      <div className="mt-4 flex items-center w-full">
+                        <div>
+                          <button onClick={() => addFlight('andata')} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
+                            <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Volo di Andata
+                          </button>
+                        </div>
+                        <div className="ml-auto">
+                          <button onClick={saveFlights} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Salva Voli</button>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -871,11 +920,15 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                           </div>
                         ))}
                       </div>
-                       <div className="mt-4 flex items-center space-x-3">
-                        <button onClick={() => addFlight('ritorno')} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
-                          <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Volo di Ritorno
-                        </button>
-                        <button onClick={saveFlights} className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">Salva Voli</button>
+                       <div className="mt-4 flex items-center w-full">
+                        <div>
+                          <button onClick={() => addFlight('ritorno')} className="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-lg transition-colors">
+                            <PlusIcon className="w-4 h-4 mr-1" /> Aggiungi Volo di Ritorno
+                          </button>
+                        </div>
+                        <div className="ml-auto">
+                          <button onClick={saveFlights} className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Salva Voli</button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -960,7 +1013,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <FormField label="Giorno" className="md:col-span-1"><Input value={String(activeDayObj ? activeDayObj.day : activeDay)} readOnly className="!bg-gray-100" /></FormField>
               <FormField label="Data" className="md:col-span-2"><Input type="date" placeholder="gg/mm/yyyy" value={activeDayObj ? (activeDayObj.date || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { date: e.target.value })} /></FormField>
-              <FormField label="Titolo del Giorno" className="md:col-span-3"><Input placeholder="Arrivo e Check-in" value={activeDayObj ? (activeDayObj.title || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { title: e.target.value })} /></FormField>
+              <FormField label="Titolo del Giorno" className="md:col-span-3"><Input data-testid={`day-title-${activeDayObj ? (activeDayObj.day ?? activeDay) : activeDay}`} placeholder="Arrivo e Check-in" value={activeDayObj ? (activeDayObj.title || '') : ''} onChange={(e)=> updateAgendaDay(activeDayIndex, { title: e.target.value })} /></FormField>
             </div>
 
             <div className="pt-4 border-t border-gray-200">
@@ -982,7 +1035,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                         <Input type="time" value={item.time || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { time: e.target.value })} />
                       </FormField>
                       <FormField label="Titolo Evento">
-                        <Input value={item.title || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { title: e.target.value })} />
+                        <Input data-testid={`event-title-${String(item.id || itemIdx)}`} value={item.title || ''} onChange={(e)=> updateAgendaItem(activeDayIndex, itemIdx, { title: e.target.value })} />
                       </FormField>
                       <FormField label="Categoria">
                         <div className="relative">
@@ -1095,7 +1148,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
                   </button>
                 </div>
                 <div>
-                  <button onClick={saveAgenda} className="bg-white border border-gray-300 text-gray-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50">Salva Agenda</button>
+                  <button onClick={saveAgenda} className="bg-blue-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700">Salva Agenda</button>
                 </div>
               </div>
             </div>
@@ -1118,7 +1171,7 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
 
       <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
         <button onClick={onCancel} className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors">Annulla</button>
-        <button type="button" onClick={() => {}} className="bg-white border border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Salva Bozza</button>
+        <button type="button" onClick={() => {}} className="bg-white border border-gray-300 text-gray-700 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">Salva Impostazioni</button>
         <button onClick={onSave} className="bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">{isEditing ? 'Aggiorna' : 'Salva e Pubblica'}</button>
       </footer>
       <ConfirmModal

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToastProvider, useToast } from './components/ToastContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -82,6 +82,35 @@ const AppContent: React.FC = () => {
   const [participants, setParticipants] = useState<any[]>([]);
 
   const toast = useToast();
+
+  // If URL contains /manage-trip or /manage-trips with ?tripId=..., fetch trip and open editor
+  useEffect(() => {
+    try {
+      const { pathname, search } = window.location;
+      const lower = (pathname || '').toLowerCase();
+      const params = new URLSearchParams(search || '');
+      const tripId = params.get('tripId') || params.get('id');
+      if (lower.includes('manage-trip') || lower.includes('manage-trips')) {
+        setActiveView('manage-trip');
+        if (tripId) {
+          (async () => {
+            try {
+              const res = await fetch(`/api/trips/${tripId}`);
+              if (!res.ok) return;
+              const json = await res.json();
+              const normalized = { ...(json || {}), tripId: json.tripId || json._id || json.id || tripId };
+              try { (window as any).__E2E_injectedTrip = normalized; } catch (e) {}
+              // If CreateTrip exposed a setter, call it so component receives the trip immediately
+              try { if ((window as any).__E2E_setTripDraft) (window as any).__E2E_setTripDraft(normalized); } catch (e) {}
+              setTripFormMode('edit');
+            } catch (e) {
+              console.warn('Failed loading trip from URL', e);
+            }
+          })();
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   React.useEffect(() => {
     // Load invites and participants from API
