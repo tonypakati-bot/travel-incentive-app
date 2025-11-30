@@ -98,8 +98,8 @@ const Forms: React.FC<FormsProps> = ({ onCreateForm, onEditForm, onDeleteForm, o
                     </tr>
                 </thead>
                 <tbody>
-                    {forms.map((form) => (
-                        <tr key={form.id} className="bg-white border-b last:border-b-0 hover:bg-gray-50">
+                    {forms.map((form, index) => (
+                        <tr key={`${form.id}-${index}`} className="bg-white border-b last:border-b-0 hover:bg-gray-50">
                             <td className="px-4 py-4">
                                 <input type="checkbox" checked={selectedIds.includes(form.id)} onChange={() => toggleSelect(form.id)} className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
                             </td>

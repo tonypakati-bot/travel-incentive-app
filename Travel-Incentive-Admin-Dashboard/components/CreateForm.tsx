@@ -10,6 +10,7 @@ interface CreateFormProps {
     isEditing?: boolean;
     initialData?: any;
     onDelete?: (id: string | number) => void;
+    asPage?: boolean;
 }
 
 type Section = {
@@ -64,7 +65,7 @@ const Select: React.FC<{ children: React.ReactNode, value?: string | number, onC
 
 import ModalPortal from './ModalPortal';
 
-const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = false, initialData }) => {
+const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = false, initialData, asPage = false }) => {
     const initialActiveSections: Section[] = [];
 
     const [activeSections, setActiveSections] = useState<Section[]>(() => initialActiveSections);
@@ -201,8 +202,79 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = f
         }
     };
 
-        return (
-                <ModalPortal>
+        const mainContent = (
+            <div className="bg-white rounded-2xl shadow-lg overflow-auto">
+                <div className="p-8">
+                    <header className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-800">Create New Form</h1>
+                        <p className="text-gray-500 mt-1">Design a form to collect information from participants.</p>
+                    </header>
+
+                    <div className="max-w-7xl mx-auto">
+                        <div className="bg-white p-8 rounded-2xl shadow-sm space-y-6">
+                            <FormField label="Form Title" required>
+                                <Input ref={titleRef} placeholder="e.g., Dietary Restrictions & Allergies" value={title} onChange={(e) => setTitle(e.target.value)} />
+                                {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title}</p>}
+                            </FormField>
+                            <FormField label="Form Description">
+                                <Textarea placeholder="Provide a brief description or instructions for this form." value={description} onChange={(e) => setDescription(e.target.value)} />
+                            </FormField>
+                        </div>
+
+                        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="md:col-span-1">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">Sezioni Disponibili</h2>
+                                <div className="space-y-3">
+                                    {availableSections.map(section => (
+                                        <div key={section.id} draggable onDragStart={(e) => handleDragStart(e, section, 'available', null)} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center cursor-grab active:cursor-grabbing">
+                                            <GripVerticalIcon className="w-5 h-5 text-gray-400 mr-3" />
+                                            <span className="font-medium text-gray-700">{section.title}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-gray-800">Anteprima Form del Viaggio</h2>
+                                    <button type="button" onClick={() => { setActiveSections(ALL_SECTIONS.map(s => ({ id: s.id, title: s.title }))); setAvailableSections([]); }} className="text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold">Aggiungi tutte le sezioni</button>
+                                </div>
+
+                                <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} className="p-6 border-2 border-dashed border-gray-300 rounded-lg min-h-[300px] space-y-4 bg-gray-50/50">
+                                    {activeSections.map((section, index) => (
+                                        <div key={section.id} draggable onDragStart={(e) => handleDragStart(e, section, 'active', index)} onDragEnter={(e) => handleDragEnter(e, index)} onDragOver={(e) => e.preventDefault()} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <GripVerticalIcon className="w-5 h-5 text-gray-400 mr-3 cursor-grab active:cursor-grabbing" />
+                                                    <span className="font-bold text-gray-800">{section.title}</span>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <button type="button" onClick={() => removeSection(section.id)} className="text-gray-500 hover:text-red-600"><TrashIcon className="w-5 h-5" /></button>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 pl-8">
+                                                <button onClick={() => handleOpenModal(section)} className="flex items-center text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"><PencilIcon className="w-4 h-4 mr-2" />Modifica Campi</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {activeSections.length === 0 && (<div className="flex items-center justify-center h-full pointer-events-none"><p className="text-gray-500">Trascina le sezioni qui</p></div>)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
+                            {isEditing && (<button onClick={() => onCancel()} className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors">Annulla</button>)}
+                            <button onClick={async () => { if (!validate()) return; setIsSaving(true); const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' }; try { if (isEditing && initialData && (initialData._id || initialData.id)) { const id = String(initialData._id ?? initialData.id); const updated = await updateForm(id, payload); if (updated) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {} try { toast.showToast('Bozza aggiornata.', 'success'); } catch(e){} onSave && onSave(updated); } } else { const created = await createForm(payload); if (created) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {} try { toast.showToast('Bozza salvata.', 'success'); } catch(e){} onSave && onSave(created); } } } catch (err) { console.error('Failed saving draft', err); try { toast.showToast('Salvataggio bozza fallito.', 'error'); } catch(e){} } setIsSaving(false); }} disabled={isSaving} className={`bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>{isSaving ? 'Saving…' : 'Save Draft'}</button>
+                            <button onClick={async () => { if (!validate()) return; setIsSaving(true); const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'published' }; try { if (isEditing && initialData && (initialData._id || initialData.id)) { const id = String(initialData._id ?? initialData.id); const updated = await updateForm(id, payload); if (updated) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {} try { toast.showToast('Form aggiornato.', 'success'); } catch(e){} onSave && onSave(updated); } } else { const created = await createForm(payload); if (created) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {} try { toast.showToast('Form pubblicato.', 'success'); } catch(e){} onSave && onSave(created); } } } catch (err) { console.error('Failed publishing form', err); try { toast.showToast('Publish fallito.', 'error'); } catch(e){} } setIsSaving(false); }} disabled={isSaving} className={`bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>{isSaving ? 'Publishing…' : 'Publish Form'}</button>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        );
+
+        if (asPage) {
+            return (
+                <>
                     {isModalOpen && editingSection && (
                         <CustomizeFieldsModal 
                             section={editingSection} 
@@ -211,80 +283,33 @@ const CreateForm: React.FC<CreateFormProps> = ({ onCancel, onSave, isEditing = f
                             initialFields={sectionFieldsMap[editingSection.id]}
                         />
                     )}
+                    <div className="p-8 max-w-7xl mx-auto">
+                        {mainContent}
+                    </div>
+                </>
+            );
+        }
 
-                    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-auto p-4">
-                        <div className="relative w-full max-w-5xl">
-                                <div className="fixed inset-0 bg-black opacity-40" onClick={() => onCancel()} />
-                                <div className="bg-white rounded-2xl shadow-lg overflow-auto z-10">
-                                <div className="p-8">
-                                    <header className="mb-8">
-                                        <h1 className="text-3xl font-bold text-gray-800">Create New Form</h1>
-                                        <p className="text-gray-500 mt-1">Design a form to collect information from participants.</p>
-                                    </header>
+        return (
+            <ModalPortal>
+                {isModalOpen && editingSection && (
+                    <CustomizeFieldsModal 
+                        section={editingSection} 
+                        onClose={handleCloseModal} 
+                        onSave={handleSaveFields} 
+                        initialFields={sectionFieldsMap[editingSection.id]}
+                    />
+                )}
 
-                                    <div className="max-w-7xl mx-auto">
-                                        <div className="bg-white p-8 rounded-2xl shadow-sm space-y-6">
-                                            <FormField label="Form Title" required>
-                                                <Input ref={titleRef} placeholder="e.g., Dietary Restrictions & Allergies" value={title} onChange={(e) => setTitle(e.target.value)} />
-                                                {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title}</p>}
-                                            </FormField>
-                                            <FormField label="Form Description">
-                                                <Textarea placeholder="Provide a brief description or instructions for this form." value={description} onChange={(e) => setDescription(e.target.value)} />
-                                            </FormField>
-                                        </div>
-
-                                        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                                            <div className="md:col-span-1">
-                                                <h2 className="text-xl font-bold text-gray-800 mb-4">Sezioni Disponibili</h2>
-                                                <div className="space-y-3">
-                                                    {availableSections.map(section => (
-                                                        <div key={section.id} draggable onDragStart={(e) => handleDragStart(e, section, 'available', null)} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center cursor-grab active:cursor-grabbing">
-                                                            <GripVerticalIcon className="w-5 h-5 text-gray-400 mr-3" />
-                                                            <span className="font-medium text-gray-700">{section.title}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h2 className="text-xl font-bold text-gray-800">Anteprima Form del Viaggio</h2>
-                                                    <button type="button" onClick={() => { setActiveSections(ALL_SECTIONS.map(s => ({ id: s.id, title: s.title }))); setAvailableSections([]); }} className="text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold">Aggiungi tutte le sezioni</button>
-                                                </div>
-
-                                                <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} className="p-6 border-2 border-dashed border-gray-300 rounded-lg min-h-[300px] space-y-4 bg-gray-50/50">
-                                                    {activeSections.map((section, index) => (
-                                                        <div key={section.id} draggable onDragStart={(e) => handleDragStart(e, section, 'active', index)} onDragEnter={(e) => handleDragEnter(e, index)} onDragOver={(e) => e.preventDefault()} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex items-center">
-                                                                    <GripVerticalIcon className="w-5 h-5 text-gray-400 mr-3 cursor-grab active:cursor-grabbing" />
-                                                                    <span className="font-bold text-gray-800">{section.title}</span>
-                                                                </div>
-                                                                <div className="flex items-center space-x-4">
-                                                                    <button type="button" onClick={() => removeSection(section.id)} className="text-gray-500 hover:text-red-600"><TrashIcon className="w-5 h-5" /></button>
-                                                                </div>
-                                                            </div>
-                                                            <div className="mt-4 pl-8">
-                                                                <button onClick={() => handleOpenModal(section)} className="flex items-center text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"><PencilIcon className="w-4 h-4 mr-2" />Modifica Campi</button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {activeSections.length === 0 && (<div className="flex items-center justify-center h-full pointer-events-none"><p className="text-gray-500">Trascina le sezioni qui</p></div>)}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <footer className="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center space-x-4">
-                                            {isEditing && (<button onClick={() => onCancel()} className="bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors">Annulla</button>)}
-                                            <button onClick={async () => { if (!validate()) return; setIsSaving(true); const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'draft' }; try { if (isEditing && initialData && (initialData._id || initialData.id)) { const id = String(initialData._id ?? initialData.id); const updated = await updateForm(id, payload); if (updated) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {} try { toast.showToast('Bozza aggiornata.', 'success'); } catch(e){} onSave && onSave(updated); } } else { const created = await createForm(payload); if (created) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {} try { toast.showToast('Bozza salvata.', 'success'); } catch(e){} onSave && onSave(created); } } } catch (err) { console.error('Failed saving draft', err); try { toast.showToast('Salvataggio bozza fallito.', 'error'); } catch(e){} } setIsSaving(false); }} disabled={isSaving} className={`bg-gray-200 text-gray-800 font-semibold px-6 py-2.5 rounded-lg hover:bg-gray-300 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>{isSaving ? 'Saving…' : 'Save Draft'}</button>
-                                            <button onClick={async () => { if (!validate()) return; setIsSaving(true); const payload = { title, description, sections: activeSections.map((s, idx) => ({ id: s.id, title: s.title, order: idx, fields: (sectionFieldsMap[s.id] || []) })), status: 'published' }; try { if (isEditing && initialData && (initialData._id || initialData.id)) { const id = String(initialData._id ?? initialData.id); const updated = await updateForm(id, payload); if (updated) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { updated } })); } catch (e) {} try { toast.showToast('Form aggiornato.', 'success'); } catch(e){} onSave && onSave(updated); } } else { const created = await createForm(payload); if (created) { try { window.dispatchEvent(new CustomEvent('forms:changed', { detail: { created } })); } catch (e) {} try { toast.showToast('Form pubblicato.', 'success'); } catch(e){} onSave && onSave(created); } } } catch (err) { console.error('Failed publishing form', err); try { toast.showToast('Publish fallito.', 'error'); } catch(e){} } setIsSaving(false); }} disabled={isSaving} className={`bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}>{isSaving ? 'Publishing…' : 'Publish Form'}</button>
-                                        </footer>
-                                    </div>
-                                </div>
-                            </div>
+                <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-auto p-4">
+                    <div className="relative w-full max-w-5xl">
+                        <div className="fixed inset-0 bg-black opacity-40" onClick={() => onCancel()} />
+                        <div className="z-10">
+                            {mainContent}
                         </div>
                     </div>
-                </ModalPortal>
+                </div>
+            </ModalPortal>
         );
 };
 

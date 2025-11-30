@@ -147,7 +147,10 @@ const AppContent: React.FC = () => {
         if (formsRes.ok) {
           const data = await formsRes.json();
           const items = data.items || data;
-          setForms(items.map((f: any) => ({ id: f._id ?? f.id, name: f.title || f.name || 'Untitled Form', description: f.description || '', trip: '—', responses: '—', status: f.status || 'draft' })));
+          const mapped: Form[] = items.map((f: any) => ({ id: f._id ?? f.id, name: f.title || f.name || 'Untitled Form', description: f.description || '', trip: '—', responses: '—', status: f.status || 'draft' }));
+          // Deduplicate by id (keep first occurrence)
+          const unique: Form[] = Array.from(new Map(mapped.map(m => [String(m.id), m])).values());
+          setForms(unique);
         }
       } catch (e) {
         console.error('Error loading forms', e);
@@ -212,24 +215,14 @@ const AppContent: React.FC = () => {
 
   React.useEffect(() => {
     const openHandler = () => setFormFormMode('create');
-    const changedHandler = (e: any) => {
-      try {
-        const saved = e?.detail?.created;
-        if (saved) handleCreateOrUpdateFormSaved(saved);
-      } catch (err) {
-        console.error('forms:changed handler error', err);
-      }
-    };
     try {
       window.addEventListener('forms:openCreate', openHandler);
-      window.addEventListener('forms:changed', changedHandler as EventListener);
     } catch (e) {
       /* ignore */
     }
     return () => {
       try {
         window.removeEventListener('forms:openCreate', openHandler);
-        window.removeEventListener('forms:changed', changedHandler as EventListener);
       } catch (e) {
         /* ignore */
       }
@@ -261,7 +254,11 @@ const AppContent: React.FC = () => {
   };
 
   // Form handlers
-  const handleCreateForm = () => setFormFormMode('create');
+  // Open form creation as a page view instead of a modal
+  const handleCreateForm = () => {
+    setActiveView('forms');
+    setFormFormMode('create');
+  };
   const handleCloseForm = () => setFormFormMode('hidden');
   const handleSaveForm = () => {
     // Logic to save form would go here
@@ -323,12 +320,11 @@ const AppContent: React.FC = () => {
   const handleCreateOrUpdateFormSaved = (saved: any) => {
     if (!saved) return;
     const normalized = { id: saved._id ?? saved.id, name: saved.title ?? saved.name ?? 'Untitled Form', description: saved.description || '', trip: '—', responses: '—', status: saved.status || 'draft' };
-    const exists = forms.some(f => String(f.id) === String(normalized.id));
-    if (exists) {
-      setForms(prev => prev.map(f => String(f.id) === String(normalized.id) ? normalized : f));
-    } else {
-      setForms(prev => [normalized, ...prev]);
-    }
+    setForms(prev => {
+      const exists = prev.some(f => String(f.id) === String(normalized.id));
+      if (exists) return prev.map(f => String(f.id) === String(normalized.id) ? normalized : f);
+      return [normalized, ...prev];
+    });
     setFormFormMode('hidden');
     setEditingFormData(null);
   };
@@ -555,6 +551,23 @@ const AppContent: React.FC = () => {
       case 'useful-informations':
         return <UsefulInformations informations={usefulInformations} setInformations={setUsefulInformations} />;
       case 'forms':
+        // When formFormMode is create/edit we render the CreateForm as a full page
+        if (formFormMode === 'create' || formFormMode === 'edit') {
+          return (
+            <CreateForm
+              asPage
+              onCancel={handleCloseForm}
+              onSave={(saved?: any) => handleCreateOrUpdateFormSaved(saved)}
+              isEditing={formFormMode === 'edit'}
+              initialData={editingFormData}
+              onDelete={(id) => {
+                handleDeleteForm(id);
+                setFormFormMode('hidden');
+                setEditingFormData(null);
+              }}
+            />
+          );
+        }
         return <Forms onCreateForm={handleCreateForm} onEditForm={handleEditForm} onDeleteForm={handleDeleteForm} onCloneForm={handleCloneForm} forms={forms} />;
       case 'privacy-policy':
         return <PrivacyPolicy documents={privacyDocuments} setDocuments={setPrivacyDocuments} />;
@@ -590,19 +603,7 @@ const AppContent: React.FC = () => {
           inviteeCount={invitesModalData?.inviteeCount || 0}
           initialBody={invitesModalData?.emailBody}
         />
-        {formFormMode !== 'hidden' && (
-          <CreateForm
-            onCancel={handleCloseForm}
-            onSave={(saved?: any) => handleCreateOrUpdateFormSaved(saved)}
-            isEditing={formFormMode === 'edit'}
-            initialData={editingFormData}
-            onDelete={(id) => {
-              handleDeleteForm(id);
-              setFormFormMode('hidden');
-              setEditingFormData(null);
-            }}
-          />
-        )}
+        {/* CreateForm is now rendered as a full page under the 'forms' view */}
       </div>
     </ToastProvider>
   );
