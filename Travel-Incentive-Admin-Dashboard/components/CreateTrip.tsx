@@ -623,6 +623,18 @@ const CreateTrip: React.FC<CreateTripProps> = ({ onCancel, onSave, isEditing = f
     };
   }, []);
 
+  // When trip name changes (after a save), notify communications list to refresh.
+  useEffect(() => {
+    try {
+      const tripName = (tripDraft as any) && ((tripDraft as any).name || (tripDraft as any).tripName);
+      const last = (window as any).__lastTripNameForCommRefresh || null;
+      if (tripName && tripName !== last) {
+        (window as any).__lastTripNameForCommRefresh = tripName;
+        try { window.dispatchEvent(new CustomEvent('communications:refresh')); } catch (e) {}
+      }
+    } catch (e) {}
+  }, [tripDraft && ((tripDraft as any).name || (tripDraft as any).tripName)]);
+
   // UX: when Agenda section is opened and there are no days, auto-create first day
   useEffect(() => {
     try {

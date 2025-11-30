@@ -31,7 +31,7 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
         const last = parts.length > 1 ? parts.pop() as string : '';
         const first = parts.join(' ');
         return {
-            id: s.id || s._id || Date.now(),
+            id: String(s.id ?? s._id ?? Date.now()),
             firstName: first || '',
             lastName: last || '',
             category: s.category || 'Tour Leader',
@@ -70,22 +70,23 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     };
 
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [toDeleteId, setToDeleteId] = useState<number | null>(null);
+    const [toDeleteId, setToDeleteId] = useState<string | number | null>(null);
 
     const handleDelete = (id: string | number) => {
         setToDeleteId(id as any);
         setConfirmOpen(true);
     };
 
+    const isObjectId = (val: any) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+
     const handleConfirmDelete = async () => {
         if (toDeleteId !== null) {
             try {
-                // try server delete if id looks like ObjectId
-                if (String(toDeleteId).length > 8) {
+                if (isObjectId(toDeleteId)) {
                     await fetch(`/api/contacts/${toDeleteId}`, { method: 'DELETE' });
                 }
             } catch (e) { console.warn('Delete request failed', e); }
-            setContacts(prev => prev.filter(contact => contact.id !== toDeleteId));
+            setContacts(prev => prev.filter(contact => String(contact.id) !== String(toDeleteId)));
             try { toast && toast.showToast('Contatto eliminato', 'success'); } catch (e) {}
         }
         setConfirmOpen(false);
@@ -99,13 +100,14 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
     
     const handleSave = async (data: ContactData, id?: string | number) => {
         try {
-            if (id !== undefined && String(id).length > 8) {
+            const isObjId = (v: any) => typeof v === 'string' && /^[0-9a-fA-F]{24}$/.test(String(v));
+            if (id !== undefined && isObjId(id)) {
                 // Update remote
                 const res = await fetch(`/api/contacts/${id}`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data) });
                 if (!res.ok) throw new Error('update-failed');
                 const json = await res.json();
                 const mapped = mapServerToContact(json);
-                setContacts(prev => prev.map(c => c.id === id ? mapped : c));
+                    setContacts(prev => prev.map(c => String(c.id) === String(id) ? mapped : c));
                 try { toast && toast.showToast('Contatto aggiornato', 'success'); } catch (e) {}
             } else if (id !== undefined) {
                 // local id (number) -> try create remote but keep local fallback
@@ -113,7 +115,7 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                 if (res.ok) {
                     const json = await res.json();
                     const mapped = mapServerToContact(json);
-                    setContacts(prev => [mapped, ...prev.filter(c => c.id !== id)] as any);
+                        setContacts(prev => [mapped, ...prev.filter(c => String(c.id) !== String(id))] as any);
                     try { toast && toast.showToast('Contatto creato', 'success'); } catch (e) {}
                 } else {
                     // fallback local update
@@ -125,7 +127,7 @@ const ManageContacts: React.FC<ManageContactsProps> = ({ contacts, setContacts }
                 if (res.ok) {
                     const json = await res.json();
                     const mapped = mapServerToContact(json);
-                    setContacts(prev => [mapped, ...prev] as any);
+                        setContacts(prev => [mapped, ...prev] as any);
                     try { toast && toast.showToast('Contatto creato', 'success'); } catch (e) {}
                 } else {
                     const newContact: Contact = { id: Date.now(), ...data };

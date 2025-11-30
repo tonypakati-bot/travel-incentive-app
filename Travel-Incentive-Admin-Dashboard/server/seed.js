@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Invite from './models/Invite.js';
 import Participant from './models/Participant.js';
+import Trip from './models/Trip.js';
+import Communication from './models/Communication.js';
 
 dotenv.config();
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travel-admin';
@@ -30,6 +32,33 @@ const run = async () => {
   await Participant.deleteMany({});
   await Invite.insertMany(invites);
   await Participant.insertMany(participants);
+  // ensure trips exist and have settings.groups for testing
+  try {
+    const trips = await Trip.find({}).lean();
+    if (!trips || trips.length === 0) {
+      // create sample trips
+      await Trip.create({ clientName: 'ACME', name: 'Sales Kick-off Dubai', startDate: new Date(), endDate: new Date(Date.now()+1000*60*60*24*3), status: 'published', settings: { groups: ['Milano','Roma'] } });
+      await Trip.create({ clientName: 'ACME', name: 'Trip to Ibiza', startDate: new Date(), endDate: new Date(Date.now()+1000*60*60*24*2), status: 'published', settings: { groups: ['VIP','Tutti'] } });
+      await Trip.create({ clientName: 'ACME', name: 'Team Retreat Mykonos', startDate: new Date(), endDate: new Date(Date.now()+1000*60*60*24*5), status: 'published', settings: { groups: ['Milano','Venezia'] } });
+      console.log('Seeded sample trips');
+    } else {
+      // ensure groups key exists
+      for (const t of trips) {
+        if (!t.settings || !Array.isArray(t.settings.groups) || t.settings.groups.length === 0) {
+          await Trip.findByIdAndUpdate(t._id, { $set: { 'settings.groups': ['All'] } });
+        }
+      }
+    }
+    // seed a sample communication
+    await Communication.deleteMany({});
+    const someTrip = await Trip.findOne({}).lean();
+    if (someTrip) {
+      await Communication.create({ tripId: someTrip._id, tripName: someTrip.name, group: 'all', type: 'information', title: 'Welcome', message: 'Benvenuti al viaggio!', createdBy: 'seed' });
+      console.log('Seeded sample communication');
+    }
+  } catch (e) {
+    console.warn('Trip/Communication seeding skipped', e.message);
+  }
   // seed contacts if model exists
   try {
     const Contact = (await import('./models/Contact.js')).default;

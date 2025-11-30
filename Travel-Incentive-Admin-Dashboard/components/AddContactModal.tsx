@@ -17,7 +17,7 @@ export type ContactData = Omit<Contact, 'id'>;
 interface AddContactModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (contact: ContactData, id?: number) => void;
+    onSave: (contact: ContactData, id?: string | number) => void;
     contactToEdit: Contact | null;
 }
 
@@ -87,7 +87,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ isOpen, onClose, onSa
             try { toast && toast.showToast('Numero di telefono non valido', 'error'); } catch (e) {}
             return;
         }
-        onSave(formData, contactToEdit ? (Number(contactToEdit.id) as any) : undefined);
+        // Pass through the existing id as-is (string or number). Converting to Number() broke string ObjectIds.
+        onSave(formData, contactToEdit ? contactToEdit.id : undefined);
     };
 
     return (

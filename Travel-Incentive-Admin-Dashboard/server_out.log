@@ -1,0 +1,6 @@
+
+> travel-admin-server@0.0.0 start
+> node index.js
+
+Connected to MongoDB
+Server listening on 5001
