@@ -65,6 +65,7 @@ const AppContent: React.FC = () => {
   const [formFormMode, setFormFormMode] = useState<'hidden' | 'create' | 'edit'>('hidden');
   const [editingFormData, setEditingFormData] = useState<any | null>(null);
   const [commInitialType, setCommInitialType] = useState<'information' | 'alert' | undefined>(undefined);
+  const [commEditingData, setCommEditingData] = useState<any | null>(null);
 
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
   const [reminderParticipantCount, setReminderParticipantCount] = useState(0);
@@ -182,13 +183,17 @@ const AppContent: React.FC = () => {
               else if (data && data.items) items = [data.items];
               else if (data) items = [data];
 
-              setUsefulInformations(items.map((u: any) => ({
-                id: u._id ?? u.id ?? String(Math.random()).slice(2),
-                destinationName: u.title || '',
-                country: '',
-                dateAdded: u.createdAt ? new Date(u.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '') : '',
-                fullData: u
-              })));
+              setUsefulInformations(items.map((u: any) => {
+                const src = u.usefulInfo ?? u;
+                const createdAt = u.createdAt ?? src.createdAt ?? src._createdAt ?? null;
+                return {
+                  id: u._id ?? u.id ?? String(Math.random()).slice(2),
+                  destinationName: src.destinationName || u.title || '',
+                  country: src.country || '',
+                  dateAdded: createdAt ? new Date(createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '') : '',
+                  fullData: src
+                };
+              }));
             }
           } catch (e) {
             console.error('Error loading useful informations', e);
@@ -239,18 +244,27 @@ const AppContent: React.FC = () => {
   };
 
   // Communication form handlers
-  const handleCreateCommunication = (initialType?: 'information' | 'alert') => {
-    setCommInitialType(initialType);
+  const handleCreateCommunication = (initial?: any) => {
+    // initial may be a type string or a full communication object to edit
+    if (initial && typeof initial === 'object') {
+      setCommEditingData(initial);
+      setCommInitialType(initial.type || undefined);
+    } else {
+      setCommEditingData(null);
+      setCommInitialType(initial as ('information'|'alert') | undefined);
+    }
     setIsCommFormVisible(true);
   };
   const handleCloseCommForm = () => {
     setIsCommFormVisible(false);
     setCommInitialType(undefined);
+    setCommEditingData(null);
   };
   const handleSaveCommForm = () => {
-    // Logic to save/send communication would go here
+    // Close the form; CreateCommunication will dispatch an event to refresh the list
     setIsCommFormVisible(false);
     setCommInitialType(undefined);
+    setCommEditingData(null);
   };
 
   // Form handlers
@@ -532,7 +546,7 @@ const AppContent: React.FC = () => {
     }
 
     if (isCommFormVisible) {
-      return <CreateCommunication onCancel={handleCloseCommForm} onSave={handleSaveCommForm} initialType={commInitialType} />;
+      return <CreateCommunication onCancel={handleCloseCommForm} onSave={handleSaveCommForm} initialType={commInitialType} initialData={commEditingData} />;
     }
     
     switch (activeView) {

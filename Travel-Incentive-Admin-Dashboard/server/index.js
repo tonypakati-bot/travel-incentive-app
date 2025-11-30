@@ -13,6 +13,7 @@ import usefulInformationsRouter from './routes/usefulInformations.js';
 import formsRouter from './routes/forms.js';
 import contactsRouter from './routes/contacts.js';
 import configRouter from './routes/config.js';
+import communicationsRouter from './routes/communications.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/terms-documents', termsDocumentsRouter);
 app.use('/api/useful-informations', usefulInformationsRouter);
 app.use('/api/forms', formsRouter);
 app.use('/api/contacts', contactsRouter);
+app.use('/api/communications', communicationsRouter);
 // Config endpoint (safe to expose in all environments)
 app.use('/api/config', configRouter);
 

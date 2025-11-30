@@ -21,7 +21,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ open, title, message, confi
         {title && <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>}
         <div className="text-sm text-gray-700 mb-4">{message}</div>
         <div className="flex justify-end space-x-3">
-          <button onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">{cancelLabel}</button>
+          {cancelLabel ? (
+            <button onClick={onCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">{cancelLabel}</button>
+          ) : null}
           <button onClick={onConfirm} className={confirmClasses}>{confirmLabel}</button>
         </div>
       </div>

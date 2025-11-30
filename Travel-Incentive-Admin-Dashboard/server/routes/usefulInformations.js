@@ -41,8 +41,9 @@ router.get('/summary', async (req, res) => {
       ];
     }
     const total = await UsefulInfo.countDocuments(filter);
-    const docs = await UsefulInfo.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).select('_id title createdAt').lean();
-    const mapped = docs.map(d => ({ id: d._id, title: d.title, createdAt: d.createdAt }));
+    // Select only the fields we need for the summary: id, title, createdAt and usefulInfo subset
+    const docs = await UsefulInfo.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).select('_id title createdAt usefulInfo.destinationName usefulInfo.country').lean();
+    const mapped = docs.map(d => ({ id: d._id, title: d.title, createdAt: d.createdAt, usefulInfo: d.usefulInfo || null }));
     res.json({ items: mapped, total, page, limit });
   } catch (err) {
     console.error(err);

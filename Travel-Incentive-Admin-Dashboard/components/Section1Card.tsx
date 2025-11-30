@@ -17,17 +17,28 @@ const Section1Card: React.FC<Props> = ({ initial = {}, settings, onSaved }) => {
     if (!valid) return null;
     setSaving(true);
     try {
-      const payload: any = { clientName, name, subtitle, description, startDate, endDate, status: 'draft' };
-      // DEV E2E: payload is prepared for save
+      const payload: any = { clientName, name, subtitle, description, startDate, endDate };
       if (settings) payload.settings = settings;
-      const res = await fetch('/api/trips', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+
+      // If initial contains an existing trip id, PATCH it (this ensures name changes trigger server-side propagation).
+      const existingId = (initial as any) && ((initial as any).tripId || (initial as any)._id || (initial as any).id);
+      let res;
+      if (existingId) {
+        // include status only if provided in initial to avoid unintentionally changing it
+        if ((initial as any).status) payload.status = (initial as any).status;
+        res = await fetch(`/api/trips/${existingId}`, { method: 'PATCH', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      } else {
+        payload.status = 'draft';
+        res = await fetch('/api/trips', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      }
+
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(txt || `HTTP ${res.status}`);
       }
       const json = await res.json();
       // normalize id shape
-      const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id)) };
+      const normalized = { ...(json || {}), tripId: (json && (json.tripId || json._id || existingId)) };
       onSaved(normalized as any);
       return normalized;
     } catch (err) {

@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Trip from '../models/Trip.js';
 import Contact from '../models/Contact.js';
+import Communication from '../models/Communication.js';
 import Document from '../models/Document.js';
 
 const router = express.Router();
@@ -14,6 +15,16 @@ router.param('tripId', (req, res, next, id) => {
 router.param('id', (req, res, next, id) => {
   if (!mongoose.Types.ObjectId.isValid(String(id))) return res.status(400).json({ error: 'Invalid id' });
   next();
+});
+
+// List trips (supports ?status=published)
+router.get('/', async (req, res) => {
+  try {
+    const q = {};
+    if (req.query.status) q.status = String(req.query.status);
+    const items = await Trip.find(q).sort({ startDate: -1 }).lean();
+    return res.json({ items, total: items.length });
+  } catch (err) { console.error(err); return res.status(500).json({ error: 'Server error' }); }
 });
 
 router.post('/', async (req, res) => {
@@ -196,6 +207,12 @@ router.patch('/:id', async (req, res) => {
       return res.status(500).json({ error: 'Server error' });
     }
     if (!trip) return res.status(404).json({ error: 'Not found' });
+    // propagate name changes to communications denormalized tripName
+    try {
+      if (payload.name) {
+        await Communication.updateMany({ tripId: trip._id }, { $set: { tripName: String(payload.name) } });
+      }
+    } catch (e) { console.error('Failed to propagate trip name to communications', e); }
     return res.json(trip);
   } catch (err) {
     console.error(err);

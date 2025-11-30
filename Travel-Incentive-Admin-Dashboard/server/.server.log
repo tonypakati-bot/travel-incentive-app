@@ -1,9 +1,2 @@
 Connected to MongoDB
 Server listening on 5001
-Contact propagation result: {
-  acknowledged: true,
-  modifiedCount: 1,
-  upsertedId: null,
-  upsertedCount: 0,
-  matchedCount: 1
-}
